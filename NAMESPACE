@@ -1,0 +1,4 @@
+useDynLib(are)
+
+export(AllorNone, Classical.bprobit)
+
