@@ -8,6 +8,7 @@
 #include "vector.h"
 #include "subroutines.h"
 #include "rand.h"
+#include "models.h"
 
 void bprobit(int *Y,         /* binary outcome variable */ 
 	     int *R,         /* recording indicator for Y */
@@ -43,12 +44,8 @@ void bprobit(int *Y,         /* binary outcome variable */
   double **Xr = doubleMatrix(n_samp+n_cov, n_cov+1);
   /* covariates for the outcome model */     
   double **Xo = doubleMatrix(n_samp+n_cov, n_cov+1);
-  double *W = doubleArray(n_samp); /* latent variable */
 
   /*** model parameters ***/
-  double **SS = doubleMatrix(n_cov+1, n_cov+1); /* matrix folders for SWEEP */
-  double *mean = doubleArray(n_cov);            /* means for beta and delta */
-  double **V = doubleMatrix(n_cov, n_cov);      /* variances for beta and delta */
   double **Ao = doubleMatrix(n_cov, n_cov);
   double **Ar = doubleMatrix(n_cov, n_cov);
   double **mtemp = doubleMatrix(n_cov, n_cov);
@@ -58,12 +55,7 @@ void bprobit(int *Y,         /* binary outcome variable */
   int keep = 1;
   int i, j, k, main_loop;  
   int itemp, itemp1, itemp2, itempP = ftrunc((double) n_gen/10);
-  double dtemp, dtemp0, dtemp1, p0, p1, r0, r1;
-
-  /*** marginal data augmentation ***/
-  double sig2 = 1;
-  int nu0 = 1;
-  double s0 = 1;
+  double dtemp0, dtemp1, p0, p1, r0, r1;
 
   /*** get random seed **/
   GetRNGstate();
@@ -111,44 +103,8 @@ void bprobit(int *Y,         /* binary outcome variable */
   itemp = 0; itemp1 = 0; itemp2 = 0;     
   for(main_loop = 1; main_loop <= n_gen; main_loop++){
 
-    /** Response Model **/    
-    if (*mda) sig2 = s0/rchisq((double)nu0);
-
-    for(i = 0; i < n_samp; i++){
-      dtemp = 0;
-      for(j = 0; j < n_cov; j++) 
-	dtemp += Xr[i][j]*delta[j];
-      if(R[i]==0) 
-	W[i] = TruncNorm(dtemp-1000,0,dtemp,1,0);
-      else 
-	W[i] = TruncNorm(0,dtemp+1000,dtemp,1,0);
-      Xr[i][n_cov] = W[i]*sqrt(sig2);
-      W[i] *= sqrt(sig2);
-    }
-
-    /* SS matrix */
-    for(j = 0; j <= n_cov; j++)
-      for(k = 0; k <= n_cov; k++)
-	SS[j][k]=0;
-    for(i = 0; i < n_samp+n_cov; i++)
-      for(j = 0; j <= n_cov; j++)
-	for(k = 0; k <= n_cov; k++) 
-	  SS[j][k] += Xr[i][j]*Xr[i][k];
-    /* SWEEP SS matrix */
-    for(j = 0; j < n_cov; j++)
-      SWP(SS, j, n_cov+1);
-    /* draw delta */    
-    for(j = 0; j < n_cov; j++)
-      mean[j] = SS[j][n_cov];
-    if (*mda) 
-      sig2=(SS[n_cov][n_cov]+s0)/rchisq((double)n_samp+nu0);
-    for(j = 0; j < n_cov; j++)
-      for(k = 0; k < n_cov; k++) 
-	V[j][k] = -SS[j][k]*sig2;
-    rMVN(delta, mean, V, n_cov);
-    /* rescale the parameters */
-    if (*mda) 
-      for (i = 0; i < n_cov; i++) delta[i] /= sqrt(sig2);
+    /** Response Model: binary Probit **/    
+    bprobitGibbs(R, Xr, delta, n_samp, n_cov, 0, delta0, Ar, *mda, 1);
 
     /** Imputing the missing data **/
     for (i = 0; i < n_samp; i++) {
@@ -188,42 +144,8 @@ void bprobit(int *Y,         /* binary outcome variable */
       }
     }
       
-    /** Outcome Model **/
-    if (*mda) sig2 = s0/rchisq((double)nu0);
-    for (i = 0; i < n_samp; i++){
-      dtemp = 0;
-      for (j = 0; j < n_cov; j++) 
-	dtemp += Xo[i][j]*beta[j]; 
-      if(Y[i] == 0) 
-	W[i] = TruncNorm(dtemp-1000,0,dtemp,1,0);
-      else 
-	W[i] = TruncNorm(0,dtemp+1000,dtemp,1,0);
-      Xo[i][n_cov] = W[i]*sqrt(sig2);
-      W[i] *= sqrt(sig2);
-    }
-    /* SS matrix */
-    for(j = 0; j <= n_cov; j++)
-      for(k = 0; k <= n_cov; k++)
-	SS[j][k]=0;
-    for(i = 0;i < n_samp+n_cov; i++)
-      for(j = 0;j <= n_cov; j++)
-	for(k = 0; k <= n_cov; k++) 
-	  SS[j][k] += Xo[i][j]*Xo[i][k];
-    /* SWEEP SS matrix */
-    for(j = 0; j < n_cov; j++)
-      SWP(SS, j, n_cov+1);
-
-    /* draw beta */    
-    for(j = 0; j < n_cov; j++)
-      mean[j] = SS[j][n_cov];
-    if (*mda) 
-      sig2=(SS[n_cov][n_cov]+s0)/rchisq((double)n_samp+nu0);
-    for(j = 0; j < n_cov; j++)
-      for(k = 0; k < n_cov; k++) V[j][k]=-SS[j][k]*sig2;
-    rMVN(beta, mean, V, n_cov); 
-    /* rescaling the parameters */
-    if(*mda) 
-      for (i = 0; i < n_cov; i++) beta[i] /= sqrt(sig2);
+    /** Outcome Model: binary probit **/
+    bprobitGibbs(R, Xo, beta, n_samp, n_cov, 0, beta0, Ao, *mda, 1);
 
     /** Compute quantities of interest **/
     p0 = 0; p1 = 0;
@@ -274,10 +196,6 @@ void bprobit(int *Y,         /* binary outcome variable */
   /** freeing memory **/
   FreeMatrix(Xr, n_samp+n_cov);
   FreeMatrix(Xo, n_samp+n_cov);
-  free(W);
-  FreeMatrix(SS, n_cov+1);
-  free(mean);
-  FreeMatrix(V, n_cov);
   FreeMatrix(Ao, n_cov);
   FreeMatrix(Ar, n_cov);
   FreeMatrix(mtemp, n_cov);

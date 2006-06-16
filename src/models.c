@@ -10,6 +10,7 @@
 #include "rand.h"
 
 /* A Gibbs sampler for binary probit regression */
+/* with and without marginal data augmentation */
 void bprobitGibbs(int *Y,        /* binary outcome variable */
 		  double **X,    /* covariate matrix */
 		  double *beta,  /* coefficients */
@@ -19,7 +20,7 @@ void bprobitGibbs(int *Y,        /* binary outcome variable */
 		  double *beta0, /* prior mean */
 		  double **A0,   /* prior precision */
 		  int mda,       /* Want to use marginal data augmentation? */ 
-		  int n_gen     /* # of gibbs draws */
+		  int n_gen      /* # of gibbs draws */
 		  ) {
   
   /*** model parameters ***/
@@ -71,16 +72,14 @@ void bprobitGibbs(int *Y,        /* binary outcome variable */
     for(j = 0; j <= n_cov; j++)
       for(k = 0; k <= n_cov; k++)
 	SS[j][k]=0;
-    for(i = 0;i < n_samp+n_cov; i++)
+    for(i = 0;i < n_samp; i++)
       for(j = 0;j <= n_cov; j++)
 	for(k = 0; k <= n_cov; k++) 
 	  SS[j][k] += X[i][j]*X[i][k];
-    if (prior) {
-      for(i = n_samp;i < n_samp+n_cov; i++)
-	for(j = 0;j <= n_cov; j++)
-	  for(k = 0; k <= n_cov; k++) 
-	    SS[j][k] += X[i][j]*X[i][k];
-    }
+    for(i = n_samp;i < n_samp+n_cov; i++)
+      for(j = 0;j <= n_cov; j++)
+	for(k = 0; k <= n_cov; k++) 
+	  SS[j][k] += X[i][j]*X[i][k];
 
     /* SWEEP SS matrix */
     for(j = 0; j < n_cov; j++)
@@ -100,9 +99,6 @@ void bprobitGibbs(int *Y,        /* binary outcome variable */
       for (i = 0; i < n_cov; i++) beta[i] /= sqrt(sig2);
     R_CheckUserInterrupt();
   } /* end of Gibbs sampler */
-
-  /** write out the random seed **/
-  PutRNGstate();
 
   /** freeing memory **/
   free(W);
