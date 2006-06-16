@@ -1,4 +1,3 @@
-
 #include <stddef.h>
 #include <stdio.h>      
 #include <string.h>
@@ -20,7 +19,7 @@ void bprobitGibbs(int *Y,        /* binary outcome variable */
 		  double *beta0, /* prior mean */
 		  double **A0,   /* prior precision */
 		  int mda,       /* Want to use marginal data augmentation? */ 
-		  int n_gen,     /* # of gibbs draws */
+		  int n_gen     /* # of gibbs draws */
 		  ) {
   
   /*** model parameters ***/
@@ -41,7 +40,7 @@ void bprobitGibbs(int *Y,        /* binary outcome variable */
   
   /*** read the prior and it as additional data points ***/
   if (prior) {
-    dcholdc(Ao, n_cov, mtemp);
+    dcholdc(A0, n_cov, mtemp);
     for(i = 0; i < n_cov; i++) {
       X[n_samp+i][n_cov] = 0;
       for(j = 0; j < n_cov; j++) {
@@ -52,10 +51,9 @@ void bprobitGibbs(int *Y,        /* binary outcome variable */
   }
 
   /*** Gibbs Sampler! ***/
-  itemp = 0; itemp1 = 0; itemp2 = 0;     
   for(main_loop = 1; main_loop <= n_gen; main_loop++){
     /* marginal data augmentation */
-    if (*mda) sig2 = s0/rchisq((double)nu0);
+    if (mda) sig2 = s0/rchisq((double)nu0);
     
     for (i = 0; i < n_samp; i++){
       dtemp = 0;
@@ -91,14 +89,14 @@ void bprobitGibbs(int *Y,        /* binary outcome variable */
     /* draw beta */    
     for(j = 0; j < n_cov; j++)
       mean[j] = SS[j][n_cov];
-    if (*mda) 
+    if (mda) 
       sig2=(SS[n_cov][n_cov]+s0)/rchisq((double)n_samp+nu0);
     for(j = 0; j < n_cov; j++)
       for(k = 0; k < n_cov; k++) V[j][k]=-SS[j][k]*sig2;
     rMVN(beta, mean, V, n_cov);
  
     /* rescaling the parameters */
-    if(*mda) 
+    if(mda) 
       for (i = 0; i < n_cov; i++) beta[i] /= sqrt(sig2);
     R_CheckUserInterrupt();
   } /* end of Gibbs sampler */
