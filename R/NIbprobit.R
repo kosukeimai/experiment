@@ -1,9 +1,13 @@
-Classical.bprobit <- function(Y, D, X, data = parent.frame(),
-                              n.draws = 5000, param = TRUE, mda = TRUE,
-                              p.mean.o = 0, p.var.o = 1000,
-                              p.mean.r = 0, p.var.r = 1000,
-                              coef.start.o = 0, coef.start.r = 0,
-                              burnin = 0, thin = 0, verbose = TRUE) {  
+###
+### Bayesian probit with nonignorable missing outcomes
+###
+
+NIbprobit <- function(Y, D, X, data = parent.frame(),
+                      n.draws = 5000, param = TRUE, mda = TRUE,
+                      p.mean.o = 0, p.var.o = 1000,
+                      p.mean.r = 0, p.var.r = 1000,
+                      coef.start.o = 0, coef.start.r = 0,
+                      burnin = 0, thin = 0, verbose = TRUE) {  
 
   ## getting the data
   call <- match.call()
