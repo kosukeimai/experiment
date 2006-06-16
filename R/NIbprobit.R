@@ -51,7 +51,7 @@ Classical.bprobit <- function(Y, D, X, data = parent.frame(),
   keep <- thin + 1
 
   ## calling C function to do MCMC
-  par <- .C("bprobit",
+  par <- .C("NIbprobit",
             as.integer(Y), as.integer(R), as.integer(D), 
             as.double(Xo), as.double(Xr),
             as.double(coef.start.o), as.double(coef.start.r),

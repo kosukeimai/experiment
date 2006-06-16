@@ -10,29 +10,31 @@
 #include "rand.h"
 #include "models.h"
 
-void bprobit(int *Y,         /* binary outcome variable */ 
-	     int *R,         /* recording indicator for Y */
-	     int *D,         /* treatment status */ 
-	     double *dXo,    /* covariates */
-	     double *dXr,    /* covariates */
-	     double *beta,   /* coefficients */
-	     double *delta,  /* coefficients */
-	     int *insamp,    /* # of obs */ 
-	     int *incov,     /* # of covariates */
-	     double *beta0,  /* prior mean */
-	     double *delta0, /* prior mean */
-	     double *dAo,    /* prior precision */
-	     double *dAr,    /* prior precision */
-	     int *param,     /* store parameters? */ 
-	     int *mda,       /* marginal data augmentation? */ 
-	     int *ndraws,    /* # of gibbs draws */
-	     int *iBurnin,   /* # of burnin */
-	     int *iKeep,     /* every ?th draws to keep */
-	     int *verbose,  
-	     double *coefo,  /* storage for coefficients */ 
-	     double *coefr,  /* storage for coefficients */ 
-	     double *ATE     /* storage for ATE */
-	     ) {
+
+/* Bayesian binary probit with nonignorable missing outcomes */
+void NIbprobit(int *Y,         /* binary outcome variable */ 
+	       int *R,         /* recording indicator for Y */
+	       int *D,         /* treatment status */ 
+	       double *dXo,    /* covariates */
+	       double *dXr,    /* covariates */
+	       double *beta,   /* coefficients */
+	       double *delta,  /* coefficients */
+	       int *insamp,    /* # of obs */ 
+	       int *incov,     /* # of covariates */
+	       double *beta0,  /* prior mean */
+	       double *delta0, /* prior mean */
+	       double *dAo,    /* prior precision */
+	       double *dAr,    /* prior precision */
+	       int *param,     /* store parameters? */ 
+	       int *mda,       /* marginal data augmentation? */ 
+	       int *ndraws,    /* # of gibbs draws */
+	       int *iBurnin,   /* # of burnin */
+	       int *iKeep,     /* every ?th draws to keep */
+	       int *verbose,  
+	       double *coefo,  /* storage for coefficients */ 
+	       double *coefr,  /* storage for coefficients */ 
+	       double *ATE     /* storage for ATE */
+	       ) {
   
   /*** counters ***/
   int n_samp = *insamp;      /* sample size */
