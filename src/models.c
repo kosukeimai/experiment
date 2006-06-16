@@ -96,7 +96,7 @@ void bprobitGibbs(int *Y,        /* binary outcome variable */
  
     /* rescaling the parameters */
     if(mda) 
-      for (i = 0; i < n_cov; i++) beta[i] /= sqrt(sig2);
+      for (j = 0; j < n_cov; j++) beta[j] /= sqrt(sig2);
     R_CheckUserInterrupt();
   } /* end of Gibbs sampler */
 

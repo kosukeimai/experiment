@@ -1,4 +1,3 @@
-
 #include <stddef.h>
 #include <stdio.h>      
 #include <math.h>
@@ -202,7 +201,7 @@ void NIbprobit(int *Y,         /* binary outcome variable */
   FreeMatrix(Ar, n_cov);
   FreeMatrix(mtemp, n_cov);
 
-} /* main */
+} /* NIbprobit */
 
 
 

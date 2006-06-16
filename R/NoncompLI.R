@@ -71,24 +71,24 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
   Xo[C == 1 & Z == 0, 2] <- 1
   
   ## dimensions
-  ncovc <- ncol(Xc)
-  ncovo <- ncol(Xo)
+  ncovC <- ncol(Xc)
+  ncovO <- ncol(Xo)
     
   ## starting values
-  if(length(coef.start.c) != ncovc)
-    coef.start.c <- rep(coef.start.c, ncovc)
-  if(length(coef.start.o) != ncovo)
-    coef.start.o <- rep(coef.start.o, ncovo)
+  if(length(coef.start.c) != ncovC)
+    coef.start.c <- rep(coef.start.c, ncovC)
+  if(length(coef.start.o) != ncovO)
+    coef.start.o <- rep(coef.start.o, ncovO)
  
   ## prior
-  if(length(p.mean.c) != ncovc)
-    p.mean.c <- rep(p.mean.c, ncovc)
-  if(length(p.mean.o) != ncovo)
-    p.mean.o <- rep(p.mean.o, ncovo)
+  if(length(p.mean.c) != ncovC)
+    p.mean.c <- rep(p.mean.c, ncovC)
+  if(length(p.mean.o) != ncovO)
+    p.mean.o <- rep(p.mean.o, ncovO)
   if(!is.matrix(p.var.c))
-    p.var.c <- diag(p.var.c, ncovc)
+    p.var.c <- diag(p.var.c, ncovC)
   if(!is.matrix(p.var.o))
-    p.var.o <- diag(p.var.o, ncovo)
+    p.var.o <- diag(p.var.o, ncovO)
 
   ## checking thinnig and burnin intervals
   if (n.draws <= 0)
@@ -100,20 +100,21 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
   keep <- thin + 1
   
   ## calling C function
-  out <- .C("probit",
-            as.integer(Y), as.integer(R), as.integer(Ymax),
-            as.integer(Z), as.integer(D), as.integer(C), 
-            as.double(X), as.double(Xo),
+  out <- .C("LIbprobit",
+            as.integer(Y), as.integer(R), as.integer(Z),
+            as.integer(D), as.integer(C), as.integer(A),
+            as.interger(AT), as.double(Xc), as.double(Xo),
             as.double(coef.start.c), as.double(coef.start.o),
             as.integer(N), as.integer(n.draws),
-            as.integer(ncov), as.integer(ncovo), as.integer(ncovX),
-            as.integer(N11),
+            as.integer(ncovC), as.integer(ncovO),
             as.double(p.mean.c), as.double(p.mean.o),
             as.double(solve(p.var.c)), as.double(solve(p.var.o)),
-            as.integer(insample), as.integer(varT),
             as.integer(param), as.integer(mda), as.integer(burnin),
             as.integer(keep), as.integer(verbose),
-            pdStore = double(allpar*(ceiling((n.draws-burnin)/keep))),
+            coefC = double(ncovC*(ceiling((n.draws-burnin)/keep))),
+            coefA = double(ncovC*(ceiling((n.draws-burnin)/keep))),
+            coefO = double(ncovO*(ceiling((n.draws-burnin)/keep))),
+            QoI = double(3*(ceiling((n.draws-burnin)/keep))),
             PACKAGE="are")
 
   return(res)
