@@ -22,7 +22,6 @@ void bprobit(int *Y,         /* binary outcome variable */
 	     double *delta0, /* prior mean */
 	     double *dAo,    /* prior precision */
 	     double *dAr,    /* prior precision */
-	     int *insample,  /* 1: insample inference, 0: conditional inference */
 	     int *param,     /* store parameters? */ 
 	     int *mda,       /* marginal data augmentation? */ 
 	     int *ndraws,    /* # of gibbs draws */

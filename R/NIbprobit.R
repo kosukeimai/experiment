@@ -1,8 +1,7 @@
 Classical.bprobit <- function(Y, D, X, data = parent.frame(),
-                              n.draws = 50, insample = TRUE,
-                              param = TRUE, mda = TRUE,
-                              p.mean.o = 0, p.var.o = 100,
-                              p.mean.r = 0, p.var.r = 100,
+                              n.draws = 5000, param = TRUE, mda = TRUE,
+                              p.mean.o = 0, p.var.o = 1000,
+                              p.mean.r = 0, p.var.r = 1000,
                               coef.start.o = 0, coef.start.r = 0,
                               burnin = 0, thin = 0, verbose = TRUE) {  
 
@@ -59,7 +58,7 @@ Classical.bprobit <- function(Y, D, X, data = parent.frame(),
             as.integer(n), as.integer(k), 
             as.double(p.mean.o), as.double(p.mean.r),
             as.double(solve(p.var.o)), as.double(solve(p.var.r)), 
-            as.integer(insample), as.integer(param), as.integer(mda),
+            as.integer(param), as.integer(mda),
             as.integer(n.draws), as.integer(burnin),
             as.integer(keep), as.integer(verbose),
             coef.o = double(k*(ceiling((n.draws-burnin)/keep))),
@@ -68,7 +67,7 @@ Classical.bprobit <- function(Y, D, X, data = parent.frame(),
             PACKAGE="are")
   if (param) {
     res$coef.o <- matrix(par$coef.o, byrow = TRUE, ncol = k)
-    res$coef.o <- matrix(par$coef.r, byrow = TRUE, ncol = k)
+    res$coef.r <- matrix(par$coef.r, byrow = TRUE, ncol = k)
   }
   res$ATE <- matrix(par$ATE, byrow = TRUE, ncol = 3)
   
