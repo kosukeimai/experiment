@@ -170,7 +170,12 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	    Xtemp[itemp][j] = Xc[i][j];
 	  itemp++;
 	}
-      bprobitGibbs(Atemp, Xtemp, betaA, itemp, n_covC, 0, beta0, A0C, *mda, 1);
+      for (i = n_samp; i < n_samp + n_covC; i++) {
+	for (j = 0; j < n_covC; j++)
+	  Xtemp[itemp][j] = Xc[i][j];
+	itemp++;
+      }
+      bprobitGibbs(Atemp, Xtemp, betaA, itemp-n_covC, n_covC, 0, beta0, A0C, *mda, 1);
     }      
 
     /* Sample complier status for control group */

@@ -105,8 +105,8 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
             as.integer(Y), as.integer(R), as.integer(Z),
             as.integer(D), as.integer(C), as.integer(A),
             as.integer(AT), as.double(Xc), as.double(Xo),
-            as.double(coef.start.c), as.double(coef.start.o),
-            as.integer(N), as.integer(n.draws),
+            as.double(coef.start.c), as.double(coef.start.c),
+            as.double(coef.start.o), as.integer(N), as.integer(n.draws),
             as.integer(ncovC), as.integer(ncovO),
             as.double(p.mean.c), as.double(p.mean.o),
             as.double(solve(p.var.c)), as.double(solve(p.var.o)),
@@ -123,10 +123,10 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
     res$coefC <- matrix(out$coefC, byrow = TRUE, ncol = ncovC)
     colnames(res$coefC) <- colnames(Xc)
     if (AT) {
-      res$coefA <- matrix(out$coefC, byrow = TRUE, ncol = ncovC)
+      res$coefA <- matrix(out$coefA, byrow = TRUE, ncol = ncovC)
       colnames(res$coefA) <- colnames(Xc)
     }
-    res$coefO <- matrix(out$coefC, byrow = TRUE, ncol = ncovO)
+    res$coefO <- matrix(out$coefO, byrow = TRUE, ncol = ncovO)
     colnames(res$coefO) <- colnames(Xo)
   }
   QoI <- matrix(out$QoI, byrow = TRUE, ncol = if (AT) 8 else 7)
