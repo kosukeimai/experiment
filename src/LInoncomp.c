@@ -200,7 +200,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	  }  
 	}
 	if (Z[i] == 1 & D[i] == 1){
-	  if (unif_rand() < (qC[i]*pC[i]/(qC[i]*pC[i]+(1-qC[i]-qN[i])*pN[i]))) { 
+	  if (unif_rand() < (qC[i]*pC[i]/(qC[i]*pC[i]+(1-qC[i]-qN[i])*pA[i]))) { 
 	    C[i] = 1;
 	    A[i] = 0;
 	    Xo[i][0] = 1;
