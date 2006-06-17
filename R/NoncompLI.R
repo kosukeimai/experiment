@@ -53,6 +53,7 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
 
   ## Completing the outcome model matrix 
   ## The default category is never-takers
+  X <- Xo
   if (AT) { # when some always-takers exist
   ## Xo = [c1 c0 a X] where c1 for compliers with encouragement
   ##                        c0 for compliers without encouragement
@@ -103,7 +104,7 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
   out <- .C("LIbprobit",
             as.integer(Y), as.integer(R), as.integer(Z),
             as.integer(D), as.integer(C), as.integer(A),
-            as.interger(AT), as.double(Xc), as.double(Xo),
+            as.integer(AT), as.double(Xc), as.double(Xo),
             as.double(coef.start.c), as.double(coef.start.o),
             as.integer(N), as.integer(n.draws),
             as.integer(ncovC), as.integer(ncovO),
