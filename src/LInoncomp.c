@@ -96,7 +96,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
   int progress = 1;
   int keep = 1;
   int i, j, k, l, main_loop;  
-  int itemp, itempP = ftrunc((double) n_gen/10), itempQ;
+  int itemp, itempP = ftrunc((double) n_gen/10), itempA, itempC, itempO, itempQ;
   double dtemp;
   double **mtempC = doubleMatrix(n_covC, n_covC); 
   double **mtempO = doubleMatrix(n_covO, n_covO); 
@@ -153,7 +153,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
   }
 
   /*** Gibbs Sampler! ***/
-  itempQ = 0;   
+  itempA = 0; itempC = 0; itempO = 0; itempQ = 0;   
   for(main_loop = 1; main_loop <= n_gen; main_loop++){
 
     /** COMPLIANCE MODEL **/    
@@ -312,6 +312,16 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	QoI[itempQ++] = YbarN;
 	if (AT)
 	  QoI[itempQ++] = YbarA;
+
+	if (param) {
+	  for (j = 0; j < n_covC; j++)
+	    coefC[itempC++] = betaC[j];
+	  if (AT)
+	    for (j = 0; j < n_covC; j++)
+	      coefA[itempA++] = betaA[j];
+	  for (j = 0; j < n_covO; j++)
+	    coefO[itempO++] = gamma[j];
+	}
 
 	keep = 1;
       }

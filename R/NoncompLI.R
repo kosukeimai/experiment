@@ -1,7 +1,7 @@
 Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
-                            n.draws = 5000, insample = TRUE, param = TRUE,
-                            p.mean.c = 0, p.var.c = 100, p.mean.o = 0,
-                            p.var.o = 100, mda = TRUE, coef.start.c = 0,
+                            n.draws = 5000, param = TRUE,
+                            p.mean.c = 0, p.var.c = 1000, p.mean.o = 0,
+                            p.var.o = 1000, mda = TRUE, coef.start.c = 0,
                             coef.start.o = 0, burnin = 0,
                             thin = 0, verbose = TRUE) {  
 
@@ -114,8 +114,32 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
             coefC = double(ncovC*(ceiling((n.draws-burnin)/keep))),
             coefA = double(ncovC*(ceiling((n.draws-burnin)/keep))),
             coefO = double(ncovO*(ceiling((n.draws-burnin)/keep))),
-            QoI = double(3*(ceiling((n.draws-burnin)/keep))),
+            QoI = if(AT) double(8*(ceiling((n.draws-burnin)/keep)))
+            else double(7*(ceiling((n.draws-burnin)/keep))),
             PACKAGE="are")
+
+  if (param) {
+    res$coefC <- matrix(out$coefC, byrow = TRUE, ncol = ncovC)
+    colnames(res$coefC) <- colnames(Xc)
+    if (AT) {
+      res$coefA <- matrix(out$coefC, byrow = TRUE, ncol = ncovC)
+      colnames(res$coefA) <- colnames(Xc)
+    }
+    res$coefO <- matrix(out$coefC, byrow = TRUE, ncol = ncovO)
+    colnames(res$coefO) <- colnames(Xo)
+  }
+  QoI <- matrix(out$QoI, byrow = TRUE, ncol = if (AT) 8 else 7)
+  res$ITT <- QoI[,1]
+  res$CACE <- QoI[,2]
+  res$pC <- QoI[,3]
+  res$pN <- QoI[,4]
+  if (AT)
+    res$pA <- 1-QoI[,3]-QoI[,4]
+  res$Y1barC <- res$QoI[,5]
+  res$Y0barC <- res$QoI[,6]
+  res$YbarN <- res$QoI[,7]
+  if (AT)
+    res$YbarA <- res$QoI[,8]
 
   return(res)
 }
