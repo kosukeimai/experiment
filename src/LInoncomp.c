@@ -70,32 +70,34 @@ void LIbprobit(int *Y,         /* binary outcome variable */
   /*** model parameters ***/
   /* probability of Y = 1 for a complier */
   double *pC = doubleArray(n_samp); 
-  double *pN = doubleArray(n_samp); 
+  double *pN = doubleArray(n_samp);
   /* probability of being a complier and never-taker */
-  double qC, qN;
+  double *qC = doubleArray(n_samp);
+  double *qN = doubleArray(n_samp);
 
   /* probability of being a always-taker */
-  if (AT) {
-    double *meana = doubleArray(n_samp);
-    /* subset of the data */
-    double **Xtemp = doubleMatrix(n_samp+n_covC, n_covC+1);
-    double *Atemp = doubleArray(n_samp);
-  }
+  double *pA = doubleArray(n_samp);
+  double *meana = doubleArray(n_samp);
+  /* subset of the data */
+  double **Xtemp = doubleMatrix(n_samp+n_covC, n_covC+1);
+  int *Atemp = intArray(n_samp);
+  
   double **A0C = doubleMatrix(n_covC, n_covC);
   double **A0O = doubleMatrix(n_covO, n_covO);
 
   /* quantities of interest: ITT, CACE  */
-  double ITTY, ITTD, CACE;
-  double Y1barC, Y0barC;
+  double ITT, CACE;
+  double Y1barC, Y0barC, YbarN, YbarA;
   int n_comp;          /* number of compliers */
+  int n_never;
   int p_comp, p_never; /* prob. of being a particular type */
 
   /*** storage parameters and loop counters **/
   int progress = 1;
   int keep = 1;
   int i, j, k, l, main_loop;  
-  int itemp, itempP = ftrunc((double) n_gen/10);
-  double dtemp, ndraw, cdraw;
+  int itemp, itempP = ftrunc((double) n_gen/10), itempQ;
+  double dtemp;
   double **mtempC = doubleMatrix(n_covC, n_covC); 
   double **mtempO = doubleMatrix(n_covO, n_covO); 
 
@@ -122,7 +124,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
   itemp = 0;
   for (k = 0; k < n_covO; k++)
     for (j = 0; j < n_covO; j++)
-      A0O[j][k] = dAo[itemp++];
+      A0O[j][k] = dA0O[itemp++];
 
   dcholdc(A0C, n_covC, mtempC);
   for(i = 0; i < n_covC; i++) {
@@ -151,7 +153,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
   }
 
   /*** Gibbs Sampler! ***/
-  itemp=0;     
+  itempQ = 0;   
   for(main_loop = 1; main_loop <= n_gen; main_loop++){
 
     /** COMPLIANCE MODEL **/    
@@ -165,10 +167,10 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	if (C[i] == 0) {
 	  Atemp[itemp] = A[i];
 	  for (j = 0; j < n_covC; j++)
-	    Xtemp[itemp][j] = X[i][j];
+	    Xtemp[itemp][j] = Xc[i][j];
 	  itemp++;
 	}
-      bprobitGibbs(Atemp, Xc, betaA, itemp, n_covC, 0, beta0, A0C, *mda, 1);
+      bprobitGibbs(Atemp, Xtemp, betaA, itemp, n_covC, 0, beta0, A0C, *mda, 1);
     }      
 
     /* Sample complier status for control group */
@@ -262,75 +264,75 @@ void LIbprobit(int *Y,         /* binary outcome variable */
       } 
     }
     
-    /** Imputing missing Y **/
-    /** Computing Quantities of Interest **/
-    ITTY = 0; ITTD = 0; n_comp = 0; 
-    Y1barC = 0; Y0barC = 0; p_comp = 0; p_never = 0;
-    for(i = 0; i < n_samp; i++){
-      p_comp ++= qC[i];
-      p_never ++= qN[i];
-      if(C[i] == 1) { /* ITT effects */
-	n_comp++;
-	Y1barC += pnorm(meano[i]+gamma[0], 0, 1, 1, 0);
-	Y0barC += pnorm(meano[i]+gamma[1], 0, 1, 1, 0); 
-	ITTY += (pnorm(meano[i]+gamma[0], 0, 1, 1, 0) - 
-		 pnorm(meano[i]+gamma[1], 0, 1, 1, 0));
+    /** storing the results **/
+    if (main_loop > *iBurnin) {
+      if (keep == *iKeep) {
+	/** Computing Quantities of Interest **/
+	ITT = 0; n_comp = 0; n_never = 0;
+	p_comp = 0; p_never = 0; 
+	Y1barC = 0; Y0barC = 0; YbarN = 0; YbarA = 0;
+	for(i = 0; i < n_samp; i++){
+	  p_comp += qC[i];
+	  p_never += qN[i];
+	  if(C[i] == 1) { /* ITT effects */
+	    n_comp++;
+	    Y1barC += pnorm(meano[i]+gamma[0], 0, 1, 1, 0);
+	    Y0barC += pnorm(meano[i]+gamma[1], 0, 1, 1, 0); 
+	    ITT += (pnorm(meano[i]+gamma[0], 0, 1, 1, 0) - 
+		     pnorm(meano[i]+gamma[1], 0, 1, 1, 0));
+	  } else {
+	    if (AT)
+	      if (A[i])
+		YbarA += pnorm(meano[i]+gamma[2], 0, 1, 1, 0);
+	      else {
+		n_never++;
+		YbarN += pnorm(meano[i], 0, 1, 1, 0);
+	      }
+	    else {
+	      n_never++;
+	      YbarN += pnorm(meano[i], 0, 1, 1, 0);
+	    }
+	  }
+	}
+	ITT /= n_comp;     /* ITT effect */
+	p_comp /= n_samp;  /* ITT effect on D; Prob. of being a complier */
+	CACE = ITT/p_comp; /* CACE */
+	p_never /= n_samp; /* Prob. of being a never-taker */
+	Y1barC /= n_comp; Y0barC /= n_comp; /* E[Y_i(j)|C_i=1] for j=0,1 */
+	YbarN /= n_never;
+	if (AT)
+	  YbarA /= (n_samp-n_comp-n_never);
+
+	QoI[itempQ++] = ITT;   
+	QoI[itempQ++] = CACE;   
+	QoI[itempQ++] = p_comp; 	  
+	QoI[itempQ++] = p_never;
+	QoI[itempQ++] = Y1barC;
+	QoI[itempQ++] = Y0barC;
+	QoI[itempQ++] = YbarN;
+	if (AT)
+	  QoI[itempQ++] = YbarA;
+
+	keep = 1;
       }
-      if (R[i] == 1) { /* imputing missing data */
+      else
+	keep++;
+    }
+
+    /** Imputing missing Y **/
+    for(i = 0; i < n_samp; i++){
+      if (R[i] == 1) { 
 	if (AT) 
 	  for (j = 0; j < 3; j++)
 	    meano[i] += Xo[i][j]*gamma[i];
 	else
 	  for (j = 0; j < 2; j++)
 	    meano[i] += Xo[i][j]*gamma[i];
-	if (rand_unif() < pnorm(meano[i], 0, 1, 1, 0))
+	if (unif_rand() < pnorm(meano[i], 0, 1, 1, 0))
 	  Y[i] = 1;
 	else
 	  Y[i] = 0;
       }
-    }
-    ITTY /= n_comp;
-    p_comp /= n_samp;
-    CACE /= p_comp;
-    p_never /= n_samp;
-
-    /** storing the results **/
-    if (main_loop > *iBurnin) {
-      if (keep == *iKeep) {
-	pdStore[itemp++]=(double)n_comp/(double)n_samp;
-	if (Ymax == 1) {
-	  pdStore[itemp++]=ITTc[1]/(double)n_comp;
-	  pdStore[itemp++]=ITTc[1]/(double)n_samp;
-	  pdStore[itemp++] = base[0]/(double)n_compC;
-	  pdStore[itemp++] = base[1]/(double)n_ncompC;
-	  pdStore[itemp++] = (base[0]+base[1])/(double)(n_compC+n_ncompC);
-	}
-	else {
-	  for (i = 0; i <= Ymax; i++) 
-	    pdStore[itemp++]=ITTc[i]/(double)n_comp;
-	  for (i = 0; i <= Ymax; i++) 
-	    pdStore[itemp++]=ITTc[i]/(double)n_samp;
-	}
-	if (*param) {
-	  for(i = 0; i < n_cov; i++) 
-	    pdStore[itemp++]=beta[i];
-	  if (*smooth) {
-	    for(i = 0; i < n_covoX; i++)
-	      pdStore[itemp++]=gamma[i];
-	    for(i = 0; i < n11; i++)
-	      pdStore[itemp++]=treat[i];
-	  }
-	  else
-	    for(i = 0; i < n_covo; i++)
-	      pdStore[itemp++]=gamma[i];
-	  if (Ymax > 1)
-	    for (i = 0; i < Ymax; i++)
-	      pdStore[itemp++]=tau[i];
-	}
-	keep = 1;
-      }
-      else
-	keep++;
     }
 
     if(*verbose) {
@@ -355,11 +357,10 @@ void LIbprobit(int *Y,         /* binary outcome variable */
   free(meanc);
   free(pC);
   free(pN);
-  if (AT) {
-    free(meana);
-    FreeMatrix(Xtemp, n_samp+n_covC);
-    free(Atemp);
-  }
+  free(pA);
+  free(meana);
+  FreeMatrix(Xtemp, n_samp+n_covC);
+  free(Atemp);
   FreeMatrix(A0C, n_covC);
   FreeMatrix(A0O, n_covO);
   FreeMatrix(mtempC, n_covC);
