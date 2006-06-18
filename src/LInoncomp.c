@@ -156,28 +156,6 @@ void LIbprobit(int *Y,         /* binary outcome variable */
   itempA = 0; itempC = 0; itempO = 0; itempQ = 0;   
   for(main_loop = 1; main_loop <= n_gen; main_loop++){
 
-    /** COMPLIANCE MODEL **/    
-    bprobitGibbs(C, Xc, betaC, n_samp, n_covC, 0, beta0, A0C, *mda, 1);
-
-    /** ALWAYS-TAKERS MODEL **/
-    if (AT) {
-      /* subset the data */
-      itemp = 0;
-      for (i = 0; i < n_samp; i++)
-	if (C[i] == 0) {
-	  Atemp[itemp] = A[i];
-	  for (j = 0; j < n_covC; j++)
-	    Xtemp[itemp][j] = Xc[i][j];
-	  itemp++;
-	}
-      for (i = n_samp; i < n_samp + n_covC; i++) {
-	for (j = 0; j < n_covC; j++)
-	  Xtemp[itemp][j] = Xc[i][j];
-	itemp++;
-      }
-      bprobitGibbs(Atemp, Xtemp, betaA, itemp-n_covC, n_covC, 0, beta0, A0C, *mda, 1);
-    }      
-
     /* Sample complier status for control group */
     if (AT) { /* some always-takers */
       for(i = 0; i < n_samp; i++) {
@@ -232,9 +210,43 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	}
     }
 
+    /** COMPLIANCE MODEL **/    
+    bprobitGibbs(C, Xc, betaC, n_samp, n_covC, 0, beta0, A0C, *mda, 1);
+
+    /** ALWAYS-TAKERS MODEL **/
+    if (AT) {
+      /* subset the data */
+      itemp = 0;
+      for (i = 0; i < n_samp; i++)
+	if (C[i] == 0) {
+	  Atemp[itemp] = A[i];
+	  for (j = 0; j < n_covC; j++)
+	    Xtemp[itemp][j] = Xc[i][j];
+	  itemp++;
+	}
+      for (i = n_samp; i < n_samp + n_covC; i++) {
+	for (j = 0; j < n_covC; j++)
+	  Xtemp[itemp][j] = Xc[i][j];
+	itemp++;
+      }
+      bprobitGibbs(Atemp, Xtemp, betaA, itemp-n_covC, n_covC, 0, beta0, A0C, *mda, 1);
+    }      
 
     /** OUTCOME MODEL **/
     bprobitGibbs(Y, Xo, gamma, n_samp, n_covO, 0, gamma0, A0O, *mda, 1);
+
+    /** Imputing missing Y **/
+    for(i = 0; i < n_samp; i++){
+      if (R[i] == 1) { 
+	meano[i] = 0;
+	for (j = 0; j < n_covO; j++)
+	  meano[i] += Xo[i][j]*gamma[i];
+	if (unif_rand() < pnorm(meano[i], 0, 1, 1, 0))
+	  Y[i] = 1;
+	else
+	  Y[i] = 0;
+      }
+    }
 
     /** Compute probabilities of Y = 1 **/ 
     if (AT) { /* always-takers */
@@ -332,22 +344,6 @@ void LIbprobit(int *Y,         /* binary outcome variable */
       }
       else
 	keep++;
-    }
-
-    /** Imputing missing Y **/
-    for(i = 0; i < n_samp; i++){
-      if (R[i] == 1) { 
-	if (AT) 
-	  for (j = 0; j < 3; j++)
-	    meano[i] += Xo[i][j]*gamma[i];
-	else
-	  for (j = 0; j < 2; j++)
-	    meano[i] += Xo[i][j]*gamma[i];
-	if (unif_rand() < pnorm(meano[i], 0, 1, 1, 0))
-	  Y[i] = 1;
-	else
-	  Y[i] = 0;
-      }
     }
 
     if(*verbose) {

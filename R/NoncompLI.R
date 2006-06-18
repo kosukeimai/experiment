@@ -48,9 +48,11 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
   
   ## Random starting values for missing compliance status
   C[is.na(C)] <- (runif(sum(is.na(C))) > 0.5)*1
-  if (AT)
-    A[is.na(A)] <- (runif(sum(is.na(A))) > 0.5)*1
-
+  if (AT) {
+    A[is.na(A) & C == 0] <- (runif(sum(is.na(A) & C == 0)) > 0.5)*1
+    A[is.na(A) & C == 1] <- 0
+  }
+  
   ## Completing the outcome model matrix 
   ## The default category is never-takers
   X <- Xo

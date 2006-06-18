@@ -109,5 +109,44 @@ void bprobitGibbs(int *Y,        /* binary outcome variable */
 
 } 
 
+/* A routine used for Mixed Gaussian Model */
+void compW(double **T, double sig2, double **X, int start, int size,
+	   double *W_vec, int n, int p);
+void compW(double **T, double sig2, double **X, int start, int size,
+	   double *W_vec, int n, int p){
+
+  int i,j,k;
+  double **V = doubleMatrix(size, size);
+  double **TEMP = doubleMatrix(size, p+1);
+  double **W = doubleMatrix(size, size);     /* The weight matrix */
+  double **W_inv = doubleMatrix(size, size); /* inverse of the weight matrix */
+  
+  for(i=0;i<size;i++){
+    for(j=0;j<size;j++)V[i][j]=0;
+    for(j=0;j<=p;j++)TEMP[i][j]=0;
+  }
+  for(i=0;i<size;i++)     /* row of X */
+    for(j=0;j<=p;j++)   /* col of T */
+      for(k=0;k<=p;k++)
+	TEMP[i][j]+=T[k][j]*X[start+i][k];
+  for(i=0;i<size;i++)     /* row of TEMP */
+    for(j=0;j<size;j++)   /* col of t(X) */
+      for(k=0;k<=p;k++)
+	V[i][j]+=TEMP[i][k]*X[start+j][k];
+  for(i=0;i<size;i++){
+    for(j=0;j<size;j++) W_inv[i][j]=V[i][j];
+    W_inv[i][i]+=sig2;
+  }
+  dinv(W_inv,size,W);
+
+  for(j=0;j<size;j++)             /* Store W  */
+    for(k=0;k<size;k++)
+      W_vec[j*size+k]=W[j][k];
+
+  FreeMatrix(V, size);
+  FreeMatrix(TEMP, size);
+  FreeMatrix(W, size);
+  FreeMatrix(W_inv, size);
+}
 
 
