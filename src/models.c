@@ -149,4 +149,5 @@ void compW(double **T, double sig2, double **X, int start, int size,
   FreeMatrix(W_inv, size);
 }
 
-
+/* Multinomial Probit model from MNP: 
+   It only works when */
