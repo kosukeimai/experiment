@@ -1,8 +1,9 @@
 Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
                             n.draws = 5000, param = TRUE,
                             p.mean.c = 0, p.var.c = 1000, p.mean.o = 0,
-                            p.var.o = 1000, mda = TRUE, coef.start.c = 0,
-                            coef.start.o = 0, burnin = 0,
+                            p.var.o = 1000, p.mean.r = 0, p.var.r = 1000,
+                            mda = TRUE, coef.start.c = 0,
+                            coef.start.o = 0, coef.start.r = 0, burnin = 0,
                             thin = 0, verbose = TRUE) {  
 
   ## getting the data
@@ -26,7 +27,12 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
   
   ## Random starting values for missing Y using Bernoulli(0.5)
   R <- is.na(Y)
-  Y[R] <- (runif(sum(R)) > 0.5)*1
+  if (sum(R) > 0) {
+    Miss <- TRUE
+    Y[R] <- (runif(sum(R)) > 0.5)*1
+  } else {
+    Miss <- FALSE
+  }
   
   ## Compliance status: 0 = noncomplier, 1 = complier
   C <- rep(NA, N)
@@ -41,6 +47,7 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
     A[Z == 1 & D == 0] <- 0 # never-takers
   } else { # no always-takers
     A <- rep(0, N)
+    AT <- FALSE
     C[Z == 1 & D == 1] <- 1 # compliers
   }
   res <- list(call = call, Y = Y, Xo = Xo, Xc = Xc, A = A, C = C,
@@ -82,16 +89,22 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
     coef.start.c <- rep(coef.start.c, ncovC)
   if(length(coef.start.o) != ncovO)
     coef.start.o <- rep(coef.start.o, ncovO)
+  if(length(coef.start.r) != ncovO)
+    coef.start.r <- rep(coef.start.r, ncovO)
  
   ## prior
   if(length(p.mean.c) != ncovC)
     p.mean.c <- rep(p.mean.c, ncovC)
   if(length(p.mean.o) != ncovO)
     p.mean.o <- rep(p.mean.o, ncovO)
+  if(length(p.mean.r) != ncovO)
+    p.mean.r <- rep(p.mean.r, ncovO)
   if(!is.matrix(p.var.c))
     p.var.c <- diag(p.var.c, ncovC)
   if(!is.matrix(p.var.o))
     p.var.o <- diag(p.var.o, ncovO)
+  if(!is.matrix(p.var.r))
+    p.var.r <- diag(p.var.r, ncovO)
 
   ## checking thinnig and burnin intervals
   if (n.draws <= 0)
@@ -106,17 +119,22 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
   out <- .C("LIbprobit",
             as.integer(Y), as.integer(R), as.integer(Z),
             as.integer(D), as.integer(C), as.integer(A),
-            as.integer(AT), as.double(Xc), as.double(Xo),
+            as.integer(Miss), as.integer(AT),
+            as.double(Xc), as.double(Xo),
             as.double(coef.start.c), as.double(coef.start.c),
-            as.double(coef.start.o), as.integer(N), as.integer(n.draws),
+            as.double(coef.start.o), as.double(coef.start.r),
+            as.integer(N), as.integer(n.draws),
             as.integer(ncovC), as.integer(ncovO),
             as.double(p.mean.c), as.double(p.mean.o),
+            as.double(p.mean.r),
             as.double(solve(p.var.c)), as.double(solve(p.var.o)),
+            as.double(solve(p.var.r)),
             as.integer(param), as.integer(mda), as.integer(burnin),
             as.integer(keep), as.integer(verbose),
             coefC = double(ncovC*(ceiling((n.draws-burnin)/keep))),
             coefA = double(ncovC*(ceiling((n.draws-burnin)/keep))),
             coefO = double(ncovO*(ceiling((n.draws-burnin)/keep))),
+            coefR = double(ncovO*(ceiling((n.draws-burnin)/keep))),
             QoI = if(AT) double(8*(ceiling((n.draws-burnin)/keep)))
             else double(7*(ceiling((n.draws-burnin)/keep))),
             PACKAGE="are")
@@ -130,6 +148,10 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
     }
     res$coefO <- matrix(out$coefO, byrow = TRUE, ncol = ncovO)
     colnames(res$coefO) <- colnames(Xo)
+    if (Miss) {
+      res$coefR <- matrix(out$coefR, byrow = TRUE, ncol = ncovO)
+      colnames(res$coefR) <- colnames(Xo)
+    }
   }
   QoI <- matrix(out$QoI, byrow = TRUE, ncol = if (AT) 8 else 7)
   res$ITT <- QoI[,1]
