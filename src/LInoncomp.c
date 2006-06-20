@@ -21,7 +21,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 			          noncomplier = 0 */
 	       int *A,         /* always-takers; always-taker = 1, others
 			          = 0 */
-	       int *Ymiss,     /* missing obs in Y = 1, otherwise = 0 */
+	       int *Ymiss,     /* number of missing obs in Y */
 	       int *AT,        /* Are there always-takers? */
 	       double *dXc,    /* model matrix for compliance model */
 	       double *dXo,    /* model matrix for outcome model */
@@ -62,9 +62,13 @@ void LIbprobit(int *Y,         /* binary outcome variable */
   int n_gen = *in_gen;
   int n_covC = *in_covC;
   int n_covO = *in_covO;
+  int n_miss = *Ymiss;
+  int n_obs = n_samp - n_miss;
   int burnin = *iBurnin;
 
   /*** data ***/
+  /*** observed Y ***/
+  int *Yobs = intArray(n_samp);
   /* covariates for the compliance model */
   double **Xc = doubleMatrix(n_samp+n_covC, n_covC+1);
   /* covariates for the outcome model */     
@@ -127,9 +131,16 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 
   itemp = 0;
   for (j = 0; j < n_covO; j++)
-    for (i = 0; i < n_samp; i++) {
-      Xo[i][j] = dXo[itemp++];
-      Xr[i][j] = Xo[i][j];
+    for (i = 0; i < n_samp; i++)
+      Xr[i][j] = dXo[itemp++];
+
+  itemp = 0;
+  for (i = 0; i < n_samp; i++) 
+    if (R[i] == 1) {
+      Yobs[itemp] = Y[i];
+      for (j = 0; j < n_covO; j++)
+	Xo[itemp][j] = Xr[i][j];
+      itemp++;
     }
   
   /*** read the prior and it as additional data points ***/ 
@@ -159,10 +170,10 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 
   dcholdc(A0O, n_covO, mtempO);
   for(i = 0; i < n_covO; i++) {
-    Xo[n_samp+i][n_covO]=0;
+    Xo[n_obs+i][n_covO]=0;
     for(j = 0; j < n_covO; j++) {
-      Xo[n_samp+i][n_covO] += mtempO[i][j]*gamma0[j];
-      Xo[n_samp+i][j] = mtempO[i][j];
+      Xo[n_obs+i][n_covO] += mtempO[i][j]*gamma0[j];
+      Xo[n_obs+i][j] = mtempO[i][j];
     }
   }
 
@@ -180,7 +191,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
     pC[i] = unif_rand(); 
     pN[i] = unif_rand(); 
     pA[i] = unif_rand();
-    if (*Ymiss) {
+    if (n_miss > 0) {
       prC[i] = unif_rand(); 
       prN[i] = unif_rand(); 
       prA[i] = unif_rand();
@@ -196,7 +207,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
   for(main_loop = 1; main_loop <= n_gen; main_loop++){
 
     /* Step 1: RESPONSE MODEL */
-    if (*Ymiss) {
+    if (n_miss > 0) {
       bprobitGibbs(R, Xr, delta, n_samp, n_covO, 0, delta0, A0R, *mda, 1);
       /* Compute probabilities of R = R.obs */ 
       if (AT) { /* always-takers */
@@ -324,10 +335,10 @@ void LIbprobit(int *Y,         /* binary outcome variable */
     }      
 
     /** Step 4: OUTCOME MODEL **/
-    bprobitGibbs(Y, Xo, gamma, n_samp, n_covO, 0, gamma0, A0O, *mda, 1);
+    bprobitGibbs(Yobs, Xo, gamma, n_obs, n_covO, 0, gamma0, A0O, *mda, 1);
 
-    /** Step 5: Imputing missing Y **/
-    if (*Ymiss) {
+    /** Step 5: Imputing missing Y 
+    if (n_miss > 0) {
       for(i = 0; i < n_samp; i++){
 	if (R[i] == 1) { 
 	  meano[i] = 0;
@@ -339,7 +350,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	    Y[i] = 0;
 	}
       }
-    }
+    } **/
 
     /** Compute probabilities of Y = 1 **/ 
     if (AT) { /* always-takers */
@@ -433,7 +444,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	      coefA[itempA++] = betaA[j];
 	  for (j = 0; j < n_covO; j++)
 	    coefO[itempO++] = gamma[j];
-	  if (*Ymiss) 
+	  if (n_miss > 0) 
 	    for (j = 0; j < n_covO; j++)
 	      coefR[itempR++] = delta[j];
 	}
@@ -459,6 +470,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
   PutRNGstate();
 
   /** freeing memory **/
+  free(Yobs);
   FreeMatrix(Xc, n_samp+n_covC);
   FreeMatrix(Xo, n_samp+n_covO);
   FreeMatrix(Xr, n_samp+n_covO);

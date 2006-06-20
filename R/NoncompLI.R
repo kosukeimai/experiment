@@ -28,12 +28,10 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
   ## Random starting values for missing Y using Bernoulli(0.5)
   R <- (!is.na(Y))*1
   NR <- is.na(Y)
-  if (sum(NR) > 0) {
-    Miss <- TRUE
-    Y[NR] <- (runif(sum(NR)) > 0.5)*1
-  } else {
-    Miss <- FALSE
-  }
+  Ymiss <- sum(NR)
+  if (Ymiss > 0) {
+     Y[NR] <- (runif(Ymiss) > 0.5)*1
+  } 
   
   ## Compliance status: 0 = noncomplier, 1 = complier
   C <- rep(NA, N)
@@ -124,7 +122,7 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
   out <- .C("LIbprobit",
             as.integer(Y), as.integer(R), as.integer(Z),
             as.integer(D), as.integer(C), as.integer(A),
-            as.integer(Miss), as.integer(AT),
+            as.integer(Ymiss), as.integer(AT),
             as.double(Xc), as.double(Xo),
             as.double(coef.start.c), as.double(coef.start.c),
             as.double(coef.start.o), as.double(coef.start.r),
@@ -152,7 +150,7 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
     }
     res$coefO <- matrix(out$coefO, byrow = TRUE, ncol = ncovO)
     colnames(res$coefO) <- colnames(Xo)
-    if (Miss) {
+    if (Ymiss > 0) {
       res$coefR <- matrix(out$coefR, byrow = TRUE, ncol = ncovO)
       colnames(res$coefR) <- colnames(Xo)
     }
