@@ -26,10 +26,11 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
     stop("missing values not allowed in the treatment variable")
   
   ## Random starting values for missing Y using Bernoulli(0.5)
-  R <- is.na(Y)
-  if (sum(R) > 0) {
+  R <- (!is.na(Y))*1
+  NR <- is.na(Y)
+  if (sum(NR) > 0) {
     Miss <- TRUE
-    Y[R] <- (runif(sum(R)) > 0.5)*1
+    Y[NR] <- (runif(sum(NR)) > 0.5)*1
   } else {
     Miss <- FALSE
   }
@@ -50,7 +51,7 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
     AT <- FALSE
     C[Z == 1 & D == 1] <- 1 # compliers
   }
-  res <- list(call = call, Y = Y, Xo = Xo, Xc = Xc, A = A, C = C,
+  res <- list(call = call, Y = Y, R = R, Xo = Xo, Xc = Xc, A = A, C = C,
               D = D, Z = Z, n.draws = n.draws)
   
   ## Random starting values for missing compliance status
@@ -83,7 +84,11 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
   ## dimensions
   ncovC <- ncol(Xc)
   ncovO <- ncol(Xo)
-    
+  if (AT)
+    nqoi <- 8
+  else
+    nqoi <- 7
+  
   ## starting values
   if(length(coef.start.c) != ncovC)
     coef.start.c <- rep(coef.start.c, ncovC)
@@ -135,8 +140,7 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
             coefA = double(ncovC*(ceiling((n.draws-burnin)/keep))),
             coefO = double(ncovO*(ceiling((n.draws-burnin)/keep))),
             coefR = double(ncovO*(ceiling((n.draws-burnin)/keep))),
-            QoI = if(AT) double(8*(ceiling((n.draws-burnin)/keep)))
-            else double(7*(ceiling((n.draws-burnin)/keep))),
+            QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
             PACKAGE="are")
 
   if (param) {
@@ -153,7 +157,7 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
       colnames(res$coefR) <- colnames(Xo)
     }
   }
-  QoI <- matrix(out$QoI, byrow = TRUE, ncol = if (AT) 8 else 7)
+  QoI <- matrix(out$QoI, byrow = TRUE, ncol = nqoi)
   res$ITT <- QoI[,1]
   res$CACE <- QoI[,2]
   res$pC <- QoI[,3]

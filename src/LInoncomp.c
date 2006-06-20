@@ -244,8 +244,12 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	  meana[i] += Xc[i][j]*betaA[j];
 	qN[i] = (1-qC[i])*pnorm(meana[i], 0, 1, 0, 0);
 	if (Z[i] == 0 & D[i] == 0){
-	  if (unif_rand() < 
-	      (qC[i]*pC[i]*prC[i]/(qC[i]*pC[i]*prC[i]+qN[i]*pN[i]*prN[i]))) { 
+	  if (R[i] == 1)
+	    dtemp = qC[i]*pC[i]*prC[i] / 
+	      (qC[i]*pC[i]*prC[i]+qN[i]*pN[i]*prN[i]);
+	  else 
+	    dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+qN[i]*prN[i]);
+	  if (unif_rand() < dtemp) {
 	    C[i] = 1; 
 	    Xo[i][1] = 1; Xr[i][1] = 1;
 	  }
@@ -255,8 +259,12 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	  }  
 	}
 	if (Z[i] == 1 & D[i] == 1){
-	  if (unif_rand() < 
-	      (qC[i]*pC[i]*prC[i]/(qC[i]*pC[i]*prC[i]+(1-qC[i]-qN[i])*pA[i]*prA[i]))) { 
+	  if (R[i] == 1)
+	    dtemp = qC[i]*pC[i]*prC[i] / 
+	      (qC[i]*pC[i]*prC[i]+(1-qC[i]-qN[i])*pA[i]*prA[i]);
+	  else
+	    dtemp =  qC[i]*prC[i]/(qC[i]*prC[i]+(1-qC[i]-qN[i])*prA[i]);
+	  if (unif_rand() < dtemp) {
 	    C[i] = 1;
 	    A[i] = 0;
 	    Xo[i][0] = 1; Xr[i][0] = 1;
@@ -277,8 +285,12 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	  for(j = 0; j < n_covC; j++) 
 	    meanc[i] += Xc[i][j]*betaC[j];
 	  qC[i] = pnorm(meanc[i], 0, 1, 1, 0);
-	  if (unif_rand() <
-	      (qC[i]*pC[i]*prC[i]/(qC[i]*pC[i]*prC[i]+(1-qC[i])*pN[i]*prN[i]))) {
+	  if (R[i] == 1)
+	    dtemp = qC[i]*pC[i]*prC[i] / 
+	      (qC[i]*pC[i]*prC[i]+(1-qC[i])*pN[i]*prN[i]);
+	  else
+	    dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+(1-qC[i])*prN[i]);
+	  if (unif_rand() < dtemp) {
 	    C[i] = 1; 
 	    Xo[i][1] = 1; Xr[i][1] = 1;
 	  }
@@ -332,34 +344,38 @@ void LIbprobit(int *Y,         /* binary outcome variable */
     /** Compute probabilities of Y = 1 **/ 
     if (AT) { /* always-takers */
       for (i = 0; i < n_samp; i++) {
-	meano[i] = 0;
-	for(j = 3; j < n_covO; j++)
-	  meano[i] += Xo[i][j]*gamma[j];
-	if (Z[i] == 0 & D[i] == 0) {
-	  pC[i] = Y[i]*pnorm(meano[i]+gamma[1], 0, 1, 1, 0) +
-	    (1-Y[i])*pnorm(meano[i]+gamma[1], 0, 1, 0, 0);
-	  pN[i] = Y[i]*pnorm(meano[i], 0, 1, 1, 0) +
-	    (1-Y[i])*pnorm(meano[i], 0, 1, 0, 0);
-	} 
-	if (Z[i] == 1 & D[i] == 1) {
-	  pC[i] = Y[i]*pnorm(meano[i]+gamma[0], 0, 1, 1, 0) +
-	    (1-Y[i])*pnorm(meano[i]+gamma[0], 0, 1, 0, 0);
-	  pA[i] = Y[i]*pnorm(meano[i]+gamma[2], 0, 1, 1, 0) +
-	    (1-Y[i])*pnorm(meano[i]+gamma[2], 0, 1, 0, 0);
+	if (R[i] == 1) {
+	  meano[i] = 0;
+	  for(j = 3; j < n_covO; j++)
+	    meano[i] += Xo[i][j]*gamma[j];
+	  if (Z[i] == 0 & D[i] == 0) {
+	    pC[i] = Y[i]*pnorm(meano[i]+gamma[1], 0, 1, 1, 0) +
+	      (1-Y[i])*pnorm(meano[i]+gamma[1], 0, 1, 0, 0);
+	    pN[i] = Y[i]*pnorm(meano[i], 0, 1, 1, 0) +
+	      (1-Y[i])*pnorm(meano[i], 0, 1, 0, 0);
+	  } 
+	  if (Z[i] == 1 & D[i] == 1) {
+	    pC[i] = Y[i]*pnorm(meano[i]+gamma[0], 0, 1, 1, 0) +
+	      (1-Y[i])*pnorm(meano[i]+gamma[0], 0, 1, 0, 0);
+	    pA[i] = Y[i]*pnorm(meano[i]+gamma[2], 0, 1, 1, 0) +
+	      (1-Y[i])*pnorm(meano[i]+gamma[2], 0, 1, 0, 0);
+	  }
 	}
       }
     } else { /* no always-takers */
       for(i = 0; i < n_samp; i++){
-	meano[i] = 0;
-	for(j = 2; j < n_covO; j++)
-	  meano[i] += Xo[i][j]*gamma[j];
-	if (Z[i] == 0) {
-	  pC[i] = Y[i]*pnorm(meano[i]+gamma[1], 0, 1, 1, 0) + 
-	    (1-Y[i])*pnorm(meano[i]+gamma[1], 0, 1, 0, 0);
-	  pN[i] = Y[i]*pnorm(meano[i], 0, 1, 1, 0) +
-	    (1-Y[i])*pnorm(meano[i], 0, 1, 0, 0);
-	}
-      } 
+	if (R[i] == 1) {
+	  meano[i] = 0;
+	  for(j = 2; j < n_covO; j++)
+	    meano[i] += Xo[i][j]*gamma[j];
+	  if (Z[i] == 0) {
+	    pC[i] = Y[i]*pnorm(meano[i]+gamma[1], 0, 1, 1, 0) + 
+	      (1-Y[i])*pnorm(meano[i]+gamma[1], 0, 1, 0, 0);
+	    pN[i] = Y[i]*pnorm(meano[i], 0, 1, 1, 0) +
+	      (1-Y[i])*pnorm(meano[i], 0, 1, 0, 0);
+	  }
+	} 
+      }
     }
     
     /** storing the results **/
