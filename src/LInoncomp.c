@@ -71,9 +71,9 @@ void LIbprobit(int *Y,         /* binary outcome variable */
   int *Yobs = intArray(n_samp);
   /* covariates for the compliance model */
   double **Xc = doubleMatrix(n_samp+n_covC, n_covC+1);
-  /* covariates for the outcome model */     
+  /* covariates for the outcome model: only units with observed Y */     
   double **Xo = doubleMatrix(n_samp+n_covO, n_covO+1);    
-  /* covariates for the response model */     
+  /* covariates for the response model: includes all obs */     
   double **Xr = doubleMatrix(n_samp+n_covO, n_covO+1);    
   /* mean vector for the outcome model */
   double *meano = doubleArray(n_samp);
@@ -244,6 +244,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
     }
 
     /* Step 2: SAMPLE COMPLIANCE COVARITE */
+    itemp = 0;
     if (AT) { /* some always-takers */
       for(i = 0; i < n_samp; i++) {
 	meanc[i] = 0;
@@ -261,12 +262,14 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	  else 
 	    dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+qN[i]*prN[i]);
 	  if (unif_rand() < dtemp) {
-	    C[i] = 1; 
-	    Xo[i][1] = 1; Xr[i][1] = 1;
+	    C[i] = 1; Xr[i][1] = 1;
+	    if (R[i] == 1)
+	      Xo[itemp][1] = 1; 
 	  }
 	  else {
-	    C[i] = 0; 
-	    Xo[i][1] = 0; Xr[i][1] = 0;
+	    C[i] = 0; Xr[i][1] = 0;
+	    if (R[i] == 1)
+	      Xo[itemp][1] = 0; 
 	  }  
 	}
 	if ((Z[i] == 1) && (D[i] == 1)){
@@ -276,21 +279,26 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	  else
 	    dtemp =  qC[i]*prC[i]/(qC[i]*prC[i]+(1-qC[i]-qN[i])*prA[i]);
 	  if (unif_rand() < dtemp) {
-	    C[i] = 1;
-	    A[i] = 0;
-	    Xo[i][0] = 1; Xr[i][0] = 1;
-	    Xo[i][2] = 0; Xr[i][2] = 0;
+	    C[i] = 1; Xr[i][0] = 1;
+	    A[i] = 0; Xr[i][2] = 0;
+	    if (R[i] == 1) {
+	      Xo[itemp][0] = 1; 
+	      Xo[itemp][2] = 0; 
+	    }
 	  }
 	  else {
-	    C[i] = 0;
-	    A[i] = 1;
-	    Xo[i][0] = 0; Xr[i][0] = 0;
-	    Xo[i][2] = 1; Xr[i][2] = 1;
+	    C[i] = 0; Xr[i][0] = 0;
+	    A[i] = 1; Xr[i][2] = 1;
+	    if (R[i] == 1) {
+	      Xo[itemp][0] = 0; 
+	      Xo[itemp][2] = 1;
+	    } 
 	  }  
 	}
+	if (R[i] == 1) itemp++;
       }
     } else { /* no always-takers */
-      for(i = 0; i < n_samp; i++)
+      for(i = 0; i < n_samp; i++) {
 	if(Z[i] == 0){
 	  meanc[i] = 0;
 	  for(j = 0; j < n_covC; j++) 
@@ -302,14 +310,18 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	  else
 	    dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+(1-qC[i])*prN[i]);
 	  if (unif_rand() < dtemp) {
-	    C[i] = 1; 
-	    Xo[i][1] = 1; Xr[i][1] = 1;
+	    C[i] = 1; Xr[i][1] = 1;
+	    if (R[i] == 1)
+	      Xo[itemp][1] = 1; 
 	  }
 	  else {
-	    C[i] = 0; 
-	    Xo[i][1] = 0; Xr[i][1] = 0;
+	    C[i] = 0; Xr[i][1] = 0;
+	    if (R[i] == 1)
+	      Xo[itemp][1] = 0; 
 	  }
 	}
+	if (R[i] == 1) itemp++;
+      }
     }
 
     /** Step 3a: COMPLIANCE MODEL **/    
@@ -352,12 +364,12 @@ void LIbprobit(int *Y,         /* binary outcome variable */
       }
     } **/
 
-    /** Compute probabilities of Y = 1 **/ 
+    /** Compute probabilities of Y = 1 **/
     if (AT) { /* always-takers */
       for (i = 0; i < n_samp; i++) {
 	meano[i] = 0;
 	for(j = 3; j < n_covO; j++)
-	  meano[i] += Xo[i][j]*gamma[j];
+	  meano[i] += Xr[i][j]*gamma[j];
 	if ((Z[i] == 0) && (D[i] == 0)) {
 	  pC[i] = Y[i]*pnorm(meano[i]+gamma[1], 0, 1, 1, 0) +
 	    (1-Y[i])*pnorm(meano[i]+gamma[1], 0, 1, 0, 0);
@@ -375,7 +387,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
       for(i = 0; i < n_samp; i++){
 	meano[i] = 0;
 	for(j = 2; j < n_covO; j++)
-	  meano[i] += Xo[i][j]*gamma[j];
+	  meano[i] += Xr[i][j]*gamma[j];
 	if (Z[i] == 0) {
 	  pC[i] = Y[i]*pnorm(meano[i]+gamma[1], 0, 1, 1, 0) + 
 	    (1-Y[i])*pnorm(meano[i]+gamma[1], 0, 1, 0, 0);
