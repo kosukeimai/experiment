@@ -339,7 +339,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	  itemp++;
 	}
       for (i = n_samp; i < n_samp + n_covC; i++) {
-	for (j = 0; j < n_covC; j++)
+	for (j = 0; j <= n_covC; j++)
 	  Xtemp[itemp][j] = Xc[i][j];
 	itemp++;
       }
@@ -348,6 +348,43 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 
     /** Step 4: OUTCOME MODEL **/
     bprobitGibbs(Yobs, Xo, gamma, n_obs, n_covO, 0, gamma0, A0O, *mda, 1);
+
+    /** Compute probabilities of Y = 1 **/
+    if (AT) { /* always-takers */
+      for (i = 0; i < n_samp; i++) {
+	meano[i] = 0;
+	for(j = 3; j < n_covO; j++)
+	  meano[i] += Xr[i][j]*gamma[j];
+	if (R[i] == 1) {
+	  if ((Z[i] == 0) && (D[i] == 0)) {
+	    pC[i] = Y[i]*pnorm(meano[i]+gamma[1], 0, 1, 1, 0) +
+	      (1-Y[i])*pnorm(meano[i]+gamma[1], 0, 1, 0, 0);
+	    pN[i] = Y[i]*pnorm(meano[i], 0, 1, 1, 0) +
+	      (1-Y[i])*pnorm(meano[i], 0, 1, 0, 0);
+	  } 
+	  if ((Z[i] == 1) && (D[i] == 1)) {
+	    pC[i] = Y[i]*pnorm(meano[i]+gamma[0], 0, 1, 1, 0) +
+	      (1-Y[i])*pnorm(meano[i]+gamma[0], 0, 1, 0, 0);
+	    pA[i] = Y[i]*pnorm(meano[i]+gamma[2], 0, 1, 1, 0) +
+	      (1-Y[i])*pnorm(meano[i]+gamma[2], 0, 1, 0, 0);
+	  }
+	}
+      }
+    } else { /* no always-takers */
+      for(i = 0; i < n_samp; i++){
+	meano[i] = 0;
+	for(j = 2; j < n_covO; j++)
+	  meano[i] += Xr[i][j]*gamma[j];
+	if (R[i] == 1) {
+	  if (Z[i] == 0) {
+	    pC[i] = Y[i]*pnorm(meano[i]+gamma[1], 0, 1, 1, 0) + 
+	      (1-Y[i])*pnorm(meano[i]+gamma[1], 0, 1, 0, 0);
+	    pN[i] = Y[i]*pnorm(meano[i], 0, 1, 1, 0) +
+	      (1-Y[i])*pnorm(meano[i], 0, 1, 0, 0);
+	  }
+	}
+      } 
+    }
 
     /** Step 5: Imputing missing Y 
     if (n_miss > 0) {
@@ -364,38 +401,6 @@ void LIbprobit(int *Y,         /* binary outcome variable */
       }
     } **/
 
-    /** Compute probabilities of Y = 1 **/
-    if (AT) { /* always-takers */
-      for (i = 0; i < n_samp; i++) {
-	meano[i] = 0;
-	for(j = 3; j < n_covO; j++)
-	  meano[i] += Xr[i][j]*gamma[j];
-	if ((Z[i] == 0) && (D[i] == 0)) {
-	  pC[i] = Y[i]*pnorm(meano[i]+gamma[1], 0, 1, 1, 0) +
-	    (1-Y[i])*pnorm(meano[i]+gamma[1], 0, 1, 0, 0);
-	  pN[i] = Y[i]*pnorm(meano[i], 0, 1, 1, 0) +
-	    (1-Y[i])*pnorm(meano[i], 0, 1, 0, 0);
-	} 
-	if ((Z[i] == 1) && (D[i] == 1)) {
-	  pC[i] = Y[i]*pnorm(meano[i]+gamma[0], 0, 1, 1, 0) +
-	    (1-Y[i])*pnorm(meano[i]+gamma[0], 0, 1, 0, 0);
-	  pA[i] = Y[i]*pnorm(meano[i]+gamma[2], 0, 1, 1, 0) +
-	    (1-Y[i])*pnorm(meano[i]+gamma[2], 0, 1, 0, 0);
-	}
-      }
-    } else { /* no always-takers */
-      for(i = 0; i < n_samp; i++){
-	meano[i] = 0;
-	for(j = 2; j < n_covO; j++)
-	  meano[i] += Xr[i][j]*gamma[j];
-	if (Z[i] == 0) {
-	  pC[i] = Y[i]*pnorm(meano[i]+gamma[1], 0, 1, 1, 0) + 
-	    (1-Y[i])*pnorm(meano[i]+gamma[1], 0, 1, 0, 0);
-	  pN[i] = Y[i]*pnorm(meano[i], 0, 1, 1, 0) +
-	    (1-Y[i])*pnorm(meano[i], 0, 1, 0, 0);
-	}
-      } 
-    }
     
     /** storing the results **/
     if (main_loop > burnin) {
