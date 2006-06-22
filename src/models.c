@@ -8,8 +8,76 @@
 #include "subroutines.h"
 #include "rand.h"
 
-/* A Gibbs sampler for binary probit regression */
-/* with and without marginal data augmentation */
+/* A Metroplis sampler for logistic regression (binomial and
+   multinomial) with normal prior (same and independent prior for each
+   set of coefficients): the proposal distribution is multivariate
+   normal whose mean is the current value and the variance is given by
+   the input.
+*/
+void logitMetro(int *Y,          /* outcome variable: 0, 1, ..., J-1 */
+		double **X,      /* (N x K) covariate matrix */
+		double *beta,    /* (K(J-1)) stacked
+				    coefficient vector */
+		int n_samp,      /* # of obs */
+		int n_dim,       /* # of categories, J-1 */
+		int n_cov,       /* # of covariates, K */
+		double *beta0,   /* (K(J-1)) prior mean vector */
+		double **A0,     /* (K(J-1) x K(J-1)) prior precision */
+		double **invVar, /* (K(J-1) x K(J-1)) proposal
+				    inverse variance */
+		int n_gen,       /* # of MCMC draws */
+		int counter      /* # of acceptance */
+		) {
+  
+  int i, j, k, itemp = 0, main_loop;
+  double numer = 0, denom = 0;
+  double sumall, sumall1, dtemp, dtemp1;
+  double *prop = doubleArray(n_dim*n_cov);
+
+  for (main_loop = 0; main_loop < n_gen; main_loop++) {
+    /** Sample from the proposal distribution **/
+    rMVN(prop, beta, invVar, n_dim*n_cov);
+    
+    /** Calculating the ratio (log scale) **/
+    /* prior */
+    numer = dMVN(prop, beta0, A0, n_cov*n_dim, 1);
+    denom = dMVN(beta, beta0, A0, n_cov*n_dim, 1);   
+    /* likelihood */
+    for (i = 0; i < n_samp; i++) {
+      sumall = 0; sumall1 = 0;
+      for (j = 0; j < n_dim; j++) {
+	dtemp = 0; dtemp1 = 0;
+	for (k = 0; k < n_cov; k++) {
+	  dtemp += X[i][j]*beta[j*n_cov+k];
+	  dtemp1 += X[i][j]*prop[j*n_cov+k];
+	}
+	if (Y[i] == (j+1)) {
+	  denom += dtemp;
+	  numer += dtemp1;
+	} else {
+	  sumall += exp(dtemp);
+	  sumall1 += exp(dtemp1);
+	}
+      }
+      numer -= log(1+sumall1);
+      denom -= log(1+sumall);
+    }
+
+    /** Rejection **/
+    if (rand_unif() < fmin2(1.0, exp(numer-denom))) {
+      counter++;
+      for (j = 0 ; j < n_cov*n_dim; j++)
+	beta[j] = prop[j];
+    }
+  }
+
+  free(prop);
+}
+
+/* A Gibbs sampler for binary probit regression with and without
+   marginal data augmentation 
+*/ 
+
 void bprobitGibbs(int *Y,        /* binary outcome variable */
 		  double **X,    /* covariate matrix */
 		  double *beta,  /* coefficients */

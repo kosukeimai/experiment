@@ -15,6 +15,32 @@
 #include "subroutines.h"
 #include "rand.h"
 
+/* Multivariate Normal density */
+double dMVN(
+	double *Y,		/* The data */
+	double *MEAN,		/* The parameters */
+	double **SIG_INV,         /* inverse of the covariance matrix */
+	int dim,                /* dimension */
+	int give_log){          /* 1 if log_scale 0 otherwise */
+
+  int j,k;
+  double value=0.0;
+
+  for(j=0;j<dim;j++){
+    for(k=0;k<j;k++)
+      value+=2*(Y[k]-MEAN[k])*(Y[j]-MEAN[j])*SIG_INV[j][k];
+    value+=(Y[j]-MEAN[j])*(Y[j]-MEAN[j])*SIG_INV[j][j];
+  }
+
+  value=-0.5*value-0.5*dim*log(2*M_PI)+0.5*ddet(SIG_INV, dim, 1);
+
+
+  if(give_log)
+    return(value);
+  else
+    return(exp(value));
+
+}
 
 /* Sample from a univariate truncated Normal distribution 
    (truncated both from above and below): choose either inverse cdf
