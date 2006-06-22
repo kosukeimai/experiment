@@ -64,7 +64,7 @@ void logitMetro(int *Y,          /* outcome variable: 0, 1, ..., J-1 */
     }
 
     /** Rejection **/
-    if (rand_unif() < fmin2(1.0, exp(numer-denom))) {
+    if (unif_rand() < fmin2(1.0, exp(numer-denom))) {
       counter++;
       for (j = 0 ; j < n_cov*n_dim; j++)
 	beta[j] = prop[j];
