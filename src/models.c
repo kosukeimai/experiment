@@ -106,7 +106,7 @@ void bprobitGibbs(int *Y,        /* binary outcome variable */
   int nu0 = 1;
   double s0 = 1;
   
-  /*** read the prior and it as additional data points ***/
+  /*** read the prior as additional data points ***/
   if (prior) {
     dcholdc(A0, n_cov, mtemp);
     for(i = 0; i < n_cov; i++) {

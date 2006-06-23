@@ -91,17 +91,17 @@ void LIbprobit(int *Y,         /* binary outcome variable */
   /* probability of being a complier and never-taker */
   double *qC = doubleArray(n_samp);
   double *qN = doubleArray(n_samp);
-
   /* probability of being a always-taker */
   double *pA = doubleArray(n_samp);
   double *meana = doubleArray(n_samp);
-  /* subset of the data */
-  double **Xtemp = doubleMatrix(n_samp+n_covC, n_covC+1);
-  int *Atemp = intArray(n_samp);
-  
+  /* prior precision matrices */
   double **A0C = doubleMatrix(n_covC, n_covC);
   double **A0O = doubleMatrix(n_covO, n_covO);
   double **A0R = doubleMatrix(n_covO, n_covO);
+  
+  /* subset of the data */
+  double **Xtemp = doubleMatrix(n_samp+n_covC, n_covC+1);
+  int *Atemp = intArray(n_samp);
   
   /* quantities of interest: ITT, CACE  */
   double ITT, CACE;
@@ -143,7 +143,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
       itemp++;
     }
   
-  /*** read the prior and it as additional data points ***/ 
+  /*** read the prior as additional data points ***/ 
   itemp = 0;
   for (k = 0; k < n_covC; k++)
     for (j = 0; j < n_covC; j++)
@@ -160,27 +160,27 @@ void LIbprobit(int *Y,         /* binary outcome variable */
       A0R[j][k] = dA0R[itemp++];
 
   dcholdc(A0C, n_covC, mtempC);
-  for(i = 0; i < n_covC; i++) {
+  for (i = 0; i < n_covC; i++) {
     Xc[n_samp+i][n_covC]=0;
-    for(j = 0; j < n_covC; j++) {
+    for (j = 0; j < n_covC; j++) {
       Xc[n_samp+i][n_covC] += mtempC[i][j]*beta0[j];
       Xc[n_samp+i][j] = mtempC[i][j];
     }
   }
 
   dcholdc(A0O, n_covO, mtempO);
-  for(i = 0; i < n_covO; i++) {
+  for (i = 0; i < n_covO; i++) {
     Xo[n_obs+i][n_covO]=0;
-    for(j = 0; j < n_covO; j++) {
+    for (j = 0; j < n_covO; j++) {
       Xo[n_obs+i][n_covO] += mtempO[i][j]*gamma0[j];
       Xo[n_obs+i][j] = mtempO[i][j];
     }
   }
 
   dcholdc(A0R, n_covO, mtempO);
-  for(i = 0; i < n_covO; i++) {
+  for (i = 0; i < n_covO; i++) {
     Xr[n_samp+i][n_covO]=0;
-    for(j = 0; j < n_covO; j++) {
+    for (j = 0; j < n_covO; j++) {
       Xr[n_samp+i][n_covO] += mtempO[i][j]*delta0[j];
       Xr[n_samp+i][j] = mtempO[i][j];
     }
@@ -204,18 +204,18 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 
   /*** Gibbs Sampler! ***/
   itempA = 0; itempC = 0; itempO = 0; itempQ = 0; itempR = 0;   
-  for(main_loop = 1; main_loop <= n_gen; main_loop++){
+  for (main_loop = 1; main_loop <= n_gen; main_loop++){
 
     /* Step 1: RESPONSE MODEL */
     if (n_miss > 0) {
       bprobitGibbs(R, Xr, delta, n_samp, n_covO, 0, delta0, A0R, *mda, 1);
       /* Compute probabilities of R = R.obs */ 
-      if (AT) { /* always-takers */
+      if (*AT) { /* always-takers */
 	for (i = 0; i < n_samp; i++) {
 	  dtemp = 0;
-	  for(j = 3; j < n_covO; j++)
+	  for (j = 3; j < n_covO; j++)
 	    dtemp += Xr[i][j]*delta[j];
-	  if (Z[i] == 0 && D[i] == 0) {
+	  if ((Z[i] == 0) && (D[i] == 0)) {
 	    prC[i] = R[i]*pnorm(dtemp+delta[1], 0, 1, 1, 0) +
 	      (1-R[i])*pnorm(dtemp+delta[1], 0, 1, 0, 0);
 	    prN[i] = R[i]*pnorm(dtemp, 0, 1, 1, 0) +
@@ -229,9 +229,9 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	  }
 	}
       } else { /* no always-takers */
-	for(i = 0; i < n_samp; i++){
+	for (i = 0; i < n_samp; i++){
 	  dtemp = 0;
-	  for(j = 2; j < n_covO; j++)
+	  for (j = 2; j < n_covO; j++)
 	    dtemp += Xr[i][j]*delta[j];
 	  if (Z[i] == 0) {
 	    prC[i] = R[i]*pnorm(dtemp+delta[1], 0, 1, 1, 0) + 
@@ -245,14 +245,14 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 
     /* Step 2: SAMPLE COMPLIANCE COVARITE */
     itemp = 0;
-    if (AT) { /* some always-takers */
-      for(i = 0; i < n_samp; i++) {
+    if (*AT) { /* some always-takers */
+      for (i = 0; i < n_samp; i++) {
 	meanc[i] = 0;
-	for(j = 0; j < n_covC; j++) 
+	for (j = 0; j < n_covC; j++) 
 	  meanc[i] += Xc[i][j]*betaC[j];
 	qC[i] = pnorm(meanc[i], 0, 1, 1, 0);
 	meana[i] = 0;
-	for(j = 0; j < n_covC; j++) 
+	for (j = 0; j < n_covC; j++) 
 	  meana[i] += Xc[i][j]*betaA[j];
 	qN[i] = (1-qC[i])*pnorm(meana[i], 0, 1, 0, 0);
 	if ((Z[i] == 0) && (D[i] == 0)){
@@ -277,7 +277,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	    dtemp = qC[i]*pC[i]*prC[i] / 
 	      (qC[i]*pC[i]*prC[i]+(1-qC[i]-qN[i])*pA[i]*prA[i]);
 	  else
-	    dtemp =  qC[i]*prC[i]/(qC[i]*prC[i]+(1-qC[i]-qN[i])*prA[i]);
+	    dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+(1-qC[i]-qN[i])*prA[i]);
 	  if (unif_rand() < dtemp) {
 	    C[i] = 1; Xr[i][0] = 1;
 	    A[i] = 0; Xr[i][2] = 0;
@@ -298,10 +298,10 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	if (R[i] == 1) itemp++;
       }
     } else { /* no always-takers */
-      for(i = 0; i < n_samp; i++) {
-	if(Z[i] == 0){
+      for (i = 0; i < n_samp; i++) {
+	if (Z[i] == 0){
 	  meanc[i] = 0;
-	  for(j = 0; j < n_covC; j++) 
+	  for (j = 0; j < n_covC; j++) 
 	    meanc[i] += Xc[i][j]*betaC[j];
 	  qC[i] = pnorm(meanc[i], 0, 1, 1, 0);
 	  if (R[i] == 1)
@@ -328,7 +328,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
     bprobitGibbs(C, Xc, betaC, n_samp, n_covC, 0, beta0, A0C, *mda, 1);
 
     /** Step 3b: ALWAYS-TAKERS MODEL **/
-    if (AT) {
+    if (*AT) {
       /* subset the data */
       itemp = 0;
       for (i = 0; i < n_samp; i++)
@@ -350,12 +350,12 @@ void LIbprobit(int *Y,         /* binary outcome variable */
     bprobitGibbs(Yobs, Xo, gamma, n_obs, n_covO, 0, gamma0, A0O, *mda, 1);
 
     /** Compute probabilities of Y = 1 **/
-    if (AT) { /* always-takers */
+    if (*AT) { /* always-takers */
       for (i = 0; i < n_samp; i++) {
 	meano[i] = 0;
-	for(j = 3; j < n_covO; j++)
+	for (j = 3; j < n_covO; j++)
 	  meano[i] += Xr[i][j]*gamma[j];
-	if (R[i] == 1) {
+	if (R[i] == 1) 
 	  if ((Z[i] == 0) && (D[i] == 0)) {
 	    pC[i] = Y[i]*pnorm(meano[i]+gamma[1], 0, 1, 1, 0) +
 	      (1-Y[i])*pnorm(meano[i]+gamma[1], 0, 1, 0, 0);
@@ -368,27 +368,25 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	    pA[i] = Y[i]*pnorm(meano[i]+gamma[2], 0, 1, 1, 0) +
 	      (1-Y[i])*pnorm(meano[i]+gamma[2], 0, 1, 0, 0);
 	  }
-	}
       }
     } else { /* no always-takers */
-      for(i = 0; i < n_samp; i++){
+      for (i = 0; i < n_samp; i++){
 	meano[i] = 0;
-	for(j = 2; j < n_covO; j++)
+	for (j = 2; j < n_covO; j++)
 	  meano[i] += Xr[i][j]*gamma[j];
-	if (R[i] == 1) {
+	if (R[i] == 1)
 	  if (Z[i] == 0) {
 	    pC[i] = Y[i]*pnorm(meano[i]+gamma[1], 0, 1, 1, 0) + 
 	      (1-Y[i])*pnorm(meano[i]+gamma[1], 0, 1, 0, 0);
 	    pN[i] = Y[i]*pnorm(meano[i], 0, 1, 1, 0) +
 	      (1-Y[i])*pnorm(meano[i], 0, 1, 0, 0);
 	  }
-	}
       } 
     }
-
+    
     /** Step 5: Imputing missing Y 
     if (n_miss > 0) {
-      for(i = 0; i < n_samp; i++){
+      for (i = 0; i < n_samp; i++){
 	if (R[i] == 1) { 
 	  meano[i] = 0;
 	  for (j = 0; j < n_covO; j++)
@@ -406,20 +404,22 @@ void LIbprobit(int *Y,         /* binary outcome variable */
     if (main_loop > burnin) {
       if (keep == *iKeep) {
 	/** Computing Quantities of Interest **/
-	ITT = 0; n_comp = 0; n_never = 0;
+	ITT = 0; CACE = 0; n_comp = 0; n_never = 0;
 	p_comp = 0; p_never = 0; 
 	Y1barC = 0; Y0barC = 0; YbarN = 0; YbarA = 0;
-	for(i = 0; i < n_samp; i++){
+	for (i = 0; i < n_samp; i++){
 	  p_comp += qC[i];
 	  p_never += qN[i];
-	  if(C[i] == 1) { /* ITT effects */
+	  if (C[i] == 1) { /* ITT effects */
 	    n_comp++;
 	    Y1barC += pnorm(meano[i]+gamma[0], 0, 1, 1, 0);
 	    Y0barC += pnorm(meano[i]+gamma[1], 0, 1, 1, 0); 
 	    ITT += (pnorm(meano[i]+gamma[0], 0, 1, 1, 0) - 
 		     pnorm(meano[i]+gamma[1], 0, 1, 1, 0));
+	    CACE += ((pnorm(meano[i]+gamma[0], 0, 1, 1, 0) - 
+		      pnorm(meano[i]+gamma[1], 0, 1, 1, 0))/qC[i]);
 	  } else {
-	    if (AT)
+	    if (*AT)
 	      if (A[i])
 		YbarA += pnorm(meano[i]+gamma[2], 0, 1, 1, 0);
 	      else {
@@ -433,14 +433,14 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	  }
 	}
 	ITT /= (double)n_comp;     /* ITT effect */
+	CACE /= (double)n_comp;    /* CACE */
 	p_comp /= (double)n_samp;  /* ITT effect on D; Prob. of being
 				      a complier */ 
-	CACE = ITT/p_comp; /* CACE */
 	p_never /= (double)n_samp; /* Prob. of being a never-taker */
 	Y1barC /= (double)n_comp;  /* E[Y_i(j)|C_i=1] for j=0,1 */ 
 	Y0barC /= (double)n_comp; 
 	YbarN /= (double)n_never;
-	if (AT)
+	if (*AT)
 	  YbarA /= (double)(n_samp-n_comp-n_never);
 	
 	QoI[itempQ++] = ITT;   
@@ -450,13 +450,13 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	QoI[itempQ++] = Y1barC;
 	QoI[itempQ++] = Y0barC;
 	QoI[itempQ++] = YbarN;
-	if (AT)
+	if (*AT)
 	  QoI[itempQ++] = YbarA;
 
-	if (param) {
+	if (*param) {
 	  for (j = 0; j < n_covC; j++)
 	    coefC[itempC++] = betaC[j];
-	  if (AT)
+	  if (*AT)
 	    for (j = 0; j < n_covC; j++)
 	      coefA[itempA++] = betaA[j];
 	  for (j = 0; j < n_covO; j++)
@@ -471,8 +471,8 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	keep++;
     }
 
-    if(*verbose) {
-      if(main_loop == itempP) {
+    if (*verbose) {
+      if (main_loop == itempP) {
 	Rprintf("%3d percent done.\n", progress*10);
 	itempP += ftrunc((double) n_gen/10); 
 	progress++;
