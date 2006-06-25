@@ -17,8 +17,12 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	       int *R,         /* missingness indicator for Y */
 	       int *Z,         /* treatment assignment */
 	       int *D,         /* treatment status */ 
-	       int *C,         /* compliance status; complier = 1,
-			          noncomplier = 0 */
+	       int *C,         /* compliance status; 
+				  for probit, complier = 1,
+				  noncomplier = 0
+				  for logit, never-taker = 0,
+				  complier = 1, always-taker = 2
+			       */
 	       int *A,         /* always-takers; always-taker = 1, others
 			          = 0 */
 	       int *Ymiss,     /* number of missing obs in Y */
@@ -41,9 +45,11 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	       double *dA0C,   /* prior precision for betaC and betaA */ 
 	       double *dA0O,   /* prior precision for gamma */
 	       double *dA0R,   /* prior precision for delta */
+	       double *Var,    /* proposal variance */
+	       int *logit,     /* Use logistic regression? */
 	       int *param,     /* Want to keep paramters? */
 	       int *mda,       /* Want to use marginal data
-				  augmentation? */
+				  augmentation for probit regressions? */
 	       int *iBurnin,   /* number of burnin */
 	       int *iKeep,     /* keep ?th draws */
 	       int *verbose,   /* print out messages */
@@ -95,7 +101,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
   double *pA = doubleArray(n_samp);
   double *meana = doubleArray(n_samp);
   /* prior precision matrices */
-  double **A0C = doubleMatrix(n_covC, n_covC);
+  double **A0C = doubleMatrix(n_covC*2, n_covC*2);
   double **A0O = doubleMatrix(n_covO, n_covO);
   double **A0R = doubleMatrix(n_covO, n_covO);
   
@@ -113,6 +119,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
   /*** storage parameters and loop counters **/
   int progress = 1;
   int keep = 1;
+  int *accept = intArray(n_covC*2);      /* number of acceptance */
   int i, j, k, l, main_loop;
   int itempP = ftrunc((double) n_gen/10);
   int itemp, itempA, itempC, itempO, itempQ, itempR;
@@ -144,10 +151,15 @@ void LIbprobit(int *Y,         /* binary outcome variable */
     }
   
   /*** read the prior as additional data points ***/ 
-  itemp = 0;
-  for (k = 0; k < n_covC; k++)
-    for (j = 0; j < n_covC; j++)
-      A0C[j][k] = dA0C[itemp++];
+  itemp = 0; 
+  if ((*logit == 1) && (*AT == 1))
+    for (k = 0; k < n_covC*2; k++)
+      for (j = 0; j < n_covC*2; j++)
+	A0C[j][k] = dA0C[itemp++];
+  else
+    for (k = 0; k < n_covC; k++)
+      for (j = 0; j < n_covC; j++)
+	A0C[j][k] = dA0C[itemp++];
 
   itemp = 0;
   for (k = 0; k < n_covO; k++)
@@ -159,12 +171,14 @@ void LIbprobit(int *Y,         /* binary outcome variable */
     for (j = 0; j < n_covO; j++)
       A0R[j][k] = dA0R[itemp++];
 
-  dcholdc(A0C, n_covC, mtempC);
-  for (i = 0; i < n_covC; i++) {
-    Xc[n_samp+i][n_covC]=0;
-    for (j = 0; j < n_covC; j++) {
-      Xc[n_samp+i][n_covC] += mtempC[i][j]*beta0[j];
-      Xc[n_samp+i][j] = mtempC[i][j];
+  if (*logit != 1) {
+    dcholdc(A0C, n_covC, mtempC);
+    for (i = 0; i < n_covC; i++) {
+      Xc[n_samp+i][n_covC]=0;
+      for (j = 0; j < n_covC; j++) {
+	Xc[n_samp+i][n_covC] += mtempC[i][j]*beta0[j];
+	Xc[n_samp+i][j] = mtempC[i][j];
+      }
     }
   }
 
@@ -176,7 +190,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
       Xo[n_obs+i][j] = mtempO[i][j];
     }
   }
-
+  
   dcholdc(A0R, n_covO, mtempO);
   for (i = 0; i < n_covO; i++) {
     Xr[n_samp+i][n_covO]=0;
@@ -185,7 +199,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
       Xr[n_samp+i][j] = mtempO[i][j];
     }
   }
-
+  
   /*** starting values for probabilities ***/
   for (i = 0; i < n_samp; i++) {
     pC[i] = unif_rand(); 
@@ -204,13 +218,15 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 
   /*** Gibbs Sampler! ***/
   itempA = 0; itempC = 0; itempO = 0; itempQ = 0; itempR = 0;   
+  for (j = 0; j < n_covC*2; j++)
+    accept[j] = 0;
   for (main_loop = 1; main_loop <= n_gen; main_loop++){
 
     /* Step 1: RESPONSE MODEL */
     if (n_miss > 0) {
       bprobitGibbs(R, Xr, delta, n_samp, n_covO, 0, delta0, A0R, *mda, 1);
       /* Compute probabilities of R = R.obs */ 
-      if (*AT) { /* always-takers */
+      if (*AT == 1) { /* always-takers */
 	for (i = 0; i < n_samp; i++) {
 	  dtemp = 0;
 	  for (j = 3; j < n_covO; j++)
@@ -245,16 +261,23 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 
     /* Step 2: SAMPLE COMPLIANCE COVARITE */
     itemp = 0;
-    if (*AT) { /* some always-takers */
+    if (*AT == 1) { /* some always-takers */
       for (i = 0; i < n_samp; i++) {
 	meanc[i] = 0;
 	for (j = 0; j < n_covC; j++) 
 	  meanc[i] += Xc[i][j]*betaC[j];
-	qC[i] = pnorm(meanc[i], 0, 1, 1, 0);
 	meana[i] = 0;
-	for (j = 0; j < n_covC; j++) 
-	  meana[i] += Xc[i][j]*betaA[j];
-	qN[i] = (1-qC[i])*pnorm(meana[i], 0, 1, 0, 0);
+	if (*logit == 1) { /* if logistic regression is used */
+	  for (j = 0; j < n_covC; j++) 
+	    meana[i] += Xc[i][j]*betaC[j+n_covC];
+	  qC[i] = exp(meanc[i])/(1 + exp(meanc[i]) + exp(meana[i]));
+	  qN[i] = 1/(1 + exp(meanc[i]) + exp(meana[i]));
+	} else { /* double probit regressions */
+	  for (j = 0; j < n_covC; j++) 
+	    meana[i] += Xc[i][j]*betaA[j];
+	  qC[i] = pnorm(meanc[i], 0, 1, 1, 0);
+	  qN[i] = (1-qC[i])*pnorm(meana[i], 0, 1, 0, 0);
+	}
 	if ((Z[i] == 0) && (D[i] == 0)){
 	  if (R[i] == 1)
 	    dtemp = qC[i]*pC[i]*prC[i] / 
@@ -287,8 +310,11 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	    }
 	  }
 	  else {
-	    C[i] = 0; Xr[i][0] = 0;
-	    A[i] = 1; Xr[i][2] = 1;
+	    if (*logit == 1)
+	      C[i] = 2;
+	    else
+	      C[i] = 0; 
+	    A[i] = 1; Xr[i][0] = 0; Xr[i][2] = 1;
 	    if (R[i] == 1) {
 	      Xo[itemp][0] = 0; 
 	      Xo[itemp][2] = 1;
@@ -303,7 +329,10 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	  meanc[i] = 0;
 	  for (j = 0; j < n_covC; j++) 
 	    meanc[i] += Xc[i][j]*betaC[j];
-	  qC[i] = pnorm(meanc[i], 0, 1, 1, 0);
+	  if (*logit == 1)
+	    qC[i] = 1/(1+exp(-meanc[i]));
+	  else
+	    qC[i] = pnorm(meanc[i], 0, 1, 1, 0);
 	  if (R[i] == 1)
 	    dtemp = qC[i]*pC[i]*prC[i] / 
 	      (qC[i]*pC[i]*prC[i]+(1-qC[i])*pN[i]*prN[i]);
@@ -324,33 +353,44 @@ void LIbprobit(int *Y,         /* binary outcome variable */
       }
     }
 
-    /** Step 3a: COMPLIANCE MODEL **/    
-    bprobitGibbs(C, Xc, betaC, n_samp, n_covC, 0, beta0, A0C, *mda, 1);
-
-    /** Step 3b: ALWAYS-TAKERS MODEL **/
-    if (*AT) {
-      /* subset the data */
-      itemp = 0;
-      for (i = 0; i < n_samp; i++)
-	if (C[i] == 0) {
-	  Atemp[itemp] = A[i];
-	  for (j = 0; j < n_covC; j++)
+    /** Step 3: COMPLIANCE MODEL **/
+    if (*logit == 1) 
+      if (*AT == 1) 
+	logitMetro(C, Xc, betaC, n_samp, 2, n_covC, beta0, A0C, Var, 1,
+		   accept); 
+      else 
+	logitMetro(C, Xc, betaC, n_samp, 1, n_covC, beta0, A0C, Var, 1,
+		   accept);  
+    else {
+      /* complier vs. noncomplier */
+      bprobitGibbs(C, Xc, betaC, n_samp, n_covC, 0, beta0, A0C,
+		   *mda, 1);
+      if (*AT == 1) {
+	/* never-taker vs. always-taker */
+	/* subset the data */
+	itemp = 0;
+	for (i = 0; i < n_samp; i++)
+	  if (C[i] == 0) {
+	    Atemp[itemp] = A[i];
+	    for (j = 0; j < n_covC; j++)
+	      Xtemp[itemp][j] = Xc[i][j];
+	    itemp++;
+	  }
+	for (i = n_samp; i < n_samp + n_covC; i++) {
+	  for (j = 0; j <= n_covC; j++)
 	    Xtemp[itemp][j] = Xc[i][j];
 	  itemp++;
 	}
-      for (i = n_samp; i < n_samp + n_covC; i++) {
-	for (j = 0; j <= n_covC; j++)
-	  Xtemp[itemp][j] = Xc[i][j];
-	itemp++;
-      }
-      bprobitGibbs(Atemp, Xtemp, betaA, itemp-n_covC, n_covC, 0, beta0, A0C, *mda, 1);
-    }      
-
+	bprobitGibbs(Atemp, Xtemp, betaA, itemp-n_covC, n_covC, 0,
+		     beta0, A0C, *mda, 1); 
+      }      
+    }
+    
     /** Step 4: OUTCOME MODEL **/
     bprobitGibbs(Yobs, Xo, gamma, n_obs, n_covO, 0, gamma0, A0O, *mda, 1);
 
     /** Compute probabilities of Y = 1 **/
-    if (*AT) { /* always-takers */
+    if (*AT == 1) { /* always-takers */
       for (i = 0; i < n_samp; i++) {
 	meano[i] = 0;
 	for (j = 3; j < n_covO; j++)
@@ -384,22 +424,6 @@ void LIbprobit(int *Y,         /* binary outcome variable */
       } 
     }
     
-    /** Step 5: Imputing missing Y 
-    if (n_miss > 0) {
-      for (i = 0; i < n_samp; i++){
-	if (R[i] == 1) { 
-	  meano[i] = 0;
-	  for (j = 0; j < n_covO; j++)
-	    meano[i] += Xo[i][j]*gamma[i];
-	  if (unif_rand() < pnorm(meano[i], 0, 1, 1, 0))
-	    Y[i] = 1;
-	  else
-	    Y[i] = 0;
-	}
-      }
-    } **/
-
-    
     /** storing the results **/
     if (main_loop > burnin) {
       if (keep == *iKeep) {
@@ -419,8 +443,8 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	    CACE += ((pnorm(meano[i]+gamma[0], 0, 1, 1, 0) - 
 		      pnorm(meano[i]+gamma[1], 0, 1, 1, 0))/qC[i]);
 	  } else {
-	    if (*AT)
-	      if (A[i])
+	    if (*AT == 1)
+	      if (A[i] == 1)
 		YbarA += pnorm(meano[i]+gamma[2], 0, 1, 1, 0);
 	      else {
 		n_never++;
@@ -440,7 +464,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	Y1barC /= (double)n_comp;  /* E[Y_i(j)|C_i=1] for j=0,1 */ 
 	Y0barC /= (double)n_comp; 
 	YbarN /= (double)n_never;
-	if (*AT)
+	if (*AT == 1)
 	  YbarA /= (double)(n_samp-n_comp-n_never);
 	
 	QoI[itempQ++] = ITT;   
@@ -450,15 +474,19 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	QoI[itempQ++] = Y1barC;
 	QoI[itempQ++] = Y0barC;
 	QoI[itempQ++] = YbarN;
-	if (*AT)
+	if (*AT == 1)
 	  QoI[itempQ++] = YbarA;
 
-	if (*param) {
+	if (*param == 1) {
 	  for (j = 0; j < n_covC; j++)
 	    coefC[itempC++] = betaC[j];
-	  if (*AT)
-	    for (j = 0; j < n_covC; j++)
-	      coefA[itempA++] = betaA[j];
+	  if (*AT == 1)
+	    if (*logit == 1)
+	      for (j = 0; j < n_covC; j++)
+		coefA[itempA++] = betaC[j+n_covC];
+	    else
+	      for (j = 0; j < n_covC; j++)
+		coefA[itempA++] = betaA[j];
 	  for (j = 0; j < n_covO; j++)
 	    coefO[itempO++] = gamma[j];
 	  if (n_miss > 0) 
@@ -474,6 +502,16 @@ void LIbprobit(int *Y,         /* binary outcome variable */
     if (*verbose) {
       if (main_loop == itempP) {
 	Rprintf("%3d percent done.\n", progress*10);
+	if (*logit == 1) {
+	  Rprintf("  Current Acceptance Ratio:");
+	  if (*AT == 1)
+	    for (j = 0; j < n_covC*2; j++)
+	      Rprintf("%10g", (double)accept[j]/(double)main_loop);
+	  else
+	    for (j = 0; j < n_covC; j++)
+	      Rprintf("%10g", (double)accept[j]/(double)main_loop);
+	  Rprintf("\n");
+	}
 	itempP += ftrunc((double) n_gen/10); 
 	progress++;
 	R_FlushConsole(); 
@@ -500,9 +538,10 @@ void LIbprobit(int *Y,         /* binary outcome variable */
   free(prN);
   free(prA);
   free(meana);
+  free(accept);
   FreeMatrix(Xtemp, n_samp+n_covC);
   free(Atemp);
-  FreeMatrix(A0C, n_covC);
+  FreeMatrix(A0C, n_covC*2);
   FreeMatrix(A0O, n_covO);
   FreeMatrix(A0R, n_covO);
   FreeMatrix(mtempC, n_covC);
