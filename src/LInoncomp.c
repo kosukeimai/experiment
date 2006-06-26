@@ -27,6 +27,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 			          = 0 */
 	       int *Ymiss,     /* number of missing obs in Y */
 	       int *AT,        /* Are there always-takers? */
+	       int *Insample,  /* Insample (=1) or population QoI? */
 	       double *dXc,    /* model matrix for compliance model */
 	       double *dXo,    /* model matrix for outcome model */
 	       double *betaC,  /* coefficients for compliance model */
@@ -428,7 +429,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
     if (main_loop > burnin) {
       if (keep == *iKeep) {
 	/** Computing Quantities of Interest **/
-	ITT = 0; CACE = 0; n_comp = 0; n_never = 0;
+	CACE = 0; n_comp = 0; n_never = 0;
 	p_comp = 0; p_never = 0; 
 	Y1barC = 0; Y0barC = 0; YbarN = 0; YbarA = 0;
 	for (i = 0; i < n_samp; i++){
@@ -436,31 +437,64 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	  p_never += qN[i];
 	  if (C[i] == 1) { /* ITT effects */
 	    n_comp++;
-	    Y1barC += pnorm(meano[i]+gamma[0], 0, 1, 1, 0);
-	    Y0barC += pnorm(meano[i]+gamma[1], 0, 1, 1, 0); 
-	    ITT += (pnorm(meano[i]+gamma[0], 0, 1, 1, 0) - 
-		     pnorm(meano[i]+gamma[1], 0, 1, 1, 0));
-	    CACE += ((pnorm(meano[i]+gamma[0], 0, 1, 1, 0) - 
-		      pnorm(meano[i]+gamma[1], 0, 1, 1, 0))/qC[i]);
-	  } else {
-	    if (*AT == 1)
-	      if (A[i] == 1)
-		YbarA += pnorm(meano[i]+gamma[2], 0, 1, 1, 0);
+	    if (*Insample == 1) { /* insample QoI */
+	      if ((Z[i] == 1) && (R[i] == 1))
+		Y1barC += (double)Y[i];
+	      else if (Z[i] == 1 && (R[i] == 0))
+		Y1barC += (double)((meano[i]+gamma[0]+norm_rand()) > 0);
+	      else if ((Z[i] == 0) && (R[i] == 1))
+		Y0barC += (double)Y[i];
+	      else
+		Y0barC += (double)((meano[i]+gamma[1]+norm_rand()) > 0);
+	    } else { /* population QoI */
+	      Y1barC += pnorm(meano[i]+gamma[0], 0, 1, 1, 0);
+	      Y0barC += pnorm(meano[i]+gamma[1], 0, 1, 1, 0); 
+	      CACE += ((pnorm(meano[i]+gamma[0], 0, 1, 1, 0) - 
+			pnorm(meano[i]+gamma[1], 0, 1, 1, 0))/qC[i]);
+	    }
+	  } else { /* Estimates for always-takers and never-takers */
+	      if (*AT == 1)
+		if (A[i] == 1)
+		  if (*Insample == 1)
+		    if (R[i] == 1)
+		      YbarA += (double)Y[i];
+		    else
+		      YbarA += (double)((meano[i]+gamma[2]+norm_rand()) > 0);
+		  else
+		    YbarA += pnorm(meano[i]+gamma[2], 0, 1, 1, 0);
+		else {
+		  n_never++;
+		  if (*Insample == 1)
+		    if (R[i] == 1)
+		      YbarN += (double)Y[i];
+		    else
+		      YbarN += (double)((meano[i]+norm_rand()) > 0);
+		  else
+		    YbarN += pnorm(meano[i], 0, 1, 1, 0);
+		}
 	      else {
 		n_never++;
-		YbarN += pnorm(meano[i], 0, 1, 1, 0);
+		if (*Insample == 1)
+		  if (R[i] == 1)
+		    YbarN += (double)Y[i];
+		  else
+		    YbarN += (double)((meano[i]+norm_rand()) > 0);
+		else
+		  YbarN += pnorm(meano[i], 0, 1, 1, 0);
 	      }
-	    else {
-	      n_never++;
-	      YbarN += pnorm(meano[i], 0, 1, 1, 0);
-	    }
 	  }
 	}
-	ITT /= (double)n_comp;     /* ITT effect */
-	CACE /= (double)n_comp;    /* CACE */
-	p_comp /= (double)n_samp;  /* ITT effect on D; Prob. of being
-				      a complier */ 
-	p_never /= (double)n_samp; /* Prob. of being a never-taker */
+	ITT = (Y1barC-Y0barC)/(double)n_comp;     /* ITT effect */
+	if (*Insample == 1) { 
+	  CACE = ITT/(double)n_comp;
+	  p_comp = (double)n_comp/(double)n_samp;
+	  p_never = (double)n_never/(double)n_samp;
+	} else {
+	  CACE /= (double)n_comp;    
+	  p_comp /= (double)n_samp;  /* ITT effect on D; Prob. of being
+					a complier */ 
+	  p_never /= (double)n_samp; /* Prob. of being a never-taker */
+	}
 	Y1barC /= (double)n_comp;  /* E[Y_i(j)|C_i=1] for j=0,1 */ 
 	Y0barC /= (double)n_comp; 
 	YbarN /= (double)n_never;
