@@ -19,6 +19,10 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
   ## compliance model
   mf <- model.frame(formulae[[2]], data=data, na.action='na.fail')
   Xc <- model.matrix(formulae[[2]], data=mf)
+  ## response model
+  mf <- model.frame(formulae[[3]], data=data, na.action='na.pass')
+  Xr <- model.matrix(formulae[[3]], data=mf)
+
   N <- length(Y)
   Z <- eval(call$Z, envir = data)
   D <- eval(call$D, envir = data)
@@ -57,8 +61,8 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
     AT <- FALSE
     C[Z == 1 & D == 1] <- 1 # compliers
   }
-  res <- list(call = call, Y = Y, R = R, Xo = Xo, Xc = Xc, A = A, C = C,
-              D = D, Z = Z, n.draws = n.draws)
+  res <- list(call = call, Y = Y, R = R, Xo = Xo, Xc = Xc, Xr = Xr,
+              A = A, C = C, D = D, Z = Z, n.draws = n.draws)
   
   ## Random starting values for missing compliance status
   if (AT) {
@@ -80,26 +84,36 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
   ## Completing the outcome model matrix 
   ## The default category is never-takers
   X <- Xo
+  X1 <- Xr
   if (AT) { # when some always-takers exist
   ## Xo = [c1 c0 a X] where c1 for compliers with encouragement
   ##                        c0 for compliers without encouragement
   ##                        a for always-takers with/without encouragement  
     Xo <- cbind(0, 0, 0, X)
+    Xr <- cbind(0, 0, 0, X1)
     Xo[A == 1, 3] <- 1
+    Xr[A == 1, 3] <- 1
     colnames(Xo) <- c("Complier1", "Complier0", "AlwaysTaker",
                       colnames(X))
+    colnames(Xr) <- c("Complier1", "Complier0", "AlwaysTaker",
+                      colnames(X1))
   } else { # when always-takers do not exist
   ## Xo = [c1 c0 X] where c1 for compliers with encouragement
   ##                      c0 for compliers without encouragement
     Xo <- cbind(0, 0, X)
+    Xr <- cbind(0, 0, X1)
     colnames(Xo) <- c("Complier1", "Complier0", colnames(X))
+    colnames(Xr) <- c("Complier1", "Complier0", colnames(X1))
   }
   Xo[C == 1 & Z == 1, 1] <- 1
   Xo[C == 1 & Z == 0, 2] <- 1
+  Xr[C == 1 & Z == 1, 1] <- 1
+  Xr[C == 1 & Z == 0, 2] <- 1
   
   ## dimensions
   ncovC <- ncol(Xc)
   ncovO <- ncol(Xo)
+  ncovR <- ncol(Xr)
   if (AT)
     nqoi <- 8
   else
@@ -141,16 +155,16 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
     else
       stop(paste("the length of p.mean.o should be", ncovO))    
 
-  if(length(coef.start.r) != ncovO)
+  if(length(coef.start.r) != ncovR)
     if (length(coef.start.r) == 1)
-      coef.start.r <- rep(coef.start.r, ncovO)
+      coef.start.r <- rep(coef.start.r, ncovR)
     else
-      stop(paste("the length of coef.start.r should be", ncovO))    
-  if(length(p.mean.r) != ncovO)
+      stop(paste("the length of coef.start.r should be", ncovR))    
+  if(length(p.mean.r) != ncovR)
     if (length(p.mean.r) == 1)
-      p.mean.r <- rep(p.mean.r, ncovO)
+      p.mean.r <- rep(p.mean.r, ncovR)
     else
-      stop(paste("the length of p.mean.r should be", ncovO))    
+      stop(paste("the length of p.mean.r should be", ncovR))    
 
   if(is.matrix(p.var.c)) {
     if (dim(p.var.c) != rep(ncovC*2, 2))
@@ -176,24 +190,24 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
   }
 
   if(is.matrix(p.var.r)) {
-    if (dim(p.var.r) != rep(ncovO, 2))
+    if (dim(p.var.r) != rep(ncovR, 2))
       stop(paste("the dimension of p.var.r should be",
-                 rep(ncovO, 2)))    
+                 rep(ncovR, 2)))    
   } else if (length(p.var.r) == 1){
-    p.var.r <- diag(p.var.r, ncovO)
+    p.var.r <- diag(p.var.r, ncovR)
   } else {
     stop("Incorrect input for p.var.r")
   }
   
   ## proposal variance for logits
   if (AT) {
-    if (length(tune.c) != ncovC*2 )
+    if (length(tune.c) != ncovC*2)
       if (length(tune.c) == 1)
         tune.c <- rep(tune.c, ncovC*2)
       else
         stop(paste("the length of tune.c should be", ncovC*2))
   } else {
-    if (length(tune.c) != ncovC )
+    if (length(tune.c) != ncovC)
       if (length(tune.c) == 1)
         tune.c <- rep(tune.c, ncovC)
       else
@@ -214,11 +228,11 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
             as.integer(Y), as.integer(R), as.integer(Z),
             as.integer(D), as.integer(C), as.integer(A),
             as.integer(Ymiss), as.integer(AT), as.integer(in.sample), 
-            as.double(Xc), as.double(Xo),
+            as.double(Xc), as.double(Xo), as.double(Xr),
             as.double(coef.start.c), as.double(coef.start.c),
             as.double(coef.start.o), as.double(coef.start.r),
             as.integer(N), as.integer(n.draws),
-            as.integer(ncovC), as.integer(ncovO),
+            as.integer(ncovC), as.integer(ncovO), as.integer(ncovR),
             as.double(p.mean.c), as.double(p.mean.o),
             as.double(p.mean.r),
             as.double(solve(p.var.c)), as.double(solve(p.var.o)),
@@ -229,9 +243,9 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
             coefC = double(ncovC*(ceiling((n.draws-burnin)/keep))),
             coefA = double(ncovC*(ceiling((n.draws-burnin)/keep))),
             coefO = double(ncovO*(ceiling((n.draws-burnin)/keep))),
-            coefR = double(ncovO*(ceiling((n.draws-burnin)/keep))),
+            coefR = double(ncovR*(ceiling((n.draws-burnin)/keep))),
             QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
-            PACKAGE="are")
+            PACKAGE = "are")
 
   if (param) {
     res$coefC <- matrix(out$coefC, byrow = TRUE, ncol = ncovC)
@@ -243,8 +257,8 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
     res$coefO <- matrix(out$coefO, byrow = TRUE, ncol = ncovO)
     colnames(res$coefO) <- colnames(Xo)
     if (Ymiss > 0) {
-      res$coefR <- matrix(out$coefR, byrow = TRUE, ncol = ncovO)
-      colnames(res$coefR) <- colnames(Xo)
+      res$coefR <- matrix(out$coefR, byrow = TRUE, ncol = ncovR)
+      colnames(res$coefR) <- colnames(Xr)
     }
   }
   QoI <- matrix(out$QoI, byrow = TRUE, ncol = nqoi)
@@ -257,7 +271,6 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
   res$Y1barC <- QoI[,5]
   res$Y0barC <- QoI[,6]
   res$YbarN <- QoI[,7]
-  print(logit.c)
   if (AT) 
     res$YbarA <- QoI[,8]
 

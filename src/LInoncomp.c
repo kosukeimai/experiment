@@ -30,16 +30,16 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	       int *Insample,  /* Insample (=1) or population QoI? */
 	       double *dXc,    /* model matrix for compliance model */
 	       double *dXo,    /* model matrix for outcome model */
+	       double *dXr,    /* model matrix for response model */
 	       double *betaC,  /* coefficients for compliance model */
 	       double *betaA,  /* coefficients for always-takers model */
 	       double *gamma,  /* coefficients for outcome model */
 	       double *delta,  /* coefficients for response model */
-	       int *in_samp,   /* number of observations */
-	       int *in_gen,    /* number of Gibbs draws */
-	       int *in_covC,   /* number of covariates for compliance
-				  model */ 
-	       int *in_covO,   /* number of covariates for outcome
-				  model */
+	       int *in_samp,   /* # of observations */
+	       int *in_gen,    /* # of Gibbs draws */
+	       int *in_covC,   /* # of covariates for compliance model */ 
+	       int *in_covO,   /* # of covariates for outcome model */
+	       int *in_covR,   /* # of covariates for response model */
 	       double *beta0,  /* prior mean for betaC and betaA */ 
 	       double *gamma0, /* prior mean for gamma */
 	       double *delta0, /* prior mean for delta */
@@ -70,17 +70,20 @@ void LIbprobit(int *Y,         /* binary outcome variable */
   int n_gen = *in_gen;
   int n_covC = *in_covC;
   int n_covO = *in_covO;
+  int n_covR = *in_covR;
   int n_miss = *Ymiss;
   int n_obs = n_samp - n_miss;
   int burnin = *iBurnin;
 
   /*** data ***/
   /*** observed Y ***/
-  int *Yobs = intArray(n_samp);
+  int *Yobs = intArray(n_obs);
   /* covariates for the compliance model */
   double **Xc = doubleMatrix(n_samp+n_covC, n_covC+1);
-  /* covariates for the outcome model: only units with observed Y */     
+  /* covariates for the outcome model */
   double **Xo = doubleMatrix(n_samp+n_covO, n_covO+1);    
+  /* covariates for the outcome model: only units with observed Y */     
+  double **Xobs = doubleMatrix(n_obs+n_covO, n_covO+1);    
   /* covariates for the response model: includes all obs */     
   double **Xr = doubleMatrix(n_samp+n_covO, n_covO+1);    
   /* mean vector for the outcome model */
@@ -105,7 +108,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
   /* prior precision matrices */
   double **A0C = doubleMatrix(n_covC*2, n_covC*2);
   double **A0O = doubleMatrix(n_covO, n_covO);
-  double **A0R = doubleMatrix(n_covO, n_covO);
+  double **A0R = doubleMatrix(n_covR, n_covR);
   
   /* subset of the data */
   double **Xtemp = doubleMatrix(n_samp+n_covC, n_covC+1);
@@ -141,14 +144,19 @@ void LIbprobit(int *Y,         /* binary outcome variable */
   itemp = 0;
   for (j = 0; j < n_covO; j++)
     for (i = 0; i < n_samp; i++)
-      Xr[i][j] = dXo[itemp++];
+      Xo[i][j] = dXo[itemp++];
+
+  itemp = 0;
+  for (j = 0; j < n_covR; j++)
+    for (i = 0; i < n_samp; i++)
+      Xr[i][j] = dXr[itemp++];
 
   itemp = 0;
   for (i = 0; i < n_samp; i++) 
     if (R[i] == 1) {
       Yobs[itemp] = Y[i];
       for (j = 0; j < n_covO; j++)
-	Xo[itemp][j] = Xr[i][j];
+	Xobs[itemp][j] = Xo[i][j];
       itemp++;
     }
   
@@ -169,8 +177,8 @@ void LIbprobit(int *Y,         /* binary outcome variable */
       A0O[j][k] = dA0O[itemp++];
 
   itemp = 0;
-  for (k = 0; k < n_covO; k++)
-    for (j = 0; j < n_covO; j++)
+  for (k = 0; k < n_covR; k++)
+    for (j = 0; j < n_covR; j++)
       A0R[j][k] = dA0R[itemp++];
 
   if (*logitC != 1) {
@@ -186,18 +194,18 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 
   dcholdc(A0O, n_covO, mtempO);
   for (i = 0; i < n_covO; i++) {
-    Xo[n_obs+i][n_covO]=0;
+    Xobs[n_obs+i][n_covO]=0;
     for (j = 0; j < n_covO; j++) {
-      Xo[n_obs+i][n_covO] += mtempO[i][j]*gamma0[j];
-      Xo[n_obs+i][j] = mtempO[i][j];
+      Xobs[n_obs+i][n_covO] += mtempO[i][j]*gamma0[j];
+      Xobs[n_obs+i][j] = mtempO[i][j];
     }
   }
   
-  dcholdc(A0R, n_covO, mtempO);
-  for (i = 0; i < n_covO; i++) {
-    Xr[n_samp+i][n_covO]=0;
-    for (j = 0; j < n_covO; j++) {
-      Xr[n_samp+i][n_covO] += mtempO[i][j]*delta0[j];
+  dcholdc(A0R, n_covR, mtempO);
+  for (i = 0; i < n_covR; i++) {
+    Xr[n_samp+i][n_covR]=0;
+    for (j = 0; j < n_covR; j++) {
+      Xr[n_samp+i][n_covR] += mtempO[i][j]*delta0[j];
       Xr[n_samp+i][j] = mtempO[i][j];
     }
   }
@@ -226,13 +234,13 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 
     /* Step 1: RESPONSE MODEL */
     if (n_miss > 0) {
-      bprobitGibbs(R, Xr, delta, n_samp, n_covO, 0, delta0, A0R, *mda, 1);
+      bprobitGibbs(R, Xr, delta, n_samp, n_covR, 0, delta0, A0R, *mda, 1);
 
-      /* Compute probabilities of R = R.obs */ 
+      /* Compute probabilities of R = Robs */ 
       for (i = 0; i < n_samp; i++) {
 	dtemp = 0;
 	if (*AT == 1) { /* always-takers */
-	  for (j = 3; j < n_covO; j++)
+	  for (j = 3; j < n_covR; j++)
 	    dtemp += Xr[i][j]*delta[j];
 	  if ((Z[i] == 0) && (D[i] == 0)) {
 	    prC[i] = R[i]*pnorm(dtemp+delta[1], 0, 1, 1, 0) +
@@ -247,7 +255,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	      (1-R[i])*pnorm(dtemp+delta[2], 0, 1, 0, 0);
 	  }
 	} else { /* no always-takers */
-	  for (j = 2; j < n_covO; j++)
+	  for (j = 2; j < n_covR; j++)
 	    dtemp += Xr[i][j]*delta[j];
 	  if (Z[i] == 0) {
 	    prC[i] = R[i]*pnorm(dtemp+delta[1], 0, 1, 1, 0) + 
@@ -287,12 +295,12 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	  if (unif_rand() < dtemp) {
 	    C[i] = 1; Xr[i][1] = 1;
 	    if (R[i] == 1)
-	      Xo[itemp][1] = 1; 
+	      Xobs[itemp][1] = 1; 
 	  }
 	  else {
 	    C[i] = 0; Xr[i][1] = 0;
 	    if (R[i] == 1)
-	      Xo[itemp][1] = 0; 
+	      Xobs[itemp][1] = 0; 
 	  }  
 	}
 	if ((Z[i] == 1) && (D[i] == 1)){
@@ -305,8 +313,8 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	    C[i] = 1; Xr[i][0] = 1;
 	    A[i] = 0; Xr[i][2] = 0;
 	    if (R[i] == 1) {
-	      Xo[itemp][0] = 1; 
-	      Xo[itemp][2] = 0; 
+	      Xobs[itemp][0] = 1; 
+	      Xobs[itemp][2] = 0; 
 	    }
 	  }
 	  else {
@@ -316,8 +324,8 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	      C[i] = 0; 
 	    A[i] = 1; Xr[i][0] = 0; Xr[i][2] = 1;
 	    if (R[i] == 1) {
-	      Xo[itemp][0] = 0; 
-	      Xo[itemp][2] = 1;
+	      Xobs[itemp][0] = 0; 
+	      Xobs[itemp][2] = 1;
 	    } 
 	  }  
 	}
@@ -335,12 +343,12 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	  if (unif_rand() < dtemp) {
 	    C[i] = 1; Xr[i][1] = 1;
 	    if (R[i] == 1)
-	      Xo[itemp][1] = 1; 
+	      Xobs[itemp][1] = 1; 
 	  }
 	  else {
 	    C[i] = 0; Xr[i][1] = 0;
 	    if (R[i] == 1)
-	      Xo[itemp][1] = 0; 
+	      Xobs[itemp][1] = 0; 
 	  }
 	}
       }
@@ -381,14 +389,14 @@ void LIbprobit(int *Y,         /* binary outcome variable */
     }
     
     /** Step 4: OUTCOME MODEL **/
-    bprobitGibbs(Yobs, Xo, gamma, n_obs, n_covO, 0, gamma0, A0O, *mda, 1);
+    bprobitGibbs(Yobs, Xobs, gamma, n_obs, n_covO, 0, gamma0, A0O, *mda, 1);
 
     /** Compute probabilities of Y = 1 **/
     for (i = 0; i < n_samp; i++) {
       meano[i] = 0;
       if (*AT == 1) { /* always-takers */
 	for (j = 3; j < n_covO; j++)
-	  meano[i] += Xr[i][j]*gamma[j];
+	  meano[i] += Xo[i][j]*gamma[j];
 	if (R[i] == 1) {
 	  if ((Z[i] == 0) && (D[i] == 0)) {
 	    pC[i] = Y[i]*pnorm(meano[i]+gamma[1], 0, 1, 1, 0) +
@@ -405,7 +413,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	}
       } else { /* no always-takers */
 	for (j = 2; j < n_covO; j++)
-	  meano[i] += Xr[i][j]*gamma[j];
+	  meano[i] += Xo[i][j]*gamma[j];
 	if (R[i] == 1)
 	  if (Z[i] == 0) {
 	    pC[i] = Y[i]*pnorm(meano[i]+gamma[1], 0, 1, 1, 0) + 
@@ -500,7 +508,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	  for (j = 0; j < n_covO; j++)
 	    coefO[itempO++] = gamma[j];
 	  if (n_miss > 0) 
-	    for (j = 0; j < n_covO; j++)
+	    for (j = 0; j < n_covR; j++)
 	      coefR[itempR++] = delta[j];
 	}
 	keep = 1;
@@ -538,6 +546,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
   free(Yobs);
   FreeMatrix(Xc, n_samp+n_covC);
   FreeMatrix(Xo, n_samp+n_covO);
+  FreeMatrix(Xobs, n_obs+n_covO);
   FreeMatrix(Xr, n_samp+n_covO);
   free(meano);
   free(meanc);
