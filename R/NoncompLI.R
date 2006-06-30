@@ -1,7 +1,7 @@
 Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
                             n.draws = 5000, param = TRUE,
-                            in.sample = FALSE, 
-                            model = "probit", propVar = 1,
+                            in.sample = FALSE, model.c = "probit", 
+                            tune.c = 1, 
                             p.mean.c = 0, p.var.c = 1000, p.mean.o = 0,
                             p.var.o = 1000, p.mean.r = 0, p.var.r = 1000,
                             mda = TRUE, coef.start.c = 0,
@@ -26,10 +26,10 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
     stop("missing values not allowed in the encouragement variable")
   if (sum(is.na(D)) > 0)
     stop("missing values not allowed in the treatment variable")
-  if (model == "logit") 
-    logit <- TRUE
+  if (model.c == "logit") 
+    logit.c <- TRUE
   else
-    logit <- FALSE
+    logit.c <- FALSE
   
   ## Random starting values for missing Y using Bernoulli(0.5)
   R <- (!is.na(Y))*1
@@ -46,7 +46,7 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
   if (sum(Z == 0 & D == 1)>0) { # some always-takers
     AT <- TRUE
     A <- rep(NA, N)
-    if (logit)
+    if (logit.c)
       C[Z == 0 & D == 1] <- 2 # always-takers
     else
       C[Z == 0 & D == 1] <- 0 # always-takers
@@ -62,12 +62,12 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
   
   ## Random starting values for missing compliance status
   if (AT) {
-    if (logit)
+    if (logit.c)
       C[is.na(C) & Z == 1] <- 1 + (runif(sum(is.na(C) & Z == 1)) > 0.5)*1
     else
       C[is.na(C) & Z == 1] <- (runif(sum(is.na(C) & Z == 1)) > 0.5)*1
     C[is.na(C) & Z == 0] <- (runif(sum(is.na(C) & Z == 0)) > 0.5)*1
-    if (logit)
+    if (logit.c)
       A[is.na(A)] <- (C[is.na(A)] == 2)*1
     else {
       A[is.na(A) & Z == 1] <- (C[is.na(A) & Z == 1] == 0)*1
@@ -105,46 +105,99 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
   else
     nqoi <- 7
   
-  ## starting values and prior
-  if (logit & AT) {
+  ## checking starting values and prior
+  if (logit.c & AT) {
     if(length(p.mean.c) != ncovC*2)
-      p.mean.c <- rep(p.mean.c, ncovC*2)
+      if (length(p.mean.c) == 1)
+        p.mean.c <- rep(p.mean.c, ncovC*2)
+      else
+        stop(paste("the length of p.mean.c should be", ncovC*2))    
     if(length(coef.start.c) != ncovC*2)
-      coef.start.c <- rep(coef.start.c, ncovC*2)
+      if (length(coef.start.c) == 1)
+        coef.start.c <- rep(coef.start.c, ncovC*2)
+      else
+        stop(paste("the length of coef.start.c should be", ncovC*2))        
   } else {
     if(length(p.mean.c) != ncovC)
-      p.mean.c <- rep(p.mean.c, ncovC)
+      if (length(p.mean.c) == 1)
+        p.mean.c <- rep(p.mean.c, ncovC)
+      else
+        stop(paste("the length of p.mean.c should be", ncovC))        
     if(length(coef.start.c) != ncovC)
-      coef.start.c <- rep(coef.start.c, ncovC)
+      if (length(coef.start.c) == 1)
+        coef.start.c <- rep(coef.start.c, ncovC)
+      else
+        stop(paste("the length of coef.start.c should be", ncovC))    
   }
 
   if(length(coef.start.o) != ncovO)
-    coef.start.o <- rep(coef.start.o, ncovO)
+    if (length(coef.start.o) == 1)
+      coef.start.o <- rep(coef.start.o, ncovO)
+    else
+      stop(paste("the length of coef.start.o should be", ncovO))      
   if(length(p.mean.o) != ncovO)
-    p.mean.o <- rep(p.mean.o, ncovO)
+    if (length(p.mean.o) == 1)
+      p.mean.o <- rep(p.mean.o, ncovO)
+    else
+      stop(paste("the length of p.mean.o should be", ncovO))    
 
   if(length(coef.start.r) != ncovO)
-    coef.start.r <- rep(coef.start.r, ncovO)
+    if (length(coef.start.r) == 1)
+      coef.start.r <- rep(coef.start.r, ncovO)
+    else
+      stop(paste("the length of coef.start.r should be", ncovO))    
   if(length(p.mean.r) != ncovO)
-    p.mean.r <- rep(p.mean.r, ncovO)
+    if (length(p.mean.r) == 1)
+      p.mean.r <- rep(p.mean.r, ncovO)
+    else
+      stop(paste("the length of p.mean.r should be", ncovO))    
 
-  if(!is.matrix(p.var.c)) 
-    if (logit & AT)
+  if(is.matrix(p.var.c)) {
+    if (dim(p.var.c) != rep(ncovC*2, 2))
+        stop(paste("the dimension of p.var.c should be",
+                   rep(ncovC*2, 2)))    
+  } else if (length(p.var.c) == 1){
+    if (logit.c & AT)
       p.var.c <- diag(p.var.c, ncovC*2)
     else
       p.var.c <- diag(p.var.c, ncovC)
-  if(!is.matrix(p.var.o))
-    p.var.o <- diag(p.var.o, ncovO)
-  if(!is.matrix(p.var.r))
-    p.var.r <- diag(p.var.r, ncovO)
-
-  ## proposal variance for logit
-  if (AT) {
-    if (length(propVar) != ncovC*2 )
-      propVar <- rep(propVar, ncovC*2)
   } else {
-    if (length(propVar) != ncovC )
-      propVar <- rep(propVar, ncovC)
+    stop("Incorrect input for p.var.c")
+  }
+
+  if(is.matrix(p.var.o)) {
+    if (dim(p.var.o) != rep(ncovO, 2))
+      stop(paste("the dimension of p.var.o should be",
+                 rep(ncovO, 2)))    
+  } else if (length(p.var.o) == 1){
+    p.var.o <- diag(p.var.o, ncovO)
+  } else {
+    stop("Incorrect input for p.var.o")
+  }
+
+  if(is.matrix(p.var.r)) {
+    if (dim(p.var.r) != rep(ncovO, 2))
+      stop(paste("the dimension of p.var.r should be",
+                 rep(ncovO, 2)))    
+  } else if (length(p.var.r) == 1){
+    p.var.r <- diag(p.var.r, ncovO)
+  } else {
+    stop("Incorrect input for p.var.r")
+  }
+  
+  ## proposal variance for logits
+  if (AT) {
+    if (length(tune.c) != ncovC*2 )
+      if (length(tune.c) == 1)
+        tune.c <- rep(tune.c, ncovC*2)
+      else
+        stop(paste("the length of tune.c should be", ncovC*2))
+  } else {
+    if (length(tune.c) != ncovC )
+      if (length(tune.c) == 1)
+        tune.c <- rep(tune.c, ncovC)
+      else
+        stop(paste("the length of tune.c should be", ncovC))
   }
   
   ## checking thinnig and burnin intervals
@@ -170,7 +223,7 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
             as.double(p.mean.r),
             as.double(solve(p.var.c)), as.double(solve(p.var.o)),
             as.double(solve(p.var.r)),
-            as.double(propVar), as.integer(logit),
+            as.double(tune.c), as.integer(logit.c),
             as.integer(param), as.integer(mda), as.integer(burnin),
             as.integer(keep), as.integer(verbose),
             coefC = double(ncovC*(ceiling((n.draws-burnin)/keep))),
@@ -204,7 +257,7 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
   res$Y1barC <- QoI[,5]
   res$Y0barC <- QoI[,6]
   res$YbarN <- QoI[,7]
-  print(logit)
+  print(logit.c)
   if (AT) 
     res$YbarA <- QoI[,8]
 
