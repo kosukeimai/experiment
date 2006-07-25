@@ -279,3 +279,157 @@ void bprobitGibbs(int *Y,        /* binary outcome variable */
   FreeMatrix(mtemp, n_cov);
 }
 
+
+/*** 
+   A Standard Gibbs Sampler for Binary Probit Mixed Effects Regression
+
+   MODEL: Y_i = X_i \beta + Z_i \gamma_i + \epsilon_i where i indexes groups.
+          \epsilon_i  \sim N(0, I_{n_i})
+          \gamma_i \sim N(0, \Psi)
+   PRIOR: p(\beta|X, Z) = N(beta_0, A_0^{-1})
+          p(\Psi|X,Z) = InvWish(\tau_0, T_0)
+   see the docs for bprobitGibbs for the implmentation of marginal
+          data augmentation for fixed effects coefficients       
+***/ 
+
+void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
+		       double **X,      /* model matrix for fixed
+					   effects */
+		       double **Z,      /* model matrix for random
+					   effects */
+		       int *grp,        /* group indicator: 0, 1, 2,... */
+		       double *beta,    /* fixed effects coefficients */
+		       double *gamma,   /* random effects coefficients */
+		       double **Psi,    /* covariance for random
+					   effects */
+		       int n_samp,      /* # of obs */ 
+		       int n_fixed,     /* # of fixed effects */
+		       int n_random,    /* # of random effects */
+		       int n_grp,       /* # of groups */
+		       int *n_samp_grp, /* # of obs within group */
+		       int prior,       /* include prior in X? */
+		       double *beta0,   /* prior mean */
+		       double **A0,     /* prior precision */
+		       int tau0,         /* prior df */
+		       double **T0,     /* prior scale */
+		       int mda,         /* Want to use marginal data
+					   augmentation for fixed effects ? */ 
+		       int n_gen        /* # of gibbs draws */
+		       ) {
+  
+  double *gamma0 = doubleArray(n_random);           /* prior mean for gamma */
+  double **SS = doubleMatrix(n_fixed+1, n_fixed+1); /* matrix folders for SWEEP */
+  double *mean = doubleArray(n_fixed);              /* means for beta */
+  double **V = doubleMatrix(n_fixed, n_fixed);      /* variances for beta */
+  double *W = doubleArray(n_samp);
+  double **mtemp = doubleMatrix(n_random, n_random);
+  double **mtemp1 = doubleMatrix(n_random, n_random);
+
+  /* storage parameters and loop counters */
+  int i, j, k, main_loop;  
+  double dtemp0, dtemp1;
+  
+  /* marginal data augmentation */
+  double sig2 = 1;
+  int nu0 = 1;
+  double s0 = 1;
+  
+  /* read the prior as additional data points */
+  if (prior) {
+    dcholdc(A0, n_fixed, V);
+    for(i = 0; i < n_fixed; i++) {
+      X[n_samp+i][n_fixed] = 0;
+      for(j = 0; j < n_fixed; j++) {
+	if (!mda)
+	  X[n_samp+i][n_fixed] += V[i][j]*beta0[j];
+	X[n_samp+i][j] = V[i][j];
+      }
+    }
+  }
+
+  for (j = 0; j < n_random; j++)
+    gamma0[j] = 0.0;
+
+  /* Gibbs Sampler! */
+  for(main_loop = 1; main_loop <= n_gen; main_loop++){
+    /** STEP 1: Sample Fixed Effects Given Random Effects **/
+    /* marginal data augmentation */
+    if (mda) sig2 = s0/rchisq((double)nu0);
+
+    for (i = 0; i < n_samp; i++){
+      dtemp0 = 0; dtemp1 = 0;
+      for (j = 0; j < n_fixed; j++) 
+	dtemp0 += X[i][j]*beta[j]; 
+      for (j = 0; j < n_random; j++)
+	dtemp1 += Z[i][j]*gamma[grp[i]];
+      if(Y[i] == 0) 
+	W[i] = TruncNorm(dtemp0+dtemp1-1000,0,dtemp0+dtemp1,1,0);
+      else 
+	W[i] = TruncNorm(0,dtemp0+dtemp1+1000,dtemp0+dtemp1,1,0);
+      X[i][n_fixed] = (W[i]-dtemp1)*sqrt(sig2);
+      W[i] *= sqrt(sig2);
+    }
+
+    /* SS matrix */
+    for(j = 0; j <= n_fixed; j++)
+      for(k = 0; k <= n_fixed; k++)
+	SS[j][k]=0;
+    for(i = 0;i < n_samp; i++)
+      for(j = 0;j <= n_fixed; j++)
+	for(k = 0; k <= n_fixed; k++) 
+	  SS[j][k] += X[i][j]*X[i][k];
+    for(i = n_samp;i < n_samp+n_fixed; i++)
+      for(j = 0;j <= n_fixed; j++)
+	for(k = 0; k <= n_fixed; k++) 
+	  SS[j][k] += X[i][j]*X[i][k];
+
+    /* SWEEP SS matrix */
+    for(j = 0; j < n_fixed; j++)
+      SWP(SS, j, n_fixed+1);
+
+    /* draw beta */    
+    for(j = 0; j < n_fixed; j++)
+      mean[j] = SS[j][n_fixed];
+    if (mda) 
+      sig2=(SS[n_fixed][n_fixed]+s0)/rchisq((double)n_samp+nu0);
+    for(j = 0; j < n_fixed; j++)
+      for(k = 0; k < n_fixed; k++) V[j][k]=-SS[j][k]*sig2;
+    rMVN(beta, mean, V, n_fixed);
+ 
+    /* rescaling the parameters */
+    if(mda) {
+      for (j = 0; j < n_fixed; j++) beta[j] /= sqrt(sig2);
+      for (i = 0; i < n_samp; i++) W[i] /= sqrt(sig2);
+    }
+
+    /** STEP 2: Update Random Effects Given Fixed Effects **/
+    for (i = 0; i < n_samp; i++)
+      for (j = 0; j < n_fixed; j++) 
+	W[i] -= X[i][j]*beta[j]; 
+    bNormalReg(W, Z, gamma, 1.0, n_samp, n_random, 1, gamma0, Psi, 0,
+	       0, 1, 1);
+
+    /** STEP 3: Update Covariance Matrix Given Random Effects **/
+    for (j = 0; j < n_random; j++)
+      for (k = 0; k < n_random; k++)
+	mtemp[j][k] = T0[j][k];
+    for (j = 0; j < n_random; j++)
+      for (k = 0; k < n_random; k++)
+	mtemp[j][k] += gamma[j]*gamma[k];
+    dinv(mtemp, n_random, mtemp1);
+    rWish(mtemp, mtemp1, tau0+n_grp, n_random);
+    dinv(mtemp, n_random, Psi);
+
+    R_CheckUserInterrupt();
+  } /* end of Gibbs sampler */
+
+  /* freeing memory */
+  free(W);
+  free(mean);
+  free(gamma0);
+  FreeMatrix(SS, n_fixed+1);
+  FreeMatrix(V, n_fixed);
+  FreeMatrix(mtemp, n_random);
+  FreeMatrix(mtemp1, n_random);
+}
+
