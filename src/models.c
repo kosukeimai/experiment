@@ -8,12 +8,12 @@
 #include "subroutines.h"
 #include "rand.h"
 
-/* A random walk Metroplis sampler for logistic regression (binomial
-   and multinomial) with normal prior (same and independent prior for
-   each set of coefficients): the proposal distribution is
-   multivariate normal whose mean is the current value and the
-   variance is given by the input.
-*/
+/*** 
+   A Random Walk Metroplis Sampler for Binomial and Multinomial
+   Logistic Regression with Independent Normal Prior 
+     Proposal distribution is the multivariate normal whose mean is
+   the current value and variance is given by the input.
+***/
 void logitMetro(int *Y,        /* outcome variable: 0, 1, ..., J-1 */
 		double **X,    /* (N x K) covariate matrix */
 		double *beta,  /* (K(J-1)) stacked coefficient vector */
@@ -75,38 +75,47 @@ void logitMetro(int *Y,        /* outcome variable: 0, 1, ..., J-1 */
   free(prop);
 }
 
-/* Bayesian normal regression */
+/*** 
+     Bayesian Normal Regression: see Chap.14 of Gelman et al. (2004) 
+       both proper and improper priors (and their combinations)
+       allowed for beta and sig2. 
+***/
 void bNormalReg(double *Y,     /* response variable */
 		double **X,    /* model matrix */
 		double *beta,  /* coefficients */
 		double sig2,   /* variance */
 		int n_samp,    /* sample size */
 		int n_cov,     /* # of covariates */
-		int prior,     /* 0: improper prior 
-				  p(beta,sigma^2|X) \propto sigma^{-2}
-				  1: proper prior for (beta, sigma^2)
+		int pbeta,     /* 0: improper prior 
+				  p(beta|X) \propto 1
+				  1: proper prior for (beta)
 				  p(beta|X) = normal(beta0, A0)
-				  p(sigma2|X) = InvChi2(nu0, s0)
 			       */
 		double *beta0, /* prior mean for normal */
 		double **A0,   /* prior precision for normal; can be
 				  set to zero to induce improper prior
 				  for beta alone
 			       */
-		double s0,  /* prior scale for InvChi2 */
-		int nu0     /* prior d.f. for InvChi2 */
+		int psig2,     /* 0: improper prior for sig2
+				  p(sig2|X) \propto 1/sig2
+				  1: proper prior for sig2
+				  p(sigma2|X) = InvChi2(nu0, s0)
+			       */
+		double s0,     /* prior scale for InvChi2 */
+		int nu0,       /* prior d.f. for InvChi2 */
+		int sig2fixed  /* 1: sig2 fixed, 0: sig2 sampled */ 
 		) {
-  /*** model parameters ***/
+  /* model parameters */
   double **SS = doubleMatrix(n_cov+1, n_cov+1); /* matrix folders for SWEEP */
   double *mean = doubleArray(n_cov);            /* means for beta */
   double **V = doubleMatrix(n_cov, n_cov);      /* variances for beta */
   double **mtemp = doubleMatrix(n_cov, n_cov);
 
-  /*** storage parameters and loop counters **/
+  /* storage parameters and loop counters */
   int i, j, k;  
   
-  /*** read the proper prior as additional data points ***/
-  if (prior) {
+  /* read the proper prior for beta as additional data points */
+  if (pbeta) {
     dcholdc(A0, n_cov, mtemp);
     for(i = 0; i < n_cov; i++) {
       X[n_samp+i][n_cov] = 0;
@@ -127,7 +136,7 @@ void bNormalReg(double *Y,     /* response variable */
     for(j = 0;j <= n_cov; j++)
       for(k = 0; k <= n_cov; k++) 
 	SS[j][k] += X[i][j]*X[i][k];
-  if (prior) 
+  if (pbeta) 
     for(i = n_samp;i < n_samp+n_cov; i++)
       for(j = 0;j <= n_cov; j++)
 	for(k = 0; k <= n_cov; k++) 
@@ -137,19 +146,24 @@ void bNormalReg(double *Y,     /* response variable */
   for(j = 0; j < n_cov; j++)
     SWP(SS, j, n_cov+1);
 
-  /* draw sig2 and then beta */    
+  /* draw sig2 from its marginal dist */
   for(j = 0; j < n_cov; j++)
     mean[j] = SS[j][n_cov];
-  if (prior)
-    sig2=(SS[n_cov][n_cov]+s0)/rchisq((double)n_samp+nu0);
-  else
-    sig2=SS[n_cov][n_cov]/rchisq((double)n_samp-n_cov);
+  if (!sig2fixed)
+    if (psig2)
+      if (pbeta)
+	sig2=(SS[n_cov][n_cov]+nu0*s0)/rchisq((double)n_samp+nu0);
+      else
+	sig2=(n_samp*SS[n_cov][n_cov]/(n_samp-n_cov)+nu0*s0)/rchisq((double)n_samp+nu0);
+    else
+      sig2=SS[n_cov][n_cov]/rchisq((double)n_samp-n_cov);
   
+  /* draw beta from its conditional given sig2 */
   for(j = 0; j < n_cov; j++)
     for(k = 0; k < n_cov; k++) V[j][k]=-SS[j][k]*sig2;
   rMVN(beta, mean, V, n_cov);
   
-  /** freeing memory **/
+  /* freeing memory */
   free(mean);
   FreeMatrix(SS, n_cov+1);
   FreeMatrix(V, n_cov);
@@ -157,9 +171,15 @@ void bNormalReg(double *Y,     /* response variable */
 }
 
 
-/* A Gibbs sampler for binary probit regression with and without
-   marginal data augmentation 
-*/ 
+/*** 
+   A Gibbs Sampler for Binary Probit Regression With and Without
+   Marginal Data Augmentation
+   
+   Marginal Data Augmentation: see p.318 of Imai and van Dyk (2005)
+   Journal of Econometrics.
+      Prior mean for beta will be set to zero. 
+      Improper prior allowed (set A0 to be a matrix of zeros).
+***/ 
 
 void bprobitGibbs(int *Y,        /* binary outcome variable */
 		  double **X,    /* covariate matrix */
@@ -173,35 +193,36 @@ void bprobitGibbs(int *Y,        /* binary outcome variable */
 		  int n_gen      /* # of gibbs draws */
 		  ) {
   
-  /*** model parameters ***/
+  /* model parameters */
   double **SS = doubleMatrix(n_cov+1, n_cov+1); /* matrix folders for SWEEP */
   double *mean = doubleArray(n_cov);            /* means for beta */
   double **V = doubleMatrix(n_cov, n_cov);      /* variances for beta */
   double *W = doubleArray(n_samp);
   double **mtemp = doubleMatrix(n_cov, n_cov);
 
-  /*** storage parameters and loop counters **/
+  /* storage parameters and loop counters */
   int i, j, k, main_loop;  
   double dtemp;
   
-  /*** marginal data augmentation ***/
+  /* marginal data augmentation */
   double sig2 = 1;
   int nu0 = 1;
   double s0 = 1;
   
-  /*** read the prior as additional data points ***/
+  /* read the prior as additional data points */
   if (prior) {
     dcholdc(A0, n_cov, mtemp);
     for(i = 0; i < n_cov; i++) {
       X[n_samp+i][n_cov] = 0;
       for(j = 0; j < n_cov; j++) {
-	X[n_samp+i][n_cov] += mtemp[i][j]*beta0[j];
+	if (!mda)
+	  X[n_samp+i][n_cov] += mtemp[i][j]*beta0[j];
 	X[n_samp+i][j] = mtemp[i][j];
       }
     }
   }
 
-  /*** Gibbs Sampler! ***/
+  /* Gibbs Sampler! */
   for(main_loop = 1; main_loop <= n_gen; main_loop++){
     /* marginal data augmentation */
     if (mda) sig2 = s0/rchisq((double)nu0);
@@ -250,13 +271,11 @@ void bprobitGibbs(int *Y,        /* binary outcome variable */
     R_CheckUserInterrupt();
   } /* end of Gibbs sampler */
 
-  /** freeing memory **/
+  /* freeing memory */
   free(W);
   free(mean);
   FreeMatrix(SS, n_cov+1);
   FreeMatrix(V, n_cov);
   FreeMatrix(mtemp, n_cov);
-
-} 
-
+}
 
