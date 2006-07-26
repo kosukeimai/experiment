@@ -25,7 +25,6 @@ void R2bprobitMixedGibbs(int *Y,           /* binary outcome variable */
 			 int *n_grp,       /* # of groups */
 			 int *n_samp_grp,  /* # of obs within group */
 			 int *max_samp_grp, /* max # of obs within group */
-			 int *prior,       /* include prior in X? */
 			 double *beta0,    /* prior mean */
 			 double *dA0,      /* prior precision */
 			 int *tau0,        /* prior df */
