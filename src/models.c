@@ -297,9 +297,11 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
 					   effects */
 		       double **Z,      /* model matrix for random
 					   effects */
+		       double ***Zgrp,  /* model matrix organized by
+					   grous */
 		       int *grp,        /* group indicator: 0, 1, 2,... */
 		       double *beta,    /* fixed effects coefficients */
-		       double *gamma,   /* random effects coefficients */
+		       double **gamma,  /* random effects coefficients */
 		       double **Psi,    /* covariance for random
 					   effects */
 		       int n_samp,      /* # of obs */ 
@@ -307,6 +309,7 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
 		       int n_random,    /* # of random effects */
 		       int n_grp,       /* # of groups */
 		       int *n_samp_grp, /* # of obs within group */
+		       int max_samp_grp, /* max # of obs within group */
 		       int prior,       /* include prior in X? */
 		       double *beta0,   /* prior mean */
 		       double **A0,     /* prior precision */
@@ -322,11 +325,13 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
   double *mean = doubleArray(n_fixed);              /* means for beta */
   double **V = doubleMatrix(n_fixed, n_fixed);      /* variances for beta */
   double *W = doubleArray(n_samp);
+  double **Wgrp = doubleMatrix(n_grp, max_samp_grp);
   double **mtemp = doubleMatrix(n_random, n_random);
   double **mtemp1 = doubleMatrix(n_random, n_random);
 
   /* storage parameters and loop counters */
-  int i, j, k, main_loop;  
+  int i, j, k, l, main_loop;  
+  int *vitemp = intArray(n_grp);
   double dtemp0, dtemp1;
   
   /* marginal data augmentation */
@@ -361,7 +366,7 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
       for (j = 0; j < n_fixed; j++) 
 	dtemp0 += X[i][j]*beta[j]; 
       for (j = 0; j < n_random; j++)
-	dtemp1 += Z[i][j]*gamma[grp[i]];
+	dtemp1 += Z[i][j]*gamma[grp[i]][j];
       if(Y[i] == 0) 
 	W[i] = TruncNorm(dtemp0+dtemp1-1000,0,dtemp0+dtemp1,1,0);
       else 
@@ -403,19 +408,26 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
     }
 
     /** STEP 2: Update Random Effects Given Fixed Effects **/
-    for (i = 0; i < n_samp; i++)
+    for (j = 0; j < n_grp; j++)
+      vitemp[j] = 0;
+    for (i = 0; i < n_samp; i++) {
+      Wgrp[grp[i]][vitemp[grp[i]]] = W[i];
       for (j = 0; j < n_fixed; j++) 
-	W[i] -= X[i][j]*beta[j]; 
-    bNormalReg(W, Z, gamma, 1.0, n_samp, n_random, 1, gamma0, Psi, 0,
-	       0, 1, 1);
+	Wgrp[grp[i]][vitemp[grp[i]]] -= X[i][j]*beta[j]; 
+      vitemp[grp[i]]++;
+    }
+    for (j = 0; j < n_grp; j++)
+      bNormalReg(Wgrp[j], Zgrp[j], gamma[j], 1.0, n_samp_grp[j], n_random,
+		 1, gamma0, Psi, 0, 0, 1, 1);
 
     /** STEP 3: Update Covariance Matrix Given Random Effects **/
     for (j = 0; j < n_random; j++)
       for (k = 0; k < n_random; k++)
 	mtemp[j][k] = T0[j][k];
-    for (j = 0; j < n_random; j++)
+    for (j = 0; j < n_grp; j++)
       for (k = 0; k < n_random; k++)
-	mtemp[j][k] += gamma[j]*gamma[k];
+	for (l = 0; l < n_random; l++)
+	  mtemp[k][l] += gamma[j][k]*gamma[j][l];
     dinv(mtemp, n_random, mtemp1);
     rWish(mtemp, mtemp1, tau0+n_grp, n_random);
     dinv(mtemp, n_random, Psi);
@@ -427,8 +439,10 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
   free(W);
   free(mean);
   free(gamma0);
+  free(vitemp);
   FreeMatrix(SS, n_fixed+1);
   FreeMatrix(V, n_fixed);
+  FreeMatrix(Wgrp, n_grp);
   FreeMatrix(mtemp, n_random);
   FreeMatrix(mtemp1, n_random);
 }
