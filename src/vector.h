@@ -1,7 +1,6 @@
 /******************************************************************
   This file is a part of MNP: R Package for Estimating the 
-  Multinomial Probit Models by Kosuke Imai, Jordan R. Vance, and 
-  David A. van Dyk.
+  Multinomial Probit Models by Kosuke Imai and David A. van Dyk.
   Copyright: GPL version 2 or later.
 *******************************************************************/
 
@@ -9,11 +8,17 @@
 #include <assert.h>
 
 int *intArray(int num);
+void PintArray(int *ivector, int length);
 int **intMatrix(int row, int col);
+void PintMatrix(int **imatrix, int row, int col);
 
 double *doubleArray(int num);
+void PdoubleArray(double *dvector, int length);
 double **doubleMatrix(int row, int col);
+void PdoubleMatrix(double **dmatrix, int row, int col);
+
 double ***doubleMatrix3D(int x, int y, int z);
+void PdoubleMatrix3D(double ***dmatrix3D, int x, int y, int z);
 
 long *longArray(int num);
 

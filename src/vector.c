@@ -1,7 +1,6 @@
 /******************************************************************
   This file is a part of MNP: R Package for Estimating the 
-  Multinomial Probit Models by Kosuke Imai, Jordan R. Vance, and 
-  David A. van Dyk.
+  Multinomial Probit Models by Kosuke Imai and  David A. van Dyk.
   Copyright: GPL version 2 or later.
 *******************************************************************/
 
@@ -19,6 +18,12 @@ int* intArray(int num) {
     error("Out of memory error in intArray\n");
 }
 
+void PintArray(int *ivector, int length) {
+  int i;
+  for (i = 0; i < length; i++)
+    Rprintf("%5d\n", ivector[i]);
+}
+
 int** intMatrix(int row, int col) {
   int i;
   int **iMatrix = (int **)malloc(row * sizeof(int *));
@@ -34,12 +39,28 @@ int** intMatrix(int row, int col) {
     error("Out of memory error in intMatrix\n");
 }
 
+void PintMatrix(int **imatrix, int row, int col) {
+  int i, j;
+  for (i = 0; i < row; i++) {
+    for (j = 0; j < col; j++)
+      Rprintf("%5d", imatrix[i][j]);
+    Rprintf("\n");
+  }
+}
+
+
 double* doubleArray(int num) {
   double *dArray = (double *)malloc(num * sizeof(double));
   if (dArray)
     return dArray;
   else
     error("Out of memory error in doubleArray\n");
+}
+
+void PdoubleArray(double *dvector, int length) {
+  int i;
+  for (i = 0; i < length; i++)
+    Rprintf("%14g\n", dvector[i]);
 }
 
 double** doubleMatrix(int row, int col) {
@@ -57,6 +78,15 @@ double** doubleMatrix(int row, int col) {
     error("Out of memory error in doubleMatrix\n");
 }
 
+void PdoubleMatrix(double **dmatrix, int row, int col) {
+  int i, j;
+  for (i = 0; i < row; i++) {
+    for (j = 0; j < col; j++)
+      Rprintf("%14g", dmatrix[i][j]);
+    Rprintf("\n");
+  }
+}
+
 double*** doubleMatrix3D(int x, int y, int z) {
   int i;
   double ***dM3 = (double ***)malloc(x * sizeof(double **));
@@ -67,6 +97,18 @@ double*** doubleMatrix3D(int x, int y, int z) {
   }
   else 
     error("Out of memory error in doubleMatrix3D\n");
+}
+
+void PdoubleMatrix3D(double ***dmatrix3D, int x, int y, int z) {
+  int i, j, k;
+  for (i = 0; i < x; i++) {
+    Rprintf("Fist dimension = %5d\n", i);
+    for (j = 0; j < y; j++) {
+      for (k = 0; k < z; k++)
+	Rprintf("%14g", dmatrix3D[i][j][k]);
+      Rprintf("\n");
+    }
+  }
 }
 
 long* longArray(int num) {
