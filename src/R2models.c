@@ -44,7 +44,7 @@ void R2bNormalReg(double *Y,        /* binary outcome variable */
   double sig2 = *dsig2;
 
   /* matrices */
-  double **X = doubleMatrix(*n_samp+*n_cov, *n_cov);
+  double **X = doubleMatrix(*n_samp+*n_cov, *n_cov+1);
   double **A0 = doubleMatrix(*n_cov, *n_cov);
   double **mtemp = doubleMatrix(*n_cov, *n_cov);
 
@@ -133,14 +133,14 @@ void R2bprobitMixedGibbs(int *Y,           /* binary outcome variable */
   int ibeta = 0, igamma = 0, iPsi =0;
 
   /* matrices */
-  double **X = doubleMatrix(*n_samp+*n_fixed, *n_fixed);
-  double **Z = doubleMatrix(*n_samp, *n_random);
+  double **X = doubleMatrix(*n_samp+*n_fixed, *n_fixed+1);
+  double **Z = doubleMatrix(*n_samp, *n_random+1);
   double **gamma = doubleMatrix(*n_grp, *n_random);
   double **Psi = doubleMatrix(*n_random, *n_random);
   double **A0 = doubleMatrix(*n_fixed, *n_fixed);
   double **T0 = doubleMatrix(*n_random, *n_random);
   double **mtemp = doubleMatrix(*n_fixed, *n_fixed);
-  double ***Zgrp = doubleMatrix3D(*n_grp, *max_samp_grp + *n_random, *n_random);
+  double ***Zgrp = doubleMatrix3D(*n_grp, *max_samp_grp + *n_random, *n_random+1);
 
   /* get random seed */
   GetRNGstate();
