@@ -77,12 +77,11 @@ void R2bNormalReg(double *Y,        /* binary outcome variable */
   for(main_loop = 1; main_loop <= *n_gen; main_loop++) {
     bNormalReg(Y, X, beta, sig2, *n_samp, *n_cov, *pbeta, beta0, A0,
 	       *psig2, *s0, *nu0, *sig2fixed);
-    PdoubleMatrix(A0, *n_cov, *n_cov);
 
-    /* Storing the output 
+    /* Storing the output */
     for (j = 0; j < *n_cov; j++)
       betaStore[ibeta++] = beta[j];
-    sig2Store[isig2++] = sig2; */
+    sig2Store[isig2++] = sig2;
 
     R_FlushConsole(); 
     R_CheckUserInterrupt();
