@@ -321,7 +321,7 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
 		       int n_gen        /* # of gibbs draws */
 		       ) {
   
-  double *zeros = doubleArray(n_random);           /* prior mean for gamma */
+  double *gamma0 = doubleArray(n_random);           /* prior mean for gamma */
   double **SS = doubleMatrix(n_fixed+1, n_fixed+1); /* matrix folders for SWEEP */
   double *mean = doubleArray(n_fixed);              /* means for beta */
   double **V = doubleMatrix(n_fixed, n_fixed);      /* variances for beta */
@@ -354,7 +354,7 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
   }
 
   for (j = 0; j < n_random; j++)
-    zeros[j] = 0;
+    gamma0[j] = 0;
 
   /* Gibbs Sampler! */
   for(main_loop = 1; main_loop <= n_gen; main_loop++){
@@ -420,7 +420,7 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
     dinv(Psi, n_random, mtemp);
     for (j = 0; j < n_grp; j++) {
       bNormalReg(Wgrp[j], Zgrp[j], gamma[j], 1.0, n_samp_grp[j], n_random,
-		 1, zeros, mtemp, 0, 0, 1, 1);
+		 1, gamma0, mtemp, 0, 0, 1, 1);
     }
 
     /** STEP 3: Update Covariance Matrix Given Random Effects **/
@@ -437,15 +437,13 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
 
     R_CheckUserInterrupt();
   } /* end of Gibbs sampler */
-  PdoubleArray(zeros, n_random);
+  PdoubleArray(gamma0, n_random);
 
   /* freeing memory */
   free(W);
   free(mean);
   free(vitemp);
-  /*  Rprintf("hi");
-  free(zeros);
-  Rprintf("hi"); */
+  free(gamma0);
   FreeMatrix(SS, n_fixed+1);
   FreeMatrix(V, n_fixed);
   FreeMatrix(Wgrp, n_grp);

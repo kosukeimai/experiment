@@ -9,6 +9,95 @@
 #include "rand.h"
 #include "models.h"
 
+void R2bNormalReg(double *Y,        /* binary outcome variable */
+		  double *dX,       /* model matrix */
+		  double *beta,     /* fixed effects coefficients */
+		  double *dsig2,    /* variance parameter */
+		  int *n_samp,      /* # of obs */ 
+		  int *n_cov,    /* # of covariates */
+		  int *n_gen,    /* # of gibbs draws */
+		  int *pbeta,     /* 0: improper prior 
+				    p(beta|X) \propto 1
+				    1: proper prior for (beta)
+				    p(beta|X) = normal(beta0, A0)
+				 */
+		  double *beta0, /* prior mean for normal */
+		  double *dA0,   /* prior precision for normal; can be
+				    set to zero to induce improper prior
+				    for beta alone
+				 */
+		  int *psig2,    /* 0: improper prior for sig2
+				    p(sig2|X) \propto 1/sig2
+				    1: proper prior for sig2
+				    p(sigma2|X) = InvChi2(nu0, s0)
+				 */
+		  double *s0,    /* prior scale for InvChi2 */
+		  int *nu0,      /* prior d.f. for InvChi2 */
+		  int *sig2fixed, /* 1: sig2 fixed, 0: sig2 sampled */ 
+		  double *betaStore, 
+		  double *sig2Store
+		  ) {
+
+  /* storage parameters and loop counters */
+  int i, j, k, main_loop, itemp;  
+  int ibeta = 0, isig2 = 0;
+  double sig2 = *dsig2;
+
+  /* matrices */
+  double **X = doubleMatrix(*n_samp+*n_cov, *n_cov);
+  double **A0 = doubleMatrix(*n_cov, *n_cov);
+  double **mtemp = doubleMatrix(*n_cov, *n_cov);
+
+  /* get random seed */
+  GetRNGstate();
+
+  /* packing the data */
+  itemp = 0;
+  for (j = 0; j < *n_cov; j++)
+    for (i = 0; i < *n_samp; i++) 
+      X[i][j] = dX[itemp++];
+
+  /* packing the prior */
+  itemp = 0; 
+  for (k = 0; k < *n_cov; k++)
+    for (j = 0; j < *n_cov; j++)
+      A0[j][k] = dA0[itemp++];
+
+  /* adding prior as an additional data point */
+  dcholdc(A0, *n_cov, mtemp);
+  for (i = 0; i < *n_cov; i++) {
+    X[*n_samp+i][*n_cov]=0;
+    for (j = 0; j < *n_cov; j++) {
+      X[*n_samp+i][*n_cov] += mtemp[i][j]*beta0[j];
+      X[*n_samp+i][j] = mtemp[i][j];
+    }
+  }
+
+  /* Gibbs Sampler! */
+  for(main_loop = 1; main_loop <= *n_gen; main_loop++) {
+    bNormalReg(Y, X, beta, sig2, *n_samp, *n_cov, *pbeta, beta0, A0,
+	       *psig2, *s0, *nu0, *sig2fixed);
+    PdoubleMatrix(A0, *n_cov, *n_cov);
+
+    /* Storing the output 
+    for (j = 0; j < *n_cov; j++)
+      betaStore[ibeta++] = beta[j];
+    sig2Store[isig2++] = sig2; */
+
+    R_FlushConsole(); 
+    R_CheckUserInterrupt();
+  } /* end of Gibbs sampler */
+
+  PutRNGstate();
+
+  /* freeing memory */
+  FreeMatrix(X, *n_samp+*n_cov);
+  FreeMatrix(A0, *n_cov);
+  FreeMatrix(mtemp, *n_cov);
+}
+
+
+
 void R2bprobitMixedGibbs(int *Y,           /* binary outcome variable */
 			 double *dX,       /* model matrix for fixed
 					      effects */
