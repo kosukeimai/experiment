@@ -51,7 +51,7 @@ void R2bprobitMixedGibbs(int *Y,           /* binary outcome variable */
   double **A0 = doubleMatrix(*n_fixed, *n_fixed);
   double **T0 = doubleMatrix(*n_random, *n_random);
   double **mtemp = doubleMatrix(*n_fixed, *n_fixed);
-  double ***Zgrp = doubleMatrix3D(*n_grp, *max_samp_grp, *n_random);
+  double ***Zgrp = doubleMatrix3D(*n_grp, *max_samp_grp + *n_random, *n_random);
 
   /* get random seed */
   GetRNGstate();
@@ -74,12 +74,23 @@ void R2bprobitMixedGibbs(int *Y,           /* binary outcome variable */
       Zgrp[grp[i]][vitemp[grp[i]]][j] = Z[i][j];
     vitemp[grp[i]]++;
   }
-
+  
   /* packing the prior */
+  itemp = 0;
+  for (k = 0; k < *n_random; k++)
+    for (j = 0; j < *n_random; j++)
+      Psi[j][k] = dPsi[itemp++];
+  
+  itemp = 0;
+  for (k = 0; k < *n_random; k++)
+    for (j = 0; j < *n_grp; j++)
+      gamma[j][k] = dgamma[itemp++];
+
   itemp = 0; 
   for (k = 0; k < *n_fixed; k++)
     for (j = 0; j < *n_fixed; j++)
       A0[j][k] = dA0[itemp++];
+
   itemp = 0; 
   for (k = 0; k < *n_random; k++)
     for (j = 0; j < *n_random; j++)
@@ -100,7 +111,7 @@ void R2bprobitMixedGibbs(int *Y,           /* binary outcome variable */
     bprobitMixedGibbs(Y, X, Z, Zgrp, grp, beta, gamma, Psi, *n_samp,
 		      *n_fixed, *n_random, *n_grp, n_samp_grp,
 		      *max_samp_grp, 0, beta0, A0, *tau0, T0, *mda, 1);
-    
+
     /* Storing the output */
     for (j = 0; j < *n_fixed; j++)
       betaStore[ibeta++] = beta[j];
@@ -111,6 +122,7 @@ void R2bprobitMixedGibbs(int *Y,           /* binary outcome variable */
       for (k = 0; k < *n_random; k++)
 	gammaStore[igamma++] = gamma[j][k];
 
+    R_FlushConsole(); 
     R_CheckUserInterrupt();
   } /* end of Gibbs sampler */
 
@@ -124,7 +136,7 @@ void R2bprobitMixedGibbs(int *Y,           /* binary outcome variable */
   FreeMatrix(Psi, *n_random);
   FreeMatrix(A0, *n_fixed);
   FreeMatrix(T0, *n_random);
-  FreeMatrix(mtemp, *n_random);
-  Free3DMatrix(Zgrp, *n_grp, *max_samp_grp);
+  FreeMatrix(mtemp, *n_fixed);
+  Free3DMatrix(Zgrp, *n_grp, *max_samp_grp + *n_random);
 }
 

@@ -4,6 +4,7 @@
 #include <math.h>
 #include <Rmath.h>
 #include <R.h>
+#include "models.h"
 #include "vector.h"
 #include "subroutines.h"
 #include "rand.h"
@@ -320,7 +321,7 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
 		       int n_gen        /* # of gibbs draws */
 		       ) {
   
-  double *gamma0 = doubleArray(n_random);           /* prior mean for gamma */
+  double *zeros = doubleArray(n_random);           /* prior mean for gamma */
   double **SS = doubleMatrix(n_fixed+1, n_fixed+1); /* matrix folders for SWEEP */
   double *mean = doubleArray(n_fixed);              /* means for beta */
   double **V = doubleMatrix(n_fixed, n_fixed);      /* variances for beta */
@@ -353,7 +354,7 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
   }
 
   for (j = 0; j < n_random; j++)
-    gamma0[j] = 0.0;
+    zeros[j] = 0;
 
   /* Gibbs Sampler! */
   for(main_loop = 1; main_loop <= n_gen; main_loop++){
@@ -400,7 +401,7 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
     for(j = 0; j < n_fixed; j++)
       for(k = 0; k < n_fixed; k++) V[j][k]=-SS[j][k]*sig2;
     rMVN(beta, mean, V, n_fixed);
- 
+
     /* rescaling the parameters */
     if(mda) {
       for (j = 0; j < n_fixed; j++) beta[j] /= sqrt(sig2);
@@ -416,9 +417,11 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
 	Wgrp[grp[i]][vitemp[grp[i]]] -= X[i][j]*beta[j]; 
       vitemp[grp[i]]++;
     }
-    for (j = 0; j < n_grp; j++)
+    dinv(Psi, n_random, mtemp);
+    for (j = 0; j < n_grp; j++) {
       bNormalReg(Wgrp[j], Zgrp[j], gamma[j], 1.0, n_samp_grp[j], n_random,
-		 1, gamma0, Psi, 0, 0, 1, 1);
+		 1, zeros, mtemp, 0, 0, 1, 1);
+    }
 
     /** STEP 3: Update Covariance Matrix Given Random Effects **/
     for (j = 0; j < n_random; j++)
@@ -434,12 +437,15 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
 
     R_CheckUserInterrupt();
   } /* end of Gibbs sampler */
+  PdoubleArray(zeros, n_random);
 
   /* freeing memory */
   free(W);
   free(mean);
-  free(gamma0);
   free(vitemp);
+  /*  Rprintf("hi");
+  free(zeros);
+  Rprintf("hi"); */
   FreeMatrix(SS, n_fixed+1);
   FreeMatrix(V, n_fixed);
   FreeMatrix(Wgrp, n_grp);
