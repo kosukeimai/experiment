@@ -381,13 +381,9 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
     /* SS matrix */
     for(j = 0; j <= n_fixed; j++)
       for(k = 0; k <= n_fixed; k++)
-	SS[j][k]=0;
-    for(i = 0;i < n_samp; i++)
-      for(j = 0;j <= n_fixed; j++)
-	for(k = 0; k <= n_fixed; k++) 
-	  SS[j][k] += X[i][j]*X[i][k];
-    for(i = n_samp;i < n_samp+n_fixed; i++)
-      for(j = 0;j <= n_fixed; j++)
+	SS[j][k] = 0;
+    for(i = 0; i < n_samp + n_fixed; i++)
+      for(j = 0; j <= n_fixed; j++)
 	for(k = 0; k <= n_fixed; k++) 
 	  SS[j][k] += X[i][j]*X[i][k];
 
