@@ -12,7 +12,7 @@
 void R2bNormalReg(double *Y,        /* binary outcome variable */
 		  double *dX,       /* model matrix */
 		  double *beta,     /* fixed effects coefficients */
-		  double *dsig2,    /* variance parameter */
+		  double *sig2,    /* variance parameter */
 		  int *n_samp,      /* # of obs */ 
 		  int *n_cov,    /* # of covariates */
 		  int *n_gen,    /* # of gibbs draws */
@@ -41,7 +41,6 @@ void R2bNormalReg(double *Y,        /* binary outcome variable */
   /* storage parameters and loop counters */
   int i, j, k, main_loop, itemp;  
   int ibeta = 0, isig2 = 0;
-  double sig2 = *dsig2;
 
   /* matrices */
   double **X = doubleMatrix(*n_samp+*n_cov, *n_cov+1);
@@ -81,7 +80,7 @@ void R2bNormalReg(double *Y,        /* binary outcome variable */
     /* Storing the output */
     for (j = 0; j < *n_cov; j++)
       betaStore[ibeta++] = beta[j];
-    sig2Store[isig2++] = sig2;
+    sig2Store[isig2++] = *sig2;
 
     R_FlushConsole(); 
     R_CheckUserInterrupt();

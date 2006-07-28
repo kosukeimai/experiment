@@ -84,7 +84,7 @@ void logitMetro(int *Y,        /* outcome variable: 0, 1, ..., J-1 */
 void bNormalReg(double *Y,     /* response variable */
 		double **X,    /* model matrix */
 		double *beta,  /* coefficients */
-		double sig2,   /* variance */
+		double *sig2,  /* variance */
 		int n_samp,    /* sample size */
 		int n_cov,     /* # of covariates */
 		int pbeta,     /* 0: improper prior 
@@ -114,7 +114,7 @@ void bNormalReg(double *Y,     /* response variable */
 
   /* storage parameters and loop counters */
   int i, j, k;  
-  
+
   /* read the proper prior for beta as additional data points */
   if (pbeta) {
     dcholdc(A0, n_cov, mtemp);
@@ -153,17 +153,17 @@ void bNormalReg(double *Y,     /* response variable */
   if (!sig2fixed)
     if (psig2)
       if (pbeta)
-	sig2=(SS[n_cov][n_cov]+nu0*s0)/rchisq((double)n_samp+nu0);
+	sig2[0]=(SS[n_cov][n_cov]+nu0*s0)/rchisq((double)n_samp+nu0);
       else
-	sig2=(n_samp*SS[n_cov][n_cov]/(n_samp-n_cov)+nu0*s0)/rchisq((double)n_samp+nu0);
+	sig2[0]=(n_samp*SS[n_cov][n_cov]/(n_samp-n_cov)+nu0*s0)/rchisq((double)n_samp+nu0);
     else
-      sig2=SS[n_cov][n_cov]/rchisq((double)n_samp-n_cov);
+      sig2[0]=SS[n_cov][n_cov]/rchisq((double)n_samp-n_cov);
   
   /* draw beta from its conditional given sig2 */
   for(j = 0; j < n_cov; j++)
-    for(k = 0; k < n_cov; k++) V[j][k]=-SS[j][k]*sig2;
+    for(k = 0; k < n_cov; k++) V[j][k]=-SS[j][k]*sig2[0];
   rMVN(beta, mean, V, n_cov);
-  
+
   /* freeing memory */
   free(mean);
   FreeMatrix(SS, n_cov+1);
@@ -334,7 +334,9 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
   int i, j, k, l, main_loop;  
   int *vitemp = intArray(n_grp);
   double dtemp0, dtemp1;
-  
+  double *vdtemp = doubleArray(1);
+  vdtemp[0] = 1.0;
+
   /* marginal data augmentation */
   double sig2 = 1;
   int nu0 = 1;
@@ -419,7 +421,7 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
     }
     dinv(Psi, n_random, mtemp);
     for (j = 0; j < n_grp; j++) {
-      bNormalReg(Wgrp[j], Zgrp[j], gamma[j], 1.0, n_samp_grp[j], n_random,
+      bNormalReg(Wgrp[j], Zgrp[j], gamma[j], vdtemp, n_samp_grp[j], n_random,
 		 1, gamma0, mtemp, 0, 0, 1, 1);
     }
 
@@ -442,6 +444,7 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
   /* freeing memory */
   free(W);
   free(mean);
+  free(vdtemp);
   free(vitemp);
   free(gamma0);
   FreeMatrix(SS, n_fixed+1);
