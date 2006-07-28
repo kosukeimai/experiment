@@ -439,7 +439,6 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
 
     R_CheckUserInterrupt();
   } /* end of Gibbs sampler */
-  PdoubleArray(gamma0, n_random);
 
   /* freeing memory */
   free(W);
