@@ -290,10 +290,8 @@ void bprobitGibbs(int *Y,        /* binary outcome variable */
 void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
 		       double **X,      /* model matrix for fixed
 					   effects */
-		       double **Z,      /* model matrix for random
-					   effects */
-		       double ***Zgrp,  /* model matrix organized by
-					   grous */
+		       double ***Zgrp,  /* model matrix for random
+					   effects organized by grous */
 		       int *grp,        /* group indicator: 0, 1, 2,... */
 		       double *beta,    /* fixed effects coefficients */
 		       double **gamma,  /* random effects coefficients */
@@ -347,17 +345,20 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
   /* Gibbs Sampler! */
   for(main_loop = 1; main_loop <= n_gen; main_loop++){
     /** STEP 1: Sample Latent Variable **/
+    for (j = 0; j < n_grp; j++)
+      vitemp[j] = 0;
     for (i = 0; i < n_samp; i++){
       dtemp0 = 0; dtemp1 = 0;
       for (j = 0; j < n_fixed; j++) 
 	dtemp0 += X[i][j]*beta[j]; 
       for (j = 0; j < n_random; j++)
-	dtemp1 += Z[i][j]*gamma[grp[i]][j];
+	dtemp1 += Zgrp[grp[i]][vitemp[grp[i]]][j]*gamma[grp[i]][j];
       if(Y[i] == 0) 
 	W[i] = TruncNorm(dtemp0+dtemp1-1000,0,dtemp0+dtemp1,1,0);
       else 
 	W[i] = TruncNorm(0,dtemp0+dtemp1+1000,dtemp0+dtemp1,1,0);
       X[i][n_fixed] = W[i]-dtemp1;
+      vitemp[grp[i]]++;
     }
 
     /** STEP 2: Sample Fixed Effects Given Random Effects **/
@@ -482,10 +483,13 @@ void bNormalMixedGibbs(double *Y,       /* outcome variable */
   for(main_loop = 1; main_loop <= n_gen; main_loop++){
     /** STEP 1: Sample Fixed Effects Given Random Effects 
                 Also Sample Variance Parameter **/
+    for (j = 0; j < n_grp; j++)
+      vitemp[j] = 0;
     for (i = 0; i < n_samp; i++) {
       X[i][n_fixed] = Y[i];
       for (j = 0; j < n_random; j++)
-	X[i][n_fixed] -= Z[i][j]*gamma[grp[i]][j];
+	X[i][n_fixed] -= Zgrp[grp[i]][vitemp[grp[i]]][j]*gamma[grp[i]][j];
+      vitemp[grp[i]]++;
     }
     if (imp)
       bNormalReg(X, beta, sig2, n_samp, n_fixed, 0, 1, beta0, A0, 0, 1,

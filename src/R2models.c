@@ -134,7 +134,6 @@ void R2bprobitMixedGibbs(int *Y,           /* binary outcome variable */
 
   /* matrices */
   double **X = doubleMatrix(*n_samp+*n_fixed, *n_fixed+1);
-  double **Z = doubleMatrix(*n_samp, *n_random+1);
   double **gamma = doubleMatrix(*n_grp, *n_random);
   double **Psi = doubleMatrix(*n_random, *n_random);
   double **A0 = doubleMatrix(*n_fixed, *n_fixed);
@@ -152,15 +151,11 @@ void R2bprobitMixedGibbs(int *Y,           /* binary outcome variable */
       X[i][j] = dX[itemp++];
 
   itemp = 0;
-  for (j = 0; j < *n_random; j++)
-    for (i = 0; i < *n_samp; i++)
-      Z[i][j] = dZ[itemp++];
-
   for (j = 0; j < *n_grp; j++)
     vitemp[j] = 0;
   for (i = 0; i < *n_samp; i++) {
     for (j = 0; j < *n_random; j++)
-      Zgrp[grp[i]][vitemp[grp[i]]][j] = Z[i][j];
+      Zgrp[grp[i]][vitemp[grp[i]]][j] = dZ[itemp++];
     vitemp[grp[i]]++;
   }
   
@@ -197,7 +192,7 @@ void R2bprobitMixedGibbs(int *Y,           /* binary outcome variable */
 
   /* Gibbs Sampler! */
   for(main_loop = 1; main_loop <= *n_gen; main_loop++) {
-    bprobitMixedGibbs(Y, X, Z, Zgrp, grp, beta, gamma, Psi, *n_samp,
+    bprobitMixedGibbs(Y, X, Zgrp, grp, beta, gamma, Psi, *n_samp,
 		      *n_fixed, *n_random, *n_grp, n_samp_grp,
 		      0, beta0, A0, *tau0, T0, *mda, 1);
 
@@ -220,7 +215,6 @@ void R2bprobitMixedGibbs(int *Y,           /* binary outcome variable */
   /* freeing memory */
   free(vitemp);
   FreeMatrix(X, *n_samp+*n_fixed);
-  FreeMatrix(Z, *n_samp);
   FreeMatrix(gamma, *n_grp);
   FreeMatrix(Psi, *n_random);
   FreeMatrix(A0, *n_fixed);
