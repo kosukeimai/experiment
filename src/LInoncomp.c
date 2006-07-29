@@ -129,6 +129,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
   double dtemp;
   double **mtempC = doubleMatrix(n_covC, n_covC); 
   double **mtempO = doubleMatrix(n_covO, n_covO); 
+  double **mtempR = doubleMatrix(n_covR, n_covR); 
 
   /*** get random seed **/
   GetRNGstate();
@@ -199,12 +200,12 @@ void LIbprobit(int *Y,         /* binary outcome variable */
     }
   }
   
-  dcholdc(A0R, n_covR, mtempO);
+  dcholdc(A0R, n_covR, mtempR);
   for (i = 0; i < n_covR; i++) {
     Xr[n_samp+i][n_covR]=0;
     for (j = 0; j < n_covR; j++) {
-      Xr[n_samp+i][n_covR] += mtempO[i][j]*delta0[j];
-      Xr[n_samp+i][j] = mtempO[i][j];
+      Xr[n_samp+i][n_covR] += mtempR[i][j]*delta0[j];
+      Xr[n_samp+i][j] = mtempR[i][j];
     }
   }
   
@@ -545,7 +546,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
   FreeMatrix(Xc, n_samp+n_covC);
   FreeMatrix(Xo, n_samp+n_covO);
   FreeMatrix(Xobs, n_obs+n_covO);
-  FreeMatrix(Xr, n_samp+n_covO);
+  FreeMatrix(Xr, n_samp+n_covR);
   free(meano);
   free(meanc);
   free(pC);
@@ -560,9 +561,10 @@ void LIbprobit(int *Y,         /* binary outcome variable */
   free(Atemp);
   FreeMatrix(A0C, n_covC*2);
   FreeMatrix(A0O, n_covO);
-  FreeMatrix(A0R, n_covO);
+  FreeMatrix(A0R, n_covR);
   FreeMatrix(mtempC, n_covC);
   FreeMatrix(mtempO, n_covO);
+  FreeMatrix(mtempR, n_covR);
 
 } /* main */
 
