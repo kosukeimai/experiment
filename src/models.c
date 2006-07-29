@@ -348,8 +348,7 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
 
   /* Gibbs Sampler! */
   for(main_loop = 1; main_loop <= n_gen; main_loop++){
-    /** STEP 1: Sample Fixed Effects Given Random Effects **/
-
+    /** STEP 1: Sample Latent Variable **/
     for (i = 0; i < n_samp; i++){
       dtemp0 = 0; dtemp1 = 0;
       for (j = 0; j < n_fixed; j++) 
@@ -363,11 +362,11 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
       X[i][n_fixed] = W[i]-dtemp1;
     }
 
-    /* SS matrix */
+    /** STEP 2: Sample Fixed Effects Given Random Effects **/
     bNormalReg(X, beta, vdtemp, n_samp, n_fixed, 0, 1, beta0, A0, 0, 1,
 	       1, 1);
 
-    /** STEP 2: Update Random Effects Given Fixed Effects **/
+    /** STEP 3: Update Random Effects Given Fixed Effects **/
     for (j = 0; j < n_grp; j++)
       vitemp[j] = 0;
     for (i = 0; i < n_samp; i++) {
@@ -376,12 +375,11 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
 	Zgrp[grp[i]][vitemp[grp[i]]][n_random] -= X[i][j]*beta[j]; 
       vitemp[grp[i]]++;
     }
-    for (j = 0; j < n_grp; j++) {
+    for (j = 0; j < n_grp; j++)
       bNormalReg(Zgrp[j], gamma[j], vdtemp, n_samp_grp[j], n_random,
 		 1, 1, gamma0, Psi, 0, 0, 1, 1);
-    }
 
-    /** STEP 3: Update Covariance Matrix Given Random Effects **/
+    /** STEP 4: Update Covariance Matrix Given Random Effects **/
     for (j = 0; j < n_random; j++)
       for (k = 0; k < n_random; k++)
 	mtemp[j][k] = T0[j][k];

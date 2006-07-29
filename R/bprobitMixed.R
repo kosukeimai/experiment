@@ -5,7 +5,7 @@ bprobitMixed <- function(Y, X, Z, grp, beta.start, gamma.start,
   ## this code assumes the equal number of obs within each group
   res <- .C("R2bprobitMixedGibbs", as.integer(Y), as.double(X),
             as.double(Z), as.integer(grp), as.double(beta.start),
-            as.double(gamma.start), as.double(Psi.start),
+            as.double(gamma.start), as.double(solve(Psi.start)),
             as.integer(nrow(X)), as.integer(ncol(X)), as.integer(ncol(Z)),
             as.integer(ngrp), as.integer(rep(nobs/ngrp, ngrp)),
             as.integer(nobs/ngrp), as.double(beta0), as.double(A0),
