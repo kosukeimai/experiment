@@ -425,9 +425,8 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
 void bNormalMixedGibbs(double *Y,       /* outcome variable */
 		       double **X,      /* model matrix for fixed
 					   effects */
-		       double **Z,      /* model matrix for random
-					   effects */
-		       double ***Zgrp,  /* model matrix organized by
+		       double ***Zgrp,  /* model matrix for random
+					   effects organized by
 					   grous */
 		       int *grp,        /* group indicator: 0, 1, 2,... */
 		       double *beta,    /* fixed effects coefficients */

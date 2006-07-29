@@ -18,7 +18,7 @@ void bprobitMixedGibbs(int *Y, double **X, double ***Zgrp,
 		       int prior, double *beta0, double **A0, 
 		       int tau0, double **T0, int mda, int n_gen);
 
-void bNormalMixedGibbs(double *Y, double **X, double **Z, double ***Zgrp,
+void bNormalMixedGibbs(double *Y, double **X, double ***Zgrp,
 		       int *grp, double *beta, double **gamma, double *sig2,    
 		       double **Psi, int n_samp, int n_fixed, int n_random,
 		       int n_grp, int *n_samp_grp, int prior, 
