@@ -199,7 +199,7 @@ void R2bprobitMixedGibbs(int *Y,           /* binary outcome variable */
   for(main_loop = 1; main_loop <= *n_gen; main_loop++) {
     bprobitMixedGibbs(Y, X, Z, Zgrp, grp, beta, gamma, Psi, *n_samp,
 		      *n_fixed, *n_random, *n_grp, n_samp_grp,
-		      *max_samp_grp, 0, beta0, A0, *tau0, T0, *mda, 1);
+		      0, beta0, A0, *tau0, T0, *mda, 1);
 
     /* Storing the output */
     for (j = 0; j < *n_fixed; j++)

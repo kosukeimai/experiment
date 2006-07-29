@@ -13,8 +13,15 @@ void bprobitGibbs(int *Y, double **X, double *beta, int n_samp,
 
 void bprobitMixedGibbs(int *Y, double **X,  double **Z, 
 		       double ***Zgrp, int *grp, double *beta, 
-		       double **gamma, double **Psi, 
-		       int n_samp, int n_fixed, int n_random,
-		       int n_grp, int *n_samp_grp, int max_n_samp_grp,
-		       int prior, double *beta0, double **A0, int tau0,
-		       double **T0, int mda, int n_gen);
+		       double **gamma, double **Psi, int n_samp, 
+		       int n_fixed, int n_random, int n_grp, 
+		       int *n_samp_grp, int prior, double *beta0, 
+		       double **A0, int tau0, double **T0, int mda, 
+		       int n_gen);
+
+void bNormalMixedGibbs(double *Y, double **X, double **Z, double ***Zgrp,
+		       int *grp, double *beta, double **gamma, double *sig2,    
+		       double **Psi, int n_samp, int n_fixed, int n_random,
+		       int n_grp, int *n_samp_grp, int max_samp_grp,
+		       int prior, double *beta0, double **A0, int imp,
+		       int nu0, double s0, int tau0, double **T0, int n_gen0); 
