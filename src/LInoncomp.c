@@ -36,7 +36,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	       double *gamma,  /* coefficients for outcome model */
 	       double *delta,  /* coefficients for response model */
 	       int *in_samp,   /* # of observations */
-	       int *in_gen,    /* # of Gibbs draws */
+	       int *n_gen,     /* # of Gibbs draws */
 	       int *in_covC,   /* # of covariates for compliance model */ 
 	       int *in_covO,   /* # of covariates for outcome model */
 	       int *in_covR,   /* # of covariates for response model */
@@ -52,7 +52,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	       int *param,     /* Want to keep paramters? */
 	       int *mda,       /* Want to use marginal data
 				  augmentation for probit regressions? */
-	       int *iBurnin,   /* number of burnin */
+	       int *burnin,   /* number of burnin */
 	       int *iKeep,     /* keep ?th draws */
 	       int *verbose,   /* print out messages */
 	       double *coefC,  /* Storage for coefficients of the
@@ -67,13 +67,11 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	       ) {
   /** counters **/
   int n_samp = *in_samp;
-  int n_gen = *in_gen;
   int n_covC = *in_covC;
   int n_covO = *in_covO;
   int n_covR = *in_covR;
   int n_miss = *Ymiss;
   int n_obs = n_samp - n_miss;
-  int burnin = *iBurnin;
 
   /*** data ***/
   /*** observed Y ***/
@@ -126,7 +124,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
   int keep = 1;
   int *accept = intArray(n_covC*2);      /* number of acceptance */
   int i, j, k, l, main_loop;
-  int itempP = ftrunc((double) n_gen/10);
+  int itempP = ftrunc((double) *n_gen/10);
   int itemp, itempA, itempC, itempO, itempQ, itempR;
   double dtemp;
   double **mtempC = doubleMatrix(n_covC, n_covC); 
@@ -230,7 +228,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
   itempA = 0; itempC = 0; itempO = 0; itempQ = 0; itempR = 0;   
   for (j = 0; j < n_covC*2; j++)
     accept[j] = 0;
-  for (main_loop = 1; main_loop <= n_gen; main_loop++){
+  for (main_loop = 1; main_loop <= *n_gen; main_loop++){
 
     /* Step 1: RESPONSE MODEL */
     if (n_miss > 0) {
@@ -425,7 +423,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
     }
     
     /** storing the results **/
-    if (main_loop > burnin) {
+    if (main_loop > *burnin) {
       if (keep == *iKeep) {
 	/** Computing Quantities of Interest **/
 	n_comp = 0; n_never = 0; p_comp = 0; p_never = 0; 
@@ -530,7 +528,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	      Rprintf("%10g", (double)accept[j]/(double)main_loop);
 	  Rprintf("\n");
 	}
-	itempP += ftrunc((double) n_gen/10); 
+	itempP += ftrunc((double) *n_gen/10); 
 	progress++;
 	R_FlushConsole(); 
       }
