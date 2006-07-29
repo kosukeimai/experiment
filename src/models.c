@@ -439,7 +439,6 @@ void bNormalMixedGibbs(double *Y,       /* outcome variable */
 		       int n_random,    /* # of random effects */
 		       int n_grp,       /* # of groups */
 		       int *n_samp_grp, /* # of obs within group */
-		       int max_samp_grp, /* max # of obs within group */
 		       int prior,       /* include prior for fixed effects in X? */
 		       double *beta0,   /* prior mean */
 		       double **A0,     /* prior precision */
