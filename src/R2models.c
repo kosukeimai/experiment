@@ -64,6 +64,8 @@ void R2bNormalReg(double *Y,        /* binary outcome variable */
 
   /* adding prior as an additional data point */
   dcholdc(A0, *n_cov, mtemp);
+  for (i = 0; i < *n_samp; i++)
+    X[i][*n_cov] = Y[i];
   for (i = 0; i < *n_cov; i++) {
     X[*n_samp+i][*n_cov]=0;
     for (j = 0; j < *n_cov; j++) {
@@ -74,7 +76,7 @@ void R2bNormalReg(double *Y,        /* binary outcome variable */
 
   /* Gibbs Sampler! */
   for(main_loop = 1; main_loop <= *n_gen; main_loop++) {
-    bNormalReg(Y, X, beta, sig2, *n_samp, *n_cov, *pbeta, beta0, A0,
+    bNormalReg(X, beta, sig2, *n_samp, *n_cov, 0, *pbeta, beta0, A0,
 	       *psig2, *s0, *nu0, *sig2fixed);
 
     /* Storing the output */

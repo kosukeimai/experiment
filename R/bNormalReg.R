@@ -1,7 +1,7 @@
 bNormalReg <- function(Y, X, beta.start, sig2.start, sims, beta0, A0,
                        pbeta = TRUE, psig2 = FALSE, sig2.fixed = FALSE) {
 
-  tmp <- .C("R2bNormalReg", as.double(cbind(X, Y)),
+  tmp <- .C("R2bNormalReg", as.double(Y), as.double(X),
             as.double(beta.start), as.double(sig2.start),
             as.integer(nrow(X)), as.integer(ncol(X)), as.integer(sims), 
             as.integer(pbeta), as.double(beta0), as.double(A0),
