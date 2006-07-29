@@ -83,7 +83,7 @@ void LIbprobit(int *Y,         /* binary outcome variable */
   /* covariates for the outcome model: only units with observed Y */     
   double **Xobs = doubleMatrix(n_obs+n_covO, n_covO+1);    
   /* covariates for the response model: includes all obs */     
-  double **Xr = doubleMatrix(n_samp+n_covO, n_covO+1);    
+  double **Xr = doubleMatrix(n_samp+n_covR, n_covR+1);    
   /* mean vector for the outcome model */
   double *meano = doubleArray(n_samp);
   /* mean vector for the compliance model */
