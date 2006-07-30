@@ -566,5 +566,5 @@ void LIbprobit(int *Y,         /* binary outcome variable */
   FreeMatrix(mtempO, n_covO);
   FreeMatrix(mtempR, n_covR);
 
-} /* main */
+} /* end of LIbprobit */
 

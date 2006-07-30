@@ -762,13 +762,15 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
   PutRNGstate();
 
   /** freeing memory **/
+  free(grp_obs);
   free(Yobs);
   FreeMatrix(Xc, n_samp+n_fixedC);
-  FreeMatrix(Xo, n_samp+n_fixedO);
-  FreeMatrix(Xobs, n_obs+n_fixedO);
-  FreeMatrix(Xr, n_samp+n_fixedO);
   Free3DMatrix(Zc, n_grp, *max_samp_grp + n_randomC);
+  FreeMatrix(Xo, n_samp+n_fixedO);
   Free3DMatrix(Zo, n_grp, *max_samp_grp + n_randomO);
+  FreeMatrix(Xobs, n_obs+n_fixedO);
+  Free3DMatrix(Zobs, n_grp, *max_samp_grp + n_randomO);
+  FreeMatrix(Xr, n_samp+n_fixedO);
   Free3DMatrix(Zr, n_grp, *max_samp_grp + n_randomR);
   FreeMatrix(xiC, n_grp);
   FreeMatrix(xiA, n_grp);
@@ -778,10 +780,6 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
   FreeMatrix(PsiA, n_randomC);
   FreeMatrix(PsiO, n_randomO);
   FreeMatrix(PsiR, n_randomR);
-  FreeMatrix(T0C, n_randomC);
-  FreeMatrix(T0A, n_randomC);
-  FreeMatrix(T0O, n_randomO);
-  FreeMatrix(T0R, n_randomR);
   free(meano);
   free(meanc);
   free(pC);
@@ -791,17 +789,20 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
   free(prN);
   free(prA);
   free(meana);
-  free(accept);
-  FreeMatrix(Xtemp, n_samp+n_fixedC);
-  Free3DMatrix(Ztemp, n_grp, *max_samp_grp + n_randomC);
-  free(Atemp);
-  free(grp_obs);
-  free(grp_temp);
   FreeMatrix(A0C, n_fixedC*2);
   FreeMatrix(A0O, n_fixedO);
   FreeMatrix(A0R, n_fixedO);
+  FreeMatrix(T0C, n_randomC);
+  FreeMatrix(T0A, n_randomC);
+  FreeMatrix(T0O, n_randomO);
+  FreeMatrix(T0R, n_randomR);
+  FreeMatrix(Xtemp, n_samp+n_fixedC);
+  Free3DMatrix(Ztemp, n_grp, *max_samp_grp + n_randomC);
+  free(grp_temp);
+  free(Atemp);
   free(vitemp);
   free(vitemp1);
+  free(accept);
   FreeMatrix(mtempC, n_fixedC);
   FreeMatrix(mtempO, n_fixedO);
   FreeMatrix(mtempR, n_fixedR);
