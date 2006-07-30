@@ -1,5 +1,5 @@
 useDynLib(are)
 
 export(Noncomp.mom, Noncomp.bprobit, NIbprobit,
-       bNormalReg, bprobitMixed)
+       bNormalReg, bprobitMixed, bNormalMixed)
 
