@@ -40,10 +40,6 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 		    double *dZr,    /* random effects for response model */
 		    double *betaC,  /* fixed effects for compliance model */
 		    double *betaA,  /* fixed effects for always-takers model */
-		    double *dxiC,   /* random effects for compliance model */
-		    double *dxiA,   /* random effects for always-takers model */
-		    double *dxiO,   /* random effects for outcome model */
-		    double *dxiR,   /* random effects for response model */
 		    double *gamma,  /* fixed effects for outcome model */
 		    double *delta,  /* fixed effects for response model */
 		    int *in_samp,   /* # of observations */
@@ -57,20 +53,20 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 		    int *in_randomC,/* # of random effects for compliance model */ 
 		    int *in_randomO,/* # of random effects for outcome model */
 		    int *in_randomR,/* # of covariates for response model */
-		    double *dPsiC,  /* covariance for compliance model */
-		    double *dPsiA,  /* covariance for always-takers model */
-		    double *dPsiO,  /* covariance for outcome model */
-		    double *dPsiR,  /* covariance for response model */
+		    double *dPsiC,  /* precision for compliance model */
+		    double *dPsiA,  /* precision for always-takers model */
+		    double *dPsiO,  /* precision for outcome model */
+		    double *dPsiR,  /* precision for response model */
 		    double *beta0,  /* prior mean for betaC and betaA */ 
 		    double *gamma0, /* prior mean for gamma */
 		    double *delta0, /* prior mean for delta */
 		    double *dA0C,   /* prior precision for betaC and betaA */ 
 		    double *dA0O,   /* prior precision for gamma */
 		    double *dA0R,   /* prior precision for delta */
-		    int *tau0C,      /* prior df for PsiC */
-		    int *tau0A,      /* prior df for PsiA */
-		    int *tau0O,      /* prior df for PsiO */
-		    int *tau0R,      /* prior df for PsiR */
+		    int *tau0C,     /* prior df for PsiC */
+		    int *tau0A,     /* prior df for PsiA */
+		    int *tau0O,     /* prior df for PsiO */
+		    int *tau0R,     /* prior df for PsiR */
 		    double *dT0C,   /* prior scale for PsiC */
 		    double *dT0A,   /* prior scale for PsiA */
 		    double *dT0O,   /* prior scale for PsiO */
@@ -81,7 +77,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 		    int *param,     /* Want to keep paramters? */
 		    int *mda,       /* Want to use marginal data
 				       augmentation for probit regressions? */
-		    int *burnin,   /* number of burnin */
+		    int *burnin,    /* number of burnin */
 		    int *iKeep,     /* keep ?th draws */
 		    int *verbose,   /* print out messages */
 		    double *coefC,  /* Storage for coefficients of the
@@ -91,8 +87,14 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 		    double *coefO,  /* Storage for coefficients of the
 				       outcome model */
 		    double *coefR,  /* Storage for coefficients of the
-				       response model */	      
-		    double *QoI     /* Storage of quantities of interest */
+				       response model */	
+		    double *sPsiC,  /* Storage for precisions of
+				       random effects */
+		    double *sPsiA,
+		    double *sPsiO,
+		    double *sPsiR, 
+		    double *QoI     /* Storage of quantities of
+				       interest */		 
 		    ) {
    /** counters **/
   int n_samp = *in_samp; int n_grp = *in_grp;
@@ -201,6 +203,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
   int i, j, k, l, main_loop;
   int itempP = ftrunc((double) *n_gen/10);
   int itemp, itempA, itempC, itempO, itempQ, itempR;
+  int itempAv, itempCv, itempOv, itempRv;
   double dtemp;
   double **mtempC = doubleMatrix(n_fixedC, n_fixedC); 
   double **mtempO = doubleMatrix(n_fixedO, n_fixedO); 
@@ -239,21 +242,21 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
   itemp = 0;
   for (k = 0; k < n_randomC; k++)
     for (j = 0; j < n_grp; j++)
-      xiC[j][k] = dxiC[itemp++];
+      xiC[j][k] = 0;
 
   for (k = 0; k < n_randomC; k++)
     for (j = 0; j < n_grp; j++)
-      xiA[j][k] = dxiA[itemp++];
+      xiA[j][k] = 0;
 
   itemp = 0;
   for (k = 0; k < n_randomO; k++)
     for (j = 0; j < n_grp; j++)
-      xiO[j][k] = dxiO[itemp++];
+      xiO[j][k] = 0;
 
   itemp = 0;
   for (k = 0; k < n_randomR; k++)
     for (j = 0; j < n_grp; j++)
-      xiR[j][k] = dxiR[itemp++];
+      xiR[j][k] = 0;
 
   /** pack random effects covariates **/
   itemp = 0;
@@ -402,6 +405,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 
   /*** Gibbs Sampler! ***/
   itempA = 0; itempC = 0; itempO = 0; itempQ = 0; itempR = 0;   
+  itempAv = 0; itempCv = 0; itempOv = 0; itempRv = 0;   
   for (j = 0; j < n_fixedC*2; j++)
     accept[j] = 0;
   for (main_loop = 1; main_loop <= *n_gen; main_loop++){
@@ -717,18 +721,34 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	if (*param == 1) {
 	  for (j = 0; j < n_fixedC; j++)
 	    coefC[itempC++] = betaC[j];
-	  if (*AT == 1)
+	  /* for (j = 0; j < n_randomC; j++)
+	     for (k = j; k < n_randomC; k++)
+	     sPsiC[itempCv++] = PsiC[j][k]; */
+	  if (*AT == 1) {
 	    if (*logitC == 1)
 	      for (j = 0; j < n_fixedC; j++)
 		coefA[itempA++] = betaC[j+n_fixedC];
 	    else
 	      for (j = 0; j < n_fixedC; j++)
 		coefA[itempA++] = betaA[j];
+	    /* for (j = 0; j < n_randomC; j++)
+	      for (k = j; k < n_randomC; k++)
+	      sPsiA[itempAv++] = PsiA[j][k]; */
+	  }
+
 	  for (j = 0; j < n_fixedO; j++)
 	    coefO[itempO++] = gamma[j];
-	  if (n_miss > 0) 
+	  /* for (j = 0; j < n_randomO; j++)
+	    for (k = j; k < n_randomO; k++)
+	    sPsiO[itempOv++] = PsiO[j][k]; */
+	  
+	  if (n_miss > 0) { 
 	    for (j = 0; j < n_fixedR; j++)
 	      coefR[itempR++] = delta[j];
+	    /* for (j = 0; j < n_randomR; j++)
+	       for (k = j; k < n_randomR; k++)
+	       sPsiR[itempRv++] = PsiR[j][k]; */
+	  }
 	}
 	keep = 1;
       }

@@ -265,14 +265,6 @@ Noncomp.bprobitMixed <- function(formulae, Z, D, grp, data = parent.frame(),
     stop("Incorrect input for Psi.start.r")
   }
   
-  ## starting values for random effects
-  xiC <- mvrnorm(ngrp, mu = rep(0, nrandomC),
-                 Sigma = solve(Psi.start.c)) 
-  xiO <- mvrnorm(ngrp, mu = rep(0, nrandomO),
-                 Sigma = solve(Psi.start.r)) 
-  xiR <- mvrnorm(ngrp, mu = rep(0, nrandomR),
-                 Sigma = solve(Psi.start.r)) 
-
   ## prior scale matrix for Psi's
   if(is.matrix(p.scale.c)) {
     if (dim(p.scale.c) != rep(nrandomC*2, 2))
@@ -346,21 +338,16 @@ Noncomp.bprobitMixed <- function(formulae, Z, D, grp, data = parent.frame(),
             as.integer(in.sample), as.double(Xc), as.double(Wc),
             as.double(Xo), as.double(Wo), as.double(Xr),
             as.double(Wr), as.double(coef.start.c),
-            as.double(coef.start.c), as.double(xiC),
-            as.double(xiA), as.double(xiO), as.double(xiR),
-            as.double(coef.start.o), as.double(coef.start.r),
+            as.double(coef.start.c), as.double(coef.start.o), as.double(coef.start.r),
             as.integer(N), as.integer(n.draws), as.integer(ngrp),
             as.integer(table(grp)), as.integer(max(table(grp))),
             as.integer(nfixedC), as.integer(nfixedO), as.integer(nfixedR),
             as.integer(nrandomC), as.integer(nrandomO), as.integer(nrandomR),
             as.double(Psi.start.c), as.double(Psi.start.c),
             as.double(Psi.start.o), as.double(Psi.start.r),
-            as.double(p.mean.c), as.double(p.mean.o),
-            as.double(p.mean.r),
-            as.double(p.prec.c), as.double(p.prec.o),
-            as.double(p.prec.r),
-            as.integer(p.df.c), as.integer(p.df.c),
-            as.integer(p.df.o), as.integer(p.df.r),
+            as.double(p.mean.c), as.double(p.mean.o), as.double(p.mean.r),
+            as.double(p.prec.c), as.double(p.prec.o), as.double(p.prec.r),
+            as.integer(p.df.c), as.integer(p.df.c), as.integer(p.df.o), as.integer(p.df.r),
             as.double(p.scale.c), as.double(p.scale.c),
             as.double(p.scale.o), as.double(p.scale.r),
             as.double(tune.c), as.integer(logit.c),
@@ -370,20 +357,28 @@ Noncomp.bprobitMixed <- function(formulae, Z, D, grp, data = parent.frame(),
             coefA = double(nfixedC*(ceiling((n.draws-burnin)/keep))),
             coefO = double(nfixedO*(ceiling((n.draws-burnin)/keep))),
             coefR = double(nfixedR*(ceiling((n.draws-burnin)/keep))),
+            sPsiC = double(nrandomC*(nrandomC+1)*(ceiling((n.draws-burnin)/keep))/2),
+            sPsiA = double(nrandomC*(nrandomC+1)*(ceiling((n.draws-burnin)/keep))/2),
+            sPsiO = double(nrandomO*(nrandomO+1)*(ceiling((n.draws-burnin)/keep))/2),
+            sPsiR = double(nrandomR*(nrandomR+1)*(ceiling((n.draws-burnin)/keep))/2),
             QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
             PACKAGE = "are")
 
   if (param) {
     res$coefC <- matrix(out$coefC, byrow = TRUE, ncol = nfixedC)
     colnames(res$coefC) <- colnames(Xc)
+    res$PsiC <- matrix(out$sPsiC, byrow = TRUE, ncol = nrandomC*(nrandomC+1)/2)
     if (AT) {
       res$coefA <- matrix(out$coefA, byrow = TRUE, ncol = nfixedC)
       colnames(res$coefA) <- colnames(Xc)
+      res$PsiA <- matrix(out$sPsiA, byrow = TRUE, ncol = nrandomC*(nrandomC+1)/2)
     }
     res$coefO <- matrix(out$coefO, byrow = TRUE, ncol = nfixedO)
+    res$PsiO <- matrix(out$sPsiO, byrow = TRUE, ncol = nrandomO*(nrandomO+1)/2)
     colnames(res$coefO) <- colnames(Xo)
     if (Ymiss > 0) {
       res$coefR <- matrix(out$coefR, byrow = TRUE, ncol = nfixedR)
+      res$PsiR <- matrix(out$sPsiR, byrow = TRUE, ncol = nrandomR*(nrandomR+1)/2)
       colnames(res$coefR) <- colnames(Xr)
     }
   }
