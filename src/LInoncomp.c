@@ -354,7 +354,40 @@ void LIbprobit(int *Y,         /* binary outcome variable */
       if (R[i] == 1) itemp++;
     }
 
-    /** Step 3: OUTCOME MODEL **/
+    /** Step 3: COMPLIANCE MODEL **/
+    if (*logitC == 1) 
+      if (*AT == 1) 
+	logitMetro(C, Xc, betaC, n_samp, 2, n_covC, beta0, A0C, Var, 1,
+		   accept); 
+      else 
+	logitMetro(C, Xc, betaC, n_samp, 1, n_covC, beta0, A0C, Var, 1,
+		   accept);  
+    else {
+      /* complier vs. noncomplier */
+      bprobitGibbs(C, Xc, betaC, n_samp, n_covC, 0, beta0, A0C,
+		   *mda, 1);
+      if (*AT == 1) {
+	/* never-taker vs. always-taker */
+	/* subset the data */
+	itemp = 0;
+	for (i = 0; i < n_samp; i++)
+	  if (C[i] == 0) {
+	    Atemp[itemp] = A[i];
+	    for (j = 0; j < n_covC; j++)
+	      Xtemp[itemp][j] = Xc[i][j];
+	    itemp++;
+	  }
+	for (i = n_samp; i < n_samp + n_covC; i++) {
+	  for (j = 0; j <= n_covC; j++)
+	    Xtemp[itemp][j] = Xc[i][j];
+	  itemp++;
+	}
+	bprobitGibbs(Atemp, Xtemp, betaA, itemp-n_covC, n_covC, 0,
+		     beta0, A0C, *mda, 1); 
+      }      
+    }
+    
+    /** Step 4: OUTCOME MODEL **/
     bprobitGibbs(Yobs, Xobs, gamma, n_obs, n_covO, 0, gamma0, A0O, *mda, 1);
 
     /** Compute probabilities of Y = 1 **/
@@ -388,39 +421,6 @@ void LIbprobit(int *Y,         /* binary outcome variable */
 	      (1-Y[i])*pnorm(meano[i], 0, 1, 0, 0);
 	  }
       } 
-    }
-    
-    /** Step 4: COMPLIANCE MODEL **/
-    if (*logitC == 1) 
-      if (*AT == 1) 
-	logitMetro(C, Xc, betaC, n_samp, 2, n_covC, beta0, A0C, Var, 1,
-		   accept); 
-      else 
-	logitMetro(C, Xc, betaC, n_samp, 1, n_covC, beta0, A0C, Var, 1,
-		   accept);  
-    else {
-      /* complier vs. noncomplier */
-      bprobitGibbs(C, Xc, betaC, n_samp, n_covC, 0, beta0, A0C,
-		   *mda, 1);
-      if (*AT == 1) {
-	/* never-taker vs. always-taker */
-	/* subset the data */
-	itemp = 0;
-	for (i = 0; i < n_samp; i++)
-	  if (C[i] == 0) {
-	    Atemp[itemp] = A[i];
-	    for (j = 0; j < n_covC; j++)
-	      Xtemp[itemp][j] = Xc[i][j];
-	    itemp++;
-	  }
-	for (i = n_samp; i < n_samp + n_covC; i++) {
-	  for (j = 0; j <= n_covC; j++)
-	    Xtemp[itemp][j] = Xc[i][j];
-	  itemp++;
-	}
-	bprobitGibbs(Atemp, Xtemp, betaA, itemp-n_covC, n_covC, 0,
-		     beta0, A0C, *mda, 1); 
-      }      
     }
     
     /** storing the results **/

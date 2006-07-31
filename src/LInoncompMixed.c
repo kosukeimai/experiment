@@ -560,7 +560,50 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
       vitemp[grp[i]]++;
     }
 
-    /** Step 3: OUTCOME MODEL **/
+    /** Step 3: COMPLIANCE MODEL **/
+    if (*logitC == 1) 
+      if (*AT == 1) 
+	logitMetro(C, Xc, betaC, n_samp, 2, n_fixedC, beta0, A0C, Var, 1,
+		   accept); 
+      else 
+	logitMetro(C, Xc, betaC, n_samp, 1, n_fixedC, beta0, A0C, Var, 1,
+		   accept);  
+    else {
+      /* complier vs. noncomplier */
+      bprobitMixedGibbs(C, Xc, Zc, grp, betaC, xiC, PsiC, n_samp,
+			n_fixedC, n_randomC, n_grp, n_samp_grp, 0, 
+			beta0, A0C, *tau0C, T0C, *mda, 1);
+      if (*AT == 1) {
+	/* never-taker vs. always-taker */
+	/* subset the data */
+	itemp = 0;
+	for (j = 0; j < n_grp; j++) {
+	  vitemp[j] = 0; vitemp1[j] = 0;
+	}
+	for (i = 0; i < n_samp; i++) {
+	  if (C[i] == 0) {
+	    Atemp[itemp] = A[i]; grp_temp[itemp] = grp[i];
+	    for (j = 0; j < n_fixedC; j++)
+	      Xtemp[itemp][j] = Xc[i][j];
+	    for (j = 0; j < n_randomC; j++)
+	      Ztemp[grp[i]][vitemp1[grp[i]]][j] = Zc[grp[i]][vitemp[grp[i]]][j];
+	    itemp++; vitemp1[grp[i]]++;
+	  }
+	  vitemp[grp[i]]++;
+	}
+	for (i = n_samp; i < n_samp + n_fixedC; i++) {
+	  for (j = 0; j <= n_fixedC; j++)
+	    Xtemp[itemp][j] = Xc[i][j];
+	  itemp++;
+	}
+	bprobitMixedGibbs(Atemp, Xtemp, Ztemp, grp_temp, betaA, xiA,
+			  PsiA, itemp-n_fixedC, n_fixedC, n_randomC,
+			  n_grp, vitemp1, 0, beta0, A0C, *tau0A, T0A, 
+			  *mda, 1); 
+      }      
+    }    
+
+    /** Step 4: OUTCOME MODEL **/
     bprobitMixedGibbs(Yobs, Xobs, Zobs, grp_obs, gamma, xiO, PsiO,
 		      n_obs, n_fixedO, n_randomO, n_grp, vitemp1, 0,
 		      gamma0, A0O, *tau0O, T0O, *mda, 1); 
@@ -602,49 +645,6 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	      (1-Y[i])*pnorm(meano[i], 0, 1, 0, 0);
 	  }
       } 
-    }
-    
-    /** Step 4: COMPLIANCE MODEL **/
-    if (*logitC == 1) 
-      if (*AT == 1) 
-	logitMetro(C, Xc, betaC, n_samp, 2, n_fixedC, beta0, A0C, Var, 1,
-		   accept); 
-      else 
-	logitMetro(C, Xc, betaC, n_samp, 1, n_fixedC, beta0, A0C, Var, 1,
-		   accept);  
-    else {
-      /* complier vs. noncomplier */
-      bprobitMixedGibbs(C, Xc, Zc, grp, betaC, xiC, PsiC, n_samp,
-			n_fixedC, n_randomC, n_grp, n_samp_grp, 0, 
-			beta0, A0C, *tau0C, T0C, *mda, 1);
-      if (*AT == 1) {
-	/* never-taker vs. always-taker */
-	/* subset the data */
-	itemp = 0;
-	for (j = 0; j < n_grp; j++) {
-	  vitemp[j] = 0; vitemp1[j] = 0;
-	}
-	for (i = 0; i < n_samp; i++) {
-	  if (C[i] == 0) {
-	    Atemp[itemp] = A[i]; grp_temp[itemp] = grp[i];
-	    for (j = 0; j < n_fixedC; j++)
-	      Xtemp[itemp][j] = Xc[i][j];
-	    for (j = 0; j < n_randomC; j++)
-	      Ztemp[grp[i]][vitemp1[grp[i]]][j] = Zc[grp[i]][vitemp[grp[i]]][j];
-	    itemp++; vitemp1[grp[i]]++;
-	  }
-	  vitemp[grp[i]]++;
-	}
-	for (i = n_samp; i < n_samp + n_fixedC; i++) {
-	  for (j = 0; j <= n_fixedC; j++)
-	    Xtemp[itemp][j] = Xc[i][j];
-	  itemp++;
-	}
-	bprobitMixedGibbs(Atemp, Xtemp, Ztemp, grp_temp, betaA, xiA,
-			  PsiA, itemp-n_fixedC, n_fixedC, n_randomC,
-			  n_grp, vitemp1, 0, beta0, A0C, *tau0A, T0A, 
-			  *mda, 1); 
-      }      
     }
     
     /** storing the results **/
