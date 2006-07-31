@@ -411,7 +411,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
       bprobitMixedGibbs(R, Xr, Zr, grp, delta, xiR, PsiR, n_samp, 
 			n_fixedR, n_randomR, n_grp, n_samp_grp, 0, 
 			delta0, A0R, *tau0R, T0R, *mda, 1);
-
+ 
       /* Compute probabilities of R = Robs */ 
       for (j = 0; j < n_grp; j++) vitemp[j] = 0;
       for (i = 0; i < n_samp; i++) {
@@ -560,7 +560,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
     bprobitMixedGibbs(Yobs, Xobs, Zobs, grp_obs, gamma, xiO, PsiO,
 		      n_obs, n_fixedO, n_randomO, n_grp, vitemp1, 0,
 		      gamma0, A0O, *tau0O, T0O, *mda, 1); 
-
+    
     /** Compute probabilities of Y = 1 **/
     for (j = 0; j < n_grp; j++)
       vitemp[j] = 0;

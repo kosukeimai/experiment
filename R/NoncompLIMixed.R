@@ -8,7 +8,7 @@ Noncomp.bprobitMixed <- function(formulae, Z, D, grp, data = parent.frame(),
                                  coef.start.c = 0, coef.start.o = 0,
                                  coef.start.r = 0, Psi.start.c = 1,
                                  Psi.start.o = 1, Psi.start.r = 1,
-                                 p.df.c = 1, p.df.o = 1, p.df.r = 1,
+                                 p.df.c = 10, p.df.o = 10, p.df.r = 10,
                                  p.scale.c = 1, p.scale.o = 1,
                                  p.scale.r = 1,
                                  burnin = 0, thin = 0, verbose = TRUE) {  
@@ -272,6 +272,47 @@ Noncomp.bprobitMixed <- function(formulae, Z, D, grp, data = parent.frame(),
                  Sigma = solve(Psi.start.r)) 
   xiR <- mvrnorm(ngrp, mu = rep(0, nrandomR),
                  Sigma = solve(Psi.start.r)) 
+
+  ## prior scale matrix for Psi's
+  if(is.matrix(p.scale.c)) {
+    if (dim(p.scale.c) != rep(nrandomC*2, 2))
+        stop(paste("the dimension of p.scale.c should be",
+                   rep(nrandomC*2, 2)))    
+  } else if (length(p.scale.c) == 1){
+    if (logit.c & AT)
+      p.scale.c <- diag(p.scale.c, nrandomC*2)
+    else
+      p.scale.c <- diag(p.scale.c, nrandomC)
+  } else {
+    stop("Incorrect input for p.scale.c")
+  }
+
+  if(is.matrix(p.scale.o)) {
+    if (dim(p.scale.o) != rep(nrandomO*2, 2))
+        stop(paste("the dimension of p.scale.o should be",
+                   rep(nrandomO*2, 2)))    
+  } else if (length(p.scale.o) == 1){
+    if (logit.c & AT)
+      p.scale.o <- diag(p.scale.o, nrandomO*2)
+    else
+      p.scale.o <- diag(p.scale.o, nrandomO)
+  } else {
+    stop("Incorrect input for p.scale.o")
+  }
+
+  if(is.matrix(p.scale.r)) {
+    if (dim(p.scale.r) != rep(nrandomR*2, 2))
+        stop(paste("the dimension of p.scale.r should be",
+                   rep(nrandomR*2, 2)))    
+  } else if (length(p.scale.r) == 1){
+    if (logit.c & AT)
+      p.scale.r <- diag(p.scale.r, nrandomR*2)
+    else
+      p.scale.r <- diag(p.scale.r, nrandomR)
+  } else {
+    stop("Incorrect input for p.scale.r")
+  }
+  
   
   ## proposal variance for logits
   if (AT) {

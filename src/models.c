@@ -360,7 +360,6 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
       X[i][n_fixed] = W[i]-dtemp1;
       vitemp[grp[i]]++;
     }
-
     /** STEP 2: Sample Fixed Effects Given Random Effects **/
     bNormalReg(X, beta, vdtemp, n_samp, n_fixed, 0, 1, beta0, A0, 0, 1,
 	       1, 1);
