@@ -81,7 +81,7 @@ Noncomp.bprobitMixed <- function(formulae, Z, D, grp, data = parent.frame(),
     C[Z == 1 & D == 1] <- 1 # compliers
   }
   res <- list(call = call, Y = Y, R = R, Xo = Xo, Xc = Xc, Xr = Xr,
-              Zo = Zo, Zc = Zc, Zr = Zr, A = A, C = C, D = D, Z = Z,
+              Zo = Wo, Zc = Wc, Zr = Wr, A = A, C = C, D = D, Z = Z,
               grp = grp, n.draws = n.draws)
   
   ## Random starting values for missing compliance status
