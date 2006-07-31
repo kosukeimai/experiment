@@ -543,7 +543,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	  }
 	  else {
 	    C[i] = 0; Xr[i][1] = 0;
-	    Zr[grp[i]][vitemp[grp[i]]][0] = 0;
+	    Zr[grp[i]][vitemp[grp[i]]][1] = 0;
 	    if (R[i] == 1) {
 	      Xobs[itemp][1] = 0; Zobs[grp[i]][vitemp1[grp[i]]][1] = 0;
 	    } 
