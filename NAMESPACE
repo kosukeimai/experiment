@@ -1,5 +1,6 @@
 useDynLib(are)
 
-export(Noncomp.mom, Noncomp.bprobit, NIbprobit,
-       bNormalReg, bprobitMixed, bNormalMixed)
+importFrom(MASS, mvrnorm)
+export(Noncomp.mom, Noncomp.bprobit, Noncomp.bprobitMixed, 
+       NIbprobit, bNormalReg, bprobitMixed, bNormalMixed)
 
