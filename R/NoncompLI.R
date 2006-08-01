@@ -1,22 +1,38 @@
-Noncomp.binary <- function(formulae, Z, D, data = parent.frame(),
-                           n.draws = 5000, param = TRUE,
-                           in.sample = FALSE, model.c = "probit", 
-                           model.o = "probit", model.r = "probit", 
-                           tune.c = 1, tune.o = 1, tune.r = 1,
-                           p.mean.c = 0, p.var.c = 1000, p.mean.o = 0,
-                           p.var.o = 1000, p.mean.r = 0, p.var.r = 1000,
-                           mda = TRUE, coef.start.c = 0,
-                           coef.start.o = 0, coef.start.r = 0, burnin = 0,
-                           thin = 0, verbose = TRUE) {  
+Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
+                          n.draws = 5000, param = TRUE,
+                          in.sample = FALSE, model.c = "probit", 
+                          model.o = "probit", model.r = "probit", 
+                          tune.c = 1, tune.o = 1, tune.r = 1,
+                          p.mean.c = 0, p.prec.c = 1000, p.mean.o = 0,
+                          p.prec.o = 0.001, p.mean.r = 0, p.prec.r = 0.001,
+                          p.df.o = 10, p.scale.o = 1,
+                          mda.probit = TRUE, coef.start.c = 0,
+                          coef.start.o = 0, coef.start.r = 0,
+                          var.start.o = 1,
+                          burnin = 0, thin = 0, verbose = TRUE) {  
 
   ## getting the data
   call <- match.call()
+
+  ## model types
+  if (!(model.c %in% c("logit", "probit"))) 
+    stop("no such model is supported for the compliance model.")
+  
+  if (!(model.o %in% c("logit", "probit", "gaussian"))) 
+    stop("no such model is supported for the outcome model.")
+  
+  if (!(model.r %in% c("logit", "probit"))) 
+    stop("no such model is supported for the response model.")    
+
   ## outcome model
   mf <- model.frame(formulae[[1]], data=data, na.action='na.pass')
   Xo <- model.matrix(formulae[[1]], data=mf)
   if (sum(is.na(Xo)) > 0)
     stop("missing values not allowed in covariates")
-  Y <- as.integer(model.response(mf))
+  if (model.o == "gaussian")
+    Y <- model.response(mf)
+  else
+    Y <- as.integer(model.response(mf))
   ## compliance model
   mf <- model.frame(formulae[[2]], data=data, na.action='na.fail')
   Xc <- model.matrix(formulae[[2]], data=mf)
@@ -31,25 +47,16 @@ Noncomp.binary <- function(formulae, Z, D, data = parent.frame(),
     stop("missing values not allowed in the encouragement variable")
   if (sum(is.na(D)) > 0)
     stop("missing values not allowed in the treatment variable")
-  if (model.c == "logit") 
-    logit.c <- TRUE
-  else
-    logit.c <- FALSE
-  if (model.o == "logit") 
-    logit.o <- TRUE
-  else
-    logit.o <- FALSE
-  if (model.r == "logit") 
-    logit.r <- TRUE
-  else
-    logit.r <- FALSE
-  
+
   ## Random starting values for missing Y using Bernoulli(0.5)
   R <- (!is.na(Y))*1
   NR <- is.na(Y)
   Ymiss <- sum(NR)
-  if (Ymiss > 0) 
-    Y[NR] <- (runif(Ymiss) > 0.5)*1
+  if (Ymiss > 0)
+    if (model.o == "gaussian")
+      Y[NR] <- rnorm(Ymiss)
+    else
+      Y[NR] <- (runif(Ymiss) > 0.5)*1
   
   ## Compliance status: 0 = noncomplier, 1 = complier
   C <- rep(NA, N)
@@ -59,7 +66,7 @@ Noncomp.binary <- function(formulae, Z, D, data = parent.frame(),
   if (sum(Z == 0 & D == 1)>0) { # some always-takers
     AT <- TRUE
     A <- rep(NA, N)
-    if (logit.c)
+    if (model.c == "logit")
       C[Z == 0 & D == 1] <- 2 # always-takers
     else
       C[Z == 0 & D == 1] <- 0 # always-takers
@@ -75,7 +82,7 @@ Noncomp.binary <- function(formulae, Z, D, data = parent.frame(),
   
   ## Random starting values for missing compliance status
   if (AT) {
-    if (logit.c)
+    if (model.c == "logit")
       C[is.na(C) & Z == 1] <- 1 + (runif(sum(is.na(C) & Z == 1)) > 0.5)*1
     else
       C[is.na(C) & Z == 1] <- (runif(sum(is.na(C) & Z == 1)) > 0.5)*1
@@ -129,7 +136,7 @@ Noncomp.binary <- function(formulae, Z, D, data = parent.frame(),
     nqoi <- 7
   
   ## checking starting values and prior
-  if (logit.c & AT) {
+  if (model.c == "logit" & AT) {
     if(length(p.mean.c) != ncovC*2)
       if (length(p.mean.c) == 1)
         p.mean.c <- rep(p.mean.c, ncovC*2)
@@ -175,41 +182,41 @@ Noncomp.binary <- function(formulae, Z, D, data = parent.frame(),
     else
       stop(paste("the length of p.mean.r should be", ncovR))    
 
-  if(is.matrix(p.var.c)) {
-    if (dim(p.var.c) != rep(ncovC*2, 2))
-        stop(paste("the dimension of p.var.c should be",
+  if(is.matrix(p.prec.c)) {
+    if (dim(p.prec.c) != rep(ncovC*2, 2))
+        stop(paste("the dimension of p.prec.c should be",
                    rep(ncovC*2, 2)))    
-  } else if (length(p.var.c) == 1){
-    if (logit.c & AT)
-      p.var.c <- diag(p.var.c, ncovC*2)
+  } else if (length(p.prec.c) == 1){
+    if (model.c == "logit" & AT)
+      p.prec.c <- diag(p.prec.c, ncovC*2)
     else
-      p.var.c <- diag(p.var.c, ncovC)
+      p.prec.c <- diag(p.prec.c, ncovC)
   } else {
-    stop("Incorrect input for p.var.c")
+    stop("Incorrect input for p.prec.c")
   }
 
-  if(is.matrix(p.var.o)) {
-    if (dim(p.var.o) != rep(ncovO, 2))
-      stop(paste("the dimension of p.var.o should be",
+  if(is.matrix(p.prec.o)) {
+    if (dim(p.prec.o) != rep(ncovO, 2))
+      stop(paste("the dimension of p.prec.o should be",
                  rep(ncovO, 2)))    
-  } else if (length(p.var.o) == 1){
-    p.var.o <- diag(p.var.o, ncovO)
+  } else if (length(p.prec.o) == 1){
+    p.prec.o <- diag(p.prec.o, ncovO)
   } else {
-    stop("Incorrect input for p.var.o")
+    stop("Incorrect input for p.prec.o")
   }
 
-  if(is.matrix(p.var.r)) {
-    if (dim(p.var.r) != rep(ncovR, 2))
-      stop(paste("the dimension of p.var.r should be",
+  if(is.matrix(p.prec.r)) {
+    if (dim(p.prec.r) != rep(ncovR, 2))
+      stop(paste("the dimension of p.prec.r should be",
                  rep(ncovR, 2)))    
-  } else if (length(p.var.r) == 1){
-    p.var.r <- diag(p.var.r, ncovR)
+  } else if (length(p.prec.r) == 1){
+    p.prec.r <- diag(p.prec.r, ncovR)
   } else {
-    stop("Incorrect input for p.var.r")
+    stop("Incorrect input for p.prec.r")
   }
   
   ## proposal variance for logits
-  if (logit.c)
+  if (model.c == "logit")
     if (AT) {
       if (length(tune.c) != ncovC*2)
         if (length(tune.c) == 1)
@@ -223,13 +230,13 @@ Noncomp.binary <- function(formulae, Z, D, data = parent.frame(),
         else
           stop(paste("the length of tune.c should be", ncovC))
     }
-  if (logit.o)
+  if (model.o == "logit")
     if (length(tune.o) != ncovO)
       if (length(tune.o) == 1)
         tune.o <- rep(tune.o, ncovO)
       else
         stop(paste("the length of tune.o should be", ncovO))
-  if (logit.r)
+  if (model.r == "logit")
     if (length(tune.r) != ncovR)
       if (length(tune.r) == 1)
         tune.r <- rep(tune.r, ncovR)
@@ -246,29 +253,61 @@ Noncomp.binary <- function(formulae, Z, D, data = parent.frame(),
   keep <- thin + 1
 
   ## calling C function
-  out <- .C("LIbinary",
-            as.integer(Y), as.integer(R), as.integer(Z),
-            as.integer(D), as.integer(C), as.integer(A),
-            as.integer(Ymiss), as.integer(AT), as.integer(in.sample), 
-            as.double(Xc), as.double(Xo), as.double(Xr),
-            as.double(coef.start.c), as.double(coef.start.c),
-            as.double(coef.start.o), as.double(coef.start.r),
-            as.integer(N), as.integer(n.draws),
-            as.integer(ncovC), as.integer(ncovO), as.integer(ncovR),
-            as.double(p.mean.c), as.double(p.mean.o),
-            as.double(p.mean.r),
-            as.double(solve(p.var.c)), as.double(solve(p.var.o)),
-            as.double(solve(p.var.r)),
-            as.double(tune.c), as.double(tune.o), as.double(tune.r),
-            as.integer(logit.c), as.integer(logit.o), as.integer(logit.r),
-            as.integer(param), as.integer(mda), as.integer(burnin),
-            as.integer(keep), as.integer(verbose),
-            coefC = double(ncovC*(ceiling((n.draws-burnin)/keep))),
-            coefA = double(ncovC*(ceiling((n.draws-burnin)/keep))),
-            coefO = double(ncovO*(ceiling((n.draws-burnin)/keep))),
-            coefR = double(ncovR*(ceiling((n.draws-burnin)/keep))),
-            QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
-            PACKAGE = "are")
+  if (model.o == "probit" | model.o == "logit")
+    out <- .C("LIbinary",
+              as.integer(Y), as.integer(R), as.integer(Z),
+              as.integer(D), as.integer(C), as.integer(A),
+              as.integer(Ymiss), as.integer(AT), as.integer(in.sample), 
+              as.double(Xc), as.double(Xo), as.double(Xr),
+              as.double(coef.start.c), as.double(coef.start.c),
+              as.double(coef.start.o), as.double(coef.start.r),
+              as.integer(N), as.integer(n.draws),
+              as.integer(ncovC), as.integer(ncovO), as.integer(ncovR),
+              as.double(p.mean.c), as.double(p.mean.o),
+              as.double(p.mean.r),
+              as.double(p.prec.c), as.double(p.prec.o),
+              as.double(p.prec.r),
+              as.double(tune.c), as.double(tune.o), as.double(tune.r),
+              as.integer(model.c == "logit"),
+              as.integer(model.o == "logit"),
+              as.integer(model.r == "logit"),
+              as.integer(param), as.integer(mda.probit), as.integer(burnin),
+              as.integer(keep), as.integer(verbose),
+              coefC = double(ncovC*(ceiling((n.draws-burnin)/keep))),
+              coefA = double(ncovC*(ceiling((n.draws-burnin)/keep))),
+              coefO = double(ncovO*(ceiling((n.draws-burnin)/keep))),
+              coefR = double(ncovR*(ceiling((n.draws-burnin)/keep))),
+              QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
+              PACKAGE = "are")
+  
+  if (model.o == "gaussian")
+    out <- .C("LIgaussian",
+              as.double(Y), as.integer(R), as.integer(Z),
+              as.integer(D), as.integer(C), as.integer(A),
+              as.integer(Ymiss), as.integer(AT), as.integer(in.sample), 
+              as.double(Xc), as.double(Xo), as.double(Xr),
+              as.double(coef.start.c), as.double(coef.start.c),
+              as.double(coef.start.o), as.double(var.start.o),
+              as.double(coef.start.r),
+              as.integer(N), as.integer(n.draws),
+              as.integer(ncovC), as.integer(ncovO), as.integer(ncovR),
+              as.double(p.mean.c), as.double(p.mean.o),
+              as.double(p.mean.r), 
+              as.double(p.prec.c), as.double(p.prec.o),
+              as.double(p.prec.r), as.integer(p.df.o),
+              as.double(p.scale.o),
+              as.double(tune.c), as.double(tune.r),
+              as.integer(model.c == "logit"),
+              as.integer(model.r == "logit"),
+              as.integer(param), as.integer(mda.probit), as.integer(burnin),
+              as.integer(keep), as.integer(verbose),
+              coefC = double(ncovC*(ceiling((n.draws-burnin)/keep))),
+              coefA = double(ncovC*(ceiling((n.draws-burnin)/keep))),
+              coefO = double(ncovO*(ceiling((n.draws-burnin)/keep))),
+              coefR = double(ncovR*(ceiling((n.draws-burnin)/keep))),
+              var = double(ceiling((n.draws-burnin)/keep)),
+              QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
+              PACKAGE = "are")
 
   if (param) {
     res$coefC <- matrix(out$coefC, byrow = TRUE, ncol = ncovC)
@@ -283,6 +322,8 @@ Noncomp.binary <- function(formulae, Z, D, data = parent.frame(),
       res$coefR <- matrix(out$coefR, byrow = TRUE, ncol = ncovR)
       colnames(res$coefR) <- colnames(Xr)
     }
+    if (model.o == "gaussian")
+      res$sig2 <- out$var
   }
   QoI <- matrix(out$QoI, byrow = TRUE, ncol = nqoi)
   res$ITT <- QoI[,1]
