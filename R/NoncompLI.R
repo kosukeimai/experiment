@@ -1,7 +1,8 @@
 Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
                             n.draws = 5000, param = TRUE,
                             in.sample = FALSE, model.c = "probit", 
-                            tune.c = 1, 
+                            model.o = "probit", model.r = "probit", 
+                            tune.c = 1, tune.o = 1, tune.r = 1,
                             p.mean.c = 0, p.var.c = 1000, p.mean.o = 0,
                             p.var.o = 1000, p.mean.r = 0, p.var.r = 1000,
                             mda = TRUE, coef.start.c = 0,
@@ -34,6 +35,14 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
     logit.c <- TRUE
   else
     logit.c <- FALSE
+  if (model.o == "logit") 
+    logit.o <- TRUE
+  else
+    logit.o <- FALSE
+  if (model.r == "logit") 
+    logit.r <- TRUE
+  else
+    logit.r <- FALSE
   
   ## Random starting values for missing Y using Bernoulli(0.5)
   R <- (!is.na(Y))*1
@@ -200,19 +209,32 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
   }
   
   ## proposal variance for logits
-  if (AT) {
-    if (length(tune.c) != ncovC*2)
-      if (length(tune.c) == 1)
-        tune.c <- rep(tune.c, ncovC*2)
+  if (logit.c)
+    if (AT) {
+      if (length(tune.c) != ncovC*2)
+        if (length(tune.c) == 1)
+          tune.c <- rep(tune.c, ncovC*2)
+        else
+          stop(paste("the length of tune.c should be", ncovC*2))
+    } else {
+      if (length(tune.c) != ncovC)
+        if (length(tune.c) == 1)
+          tune.c <- rep(tune.c, ncovC)
+        else
+          stop(paste("the length of tune.c should be", ncovC))
+    }
+  if (logit.o)
+    if (length(tune.o) != ncovO)
+      if (length(tune.o) == 1)
+        tune.o <- rep(tune.o, ncovO)
       else
-        stop(paste("the length of tune.c should be", ncovC*2))
-  } else {
-    if (length(tune.c) != ncovC)
-      if (length(tune.c) == 1)
-        tune.c <- rep(tune.c, ncovC)
+        stop(paste("the length of tune.o should be", ncovO))
+  if (logit.r)
+    if (length(tune.r) != ncovR)
+      if (length(tune.r) == 1)
+        tune.r <- rep(tune.r, ncovR)
       else
-        stop(paste("the length of tune.c should be", ncovC))
-  }
+        stop(paste("the length of tune.r should be", ncovR))
   
   ## checking thinnig and burnin intervals
   if (n.draws <= 0)
@@ -237,7 +259,8 @@ Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
             as.double(p.mean.r),
             as.double(solve(p.var.c)), as.double(solve(p.var.o)),
             as.double(solve(p.var.r)),
-            as.double(tune.c), as.integer(logit.c),
+            as.double(tune.c), as.double(tune.o), as.double(tune.r),
+            as.integer(logit.c), as.integer(logit.o), as.integer(logit.r),
             as.integer(param), as.integer(mda), as.integer(burnin),
             as.integer(keep), as.integer(verbose),
             coefC = double(ncovC*(ceiling((n.draws-burnin)/keep))),

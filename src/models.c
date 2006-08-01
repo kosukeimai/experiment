@@ -538,5 +538,3 @@ void bNormalMixedGibbs(double *Y,       /* outcome variable */
   FreeMatrix(mtemp1, n_random);
 }
 
-
-
