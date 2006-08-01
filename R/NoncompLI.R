@@ -1,13 +1,13 @@
-Noncomp.bprobit <- function(formulae, Z, D, data = parent.frame(),
-                            n.draws = 5000, param = TRUE,
-                            in.sample = FALSE, model.c = "probit", 
-                            model.o = "probit", model.r = "probit", 
-                            tune.c = 1, tune.o = 1, tune.r = 1,
-                            p.mean.c = 0, p.var.c = 1000, p.mean.o = 0,
-                            p.var.o = 1000, p.mean.r = 0, p.var.r = 1000,
-                            mda = TRUE, coef.start.c = 0,
-                            coef.start.o = 0, coef.start.r = 0, burnin = 0,
-                            thin = 0, verbose = TRUE) {  
+Noncomp.binary <- function(formulae, Z, D, data = parent.frame(),
+                           n.draws = 5000, param = TRUE,
+                           in.sample = FALSE, model.c = "probit", 
+                           model.o = "probit", model.r = "probit", 
+                           tune.c = 1, tune.o = 1, tune.r = 1,
+                           p.mean.c = 0, p.var.c = 1000, p.mean.o = 0,
+                           p.var.o = 1000, p.mean.r = 0, p.var.r = 1000,
+                           mda = TRUE, coef.start.c = 0,
+                           coef.start.o = 0, coef.start.r = 0, burnin = 0,
+                           thin = 0, verbose = TRUE) {  
 
   ## getting the data
   call <- match.call()
