@@ -9,6 +9,63 @@
 #include "rand.h"
 #include "models.h"
 
+void R2logitMetro(int *Y,        /* outcome variable: 0, 1, ..., J-1 */
+		  double *dX,    /* (N x K) covariate matrix */
+		  double *beta,  /* (K(J-1)) stacked coefficient vector */
+		  int *n_samp,   /* # of obs */
+		  int *n_dim,    /* # of categories, J-1 */
+		  int *n_cov,    /* # of covariates, K */
+		  double *beta0, /* (K(J-1)) prior mean vector */
+		  double *dA0,   /* (K(J-1) x K(J-1)) prior precision */
+		  double *Var,   /* K(J-1) proposal variances */
+		  int *n_gen,     /* # of MCMC draws */
+		  int *counter,  /* # of acceptance for each parameter */
+		  double *store  /* Storage for beta */
+		  ) {
+
+  /* storage parameters and loop counters */
+  int i, j, k, itemp, main_loop;  
+  
+  /* matrices */
+  double **X = doubleMatrix(*n_samp, *n_cov+1);
+  double **A0 = doubleMatrix(n_cov[0]*n_dim[0], n_cov[0]*n_dim[0]);
+
+  /* get random seed */
+  GetRNGstate();
+
+  /* packing the data */
+  itemp = 0;
+  for (j = 0; j < *n_cov; j++)
+    for (i = 0; i < *n_samp; i++) 
+      X[i][j] = dX[itemp++];
+
+  /* packing the prior */
+  itemp = 0; 
+  for (k = 0; k < n_cov[0]*n_dim[0]; k++)
+    for (j = 0; j < n_cov[0]*n_dim[0]; j++)
+      A0[j][k] = dA0[itemp++];
+
+  /* Gibbs Sampler! */
+  itemp = 0;
+  for(main_loop = 1; main_loop <= *n_gen; main_loop++) {
+    logitMetro(Y, X, beta, *n_samp, *n_dim, *n_cov, beta0, A0,
+	       Var, 1, counter);
+
+    /* Storing the output */
+    for (j = 0; j < n_dim[0]*n_cov[0]; j++)
+      store[itemp++] = beta[j];
+
+    R_FlushConsole(); 
+    R_CheckUserInterrupt();
+  } /* end of Gibbs sampler */
+
+  PutRNGstate();
+
+  /* freeing memory */
+  FreeMatrix(X, *n_samp);
+  FreeMatrix(A0, *n_cov);
+}
+
 void R2bNormalReg(double *Y,        /* binary outcome variable */
 		  double *dX,       /* model matrix */
 		  double *beta,     /* fixed effects coefficients */

@@ -2,5 +2,5 @@ useDynLib(are)
 
 importFrom(MASS, mvrnorm)
 export(Noncomp.mom, Noncomp.bayes, Noncomp.bprobitMixed, 
-       NIbprobit, bNormalReg, bprobitMixed, bNormalMixed)
+       NIbprobit, bNormalReg, bprobitMixed, bNormalMixed, blogit)
 
