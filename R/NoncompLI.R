@@ -246,7 +246,7 @@ Noncomp.binary <- function(formulae, Z, D, data = parent.frame(),
   keep <- thin + 1
 
   ## calling C function
-  out <- .C("LIbprobit",
+  out <- .C("LIbinary",
             as.integer(Y), as.integer(R), as.integer(Z),
             as.integer(D), as.integer(C), as.integer(A),
             as.integer(Ymiss), as.integer(AT), as.integer(in.sample), 

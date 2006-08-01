@@ -13,65 +13,65 @@
    noncompliance; Latent Ignorability assumption for subsequent
    missing outcomes */
 
-void LIbprobit(int *Y,         /* binary outcome variable */ 
-	       int *R,         /* missingness indicator for Y */
-	       int *Z,         /* treatment assignment */
-	       int *D,         /* treatment status */ 
-	       int *C,         /* compliance status; 
-				  for probit, complier = 1,
-				  noncomplier = 0
-				  for logit, never-taker = 0,
-				  complier = 1, always-taker = 2
-			       */
-	       int *A,         /* always-takers; always-taker = 1, others
-			          = 0 */
-	       int *Ymiss,     /* number of missing obs in Y */
-	       int *AT,        /* Are there always-takers? */
-	       int *Insample,  /* Insample (=1) or population QoI? */
-	       double *dXc,    /* model matrix for compliance model */
-	       double *dXo,    /* model matrix for outcome model */
-	       double *dXr,    /* model matrix for response model */
-	       double *betaC,  /* coefficients for compliance model */
-	       double *betaA,  /* coefficients for always-takers model */
-	       double *gamma,  /* coefficients for outcome model */
-	       double *delta,  /* coefficients for response model */
-	       int *in_samp,   /* # of observations */
-	       int *n_gen,     /* # of Gibbs draws */
-	       int *in_covC,   /* # of covariates for compliance model */ 
-	       int *in_covO,   /* # of covariates for outcome model */
-	       int *in_covR,   /* # of covariates for response model */
-	       double *beta0,  /* prior mean for betaC and betaA */ 
-	       double *gamma0, /* prior mean for gamma */
-	       double *delta0, /* prior mean for delta */
-	       double *dA0C,   /* prior precision for betaC and betaA */ 
-	       double *dA0O,   /* prior precision for gamma */
-	       double *dA0R,   /* prior precision for delta */
-	       double *VarC,    /* proposal variance for compliance
+void LIbinary(int *Y,         /* binary outcome variable */ 
+	      int *R,         /* missingness indicator for Y */
+	      int *Z,         /* treatment assignment */
+	      int *D,         /* treatment status */ 
+	      int *C,         /* compliance status; 
+				 for probit, complier = 1,
+				 noncomplier = 0
+				 for logit, never-taker = 0,
+				 complier = 1, always-taker = 2
+			      */
+	      int *A,         /* always-takers; always-taker = 1, others
+				 = 0 */
+	      int *Ymiss,     /* number of missing obs in Y */
+	      int *AT,        /* Are there always-takers? */
+	      int *Insample,  /* Insample (=1) or population QoI? */
+	      double *dXc,    /* model matrix for compliance model */
+	      double *dXo,    /* model matrix for outcome model */
+	      double *dXr,    /* model matrix for response model */
+	      double *betaC,  /* coefficients for compliance model */
+	      double *betaA,  /* coefficients for always-takers model */
+	      double *gamma,  /* coefficients for outcome model */
+	      double *delta,  /* coefficients for response model */
+	      int *in_samp,   /* # of observations */
+	      int *n_gen,     /* # of Gibbs draws */
+	      int *in_covC,   /* # of covariates for compliance model */ 
+	      int *in_covO,   /* # of covariates for outcome model */
+	      int *in_covR,   /* # of covariates for response model */
+	      double *beta0,  /* prior mean for betaC and betaA */ 
+	      double *gamma0, /* prior mean for gamma */
+	      double *delta0, /* prior mean for delta */
+	      double *dA0C,   /* prior precision for betaC and betaA */ 
+	      double *dA0O,   /* prior precision for gamma */
+	      double *dA0R,   /* prior precision for delta */
+	      double *VarC,    /* proposal variance for compliance
 				  model */
-	       double *VarO,   /* proposal variance for outcome model */
-	       double *VarR,   /* proposal variance for response model */
-	       int *logitC,    /* Use logistic regression for the
-				  compliance model? */
-	       int *logitO,    /* Use logistic regression for the
-				  outcome model? */
-	       int *logitR,    /* Use logistic regression for the
-				  response model? */
-	       int *param,     /* Want to keep paramters? */
-	       int *mda,       /* Want to use marginal data
-				  augmentation for probit regressions? */
-	       int *burnin,   /* number of burnin */
-	       int *iKeep,     /* keep ?th draws */
-	       int *verbose,   /* print out messages */
-	       double *coefC,  /* Storage for coefficients of the
-				  compliance model */
-	       double *coefA,  /* Storage for coefficients of the
-				  always-takers model */
-	       double *coefO,  /* Storage for coefficients of the
-				  outcome model */
-	       double *coefR,  /* Storage for coefficients of the
-				  response model */	      
-	       double *QoI     /* Storage of quantities of interest */
-	       ) {
+	      double *VarO,   /* proposal variance for outcome model */
+	      double *VarR,   /* proposal variance for response model */
+	      int *logitC,    /* Use logistic regression for the
+				 compliance model? */
+	      int *logitO,    /* Use logistic regression for the
+				 outcome model? */
+	      int *logitR,    /* Use logistic regression for the
+				 response model? */
+	      int *param,     /* Want to keep paramters? */
+	      int *mda,       /* Want to use marginal data
+				 augmentation for probit regressions? */
+	      int *burnin,   /* number of burnin */
+	      int *iKeep,     /* keep ?th draws */
+	      int *verbose,   /* print out messages */
+	      double *coefC,  /* Storage for coefficients of the
+				 compliance model */
+	      double *coefA,  /* Storage for coefficients of the
+				 always-takers model */
+	      double *coefO,  /* Storage for coefficients of the
+				 outcome model */
+	      double *coefR,  /* Storage for coefficients of the
+				 response model */	      
+	      double *QoI     /* Storage of quantities of interest */
+	      ) {
   /** counters **/
   int n_samp = *in_samp;
   int n_covC = *in_covC;
@@ -661,5 +661,5 @@ void LIbprobit(int *Y,         /* binary outcome variable */
   FreeMatrix(mtempO, n_covO);
   FreeMatrix(mtempR, n_covR);
 
-} /* end of LIbprobit */
+} /* end of LIbinary */
 
