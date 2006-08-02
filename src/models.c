@@ -705,7 +705,7 @@ void logitMixedMetro(int *Y,        /* outcome variable: 0, 1, ..., J-1 */
 	}
 	/* Rejection */
 	if (unif_rand() < fmin2(1.0, exp(numer-denom))) {
-	  acc_random[j]++;
+	  acc_random[j*n_grp+k]++;
 	  for (l = 0; l < n_random; l++)
 	    gamma[j][k][l] = propb[l];
 	  for (i = 0; i < n_samp; i++) {
