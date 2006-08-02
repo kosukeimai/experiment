@@ -11,9 +11,11 @@
 
 /*** 
    A Random Walk Metroplis Sampler for Binomial and Multinomial
-   Logistic Regression with Independent Normal Prior 
-     Proposal distribution is the multivariate normal whose mean is
-   the current value and variance is given by the input.
+   Logistic Regression with Independent Normal Prior
+   
+   proposal distribution is the univariate normal whose mean is
+   the current value and variance is given by the input. each
+   parameter is updated one by one.
 ***/
 void logitMetro(int *Y,        /* outcome variable: 0, 1, ..., J-1 */
 		double **X,    /* (N x K) covariate matrix */
@@ -554,3 +556,190 @@ void bNormalMixedGibbs(double *Y,       /* outcome variable */
   FreeMatrix(mtemp1, n_random);
 }
 
+/*** 
+   A Random Walk Metroplis Sampler for Binomial and Multinomial
+   Logistic Mixed Effects Regression with Independent Normal Prior and
+   Normal random effects.
+   
+   proposal distribution for fixed effects is the normal whose mean is
+   the current value and variance is given by the input. each
+   parameter is updated one by one.
+
+   proposal distribution for random effects is the multivariate normal
+   whose mean is the current value and variance is given by the
+   current value of covariance matrix multiplied by the input tuning
+   parameter. 
+***/
+void logitMixedMetro(int *Y,        /* outcome variable: 0, 1, ..., J-1 */
+		     double **X,    /* (N x K) covariate matrix for
+				       fixed effects */
+		     double ***Z,     /* covariates for random effects
+					 organized by groups */
+		     int *grp,        /* group indicator, 0, 1, ...,
+					 G-1 */
+		     double *beta,    /* (K(J-1)) stacked coefficient
+					 vector for fixed effects */
+		     double ***gamma, /*(J-1)G L array of random
+					 effects organized by
+					 equations and then by
+					 groups */
+		     double ***Psi,   /* LxL precision matrix for
+					 random effecs for each equation */
+		     int n_samp,      /* # of obs */
+		     int n_dim,       /* # of categories, J-1 */
+		     int n_fixed,     /* # of fixed effects, K */
+		     int n_random,    /* # of random effects, L */
+		     int n_grp,       /* # of groups, G */
+		     double *beta0,   /* (K(J-1)) prior mean vector */
+		     double **A0,     /* (K(J-1) x K(J-1)) prior
+				       precision */
+		     int tau0,        /* prior df for Psi */
+		     double **T0,     /* prior scale for Psi */
+		     double *tune_fixed,   /* K(J-1) proposal variances */
+		     double *tune_random,  /* tuning constant for random
+					      effects of each random effect */
+		     int n_gen,        /* # of MCMC draws */
+		     int *acc_fixed,   /* # of acceptance for fixed effects */
+		     int *acc_random   /* # of acceptance for random effects */
+		     ) {
+  
+  int i, j, k, l, main_loop;
+  int *vitemp = intArray(n_grp);
+  double numer, denom;
+  double *sumall = doubleArray(n_samp); 
+  double *sumall1 = doubleArray(n_samp);
+  double *propb = doubleArray(n_dim*n_fixed);
+  double *propg = doubleArray(n_random);
+  double *gamma0 = doubleArray(n_random);
+  double **Xbeta = doubleMatrix(n_samp, n_dim);
+  double **Xbeta1 = doubleMatrix(n_samp, n_dim);
+  double **Zgamma = doubleMatrix(n_samp, n_dim);
+  double **Zgamma1 = doubleMatrix(n_samp, n_dim);
+  double **mtemp = doubleMatrix(n_random, n_random);
+  double **mtemp1 = doubleMatrix(n_random, n_random);
+
+  for (j = 0; j < n_fixed*n_dim; j++)
+    propb[j] = beta[j];
+  for (j = 0; j < n_random; j++)
+    gamma0[j] = 0;
+  for (j = 0 ; j < n_grp; j++)
+    vitemp[j] = 0;
+  for (i = 0; i < n_samp; i++) {
+    sumall[i] = 1.0; 
+    for (j = 0; j < n_dim; j++) {
+      Xbeta[i][j] = 0; Zgamma[i][j] = 0;
+      for (k = 0; k < n_fixed; k++) 
+	Xbeta[i][j] += X[i][k]*beta[j*n_fixed+k];
+      Xbeta1[i][j] = Xbeta[i][j];
+      for (k = 0; k < n_random; k++)
+	Zgamma[i][j] += Z[j][vitemp[grp[i]]][k]*gamma[j][grp[i]][k];
+      sumall[i] += exp(Xbeta[i][j] + Zgamma[i][j]);
+      Zgamma1[i][j] = Zgamma[i][j];
+    }
+    sumall1[i] = sumall[i];
+    vitemp[grp[i]]++;
+  }
+
+  for (main_loop = 0; main_loop < n_gen; main_loop++) {
+     /** STEP 1: Update Fixed Effects Given Random Effects **/
+    for (j = 0; j < n_dim; j++)
+      for (k = 0; k < n_fixed; k++) {
+	/** Sample from the proposal distribution **/
+	propb[j*n_fixed+k] = beta[j*n_fixed+k] + 
+	  norm_rand()*sqrt(tune_fixed[j*n_fixed+k]);
+	/** Calculating the ratio (log scale) **/
+	/* prior */
+	numer = dMVN(propb, beta0, A0, n_fixed*n_dim, 1);
+	denom = dMVN(beta, beta0, A0, n_fixed*n_dim, 1);   
+	/* likelihood */
+	for (i = 0; i < n_samp; i++) {
+	  Xbeta1[i][j] = Xbeta[i][j] - X[i][k]*(beta[j*n_fixed+k]-propb[j*n_fixed+k]);
+	  if (Y[i] > 0) {
+	    denom += (Xbeta[i][Y[i]-1] + Zgamma[i][Y[i]-1]);
+	    numer += (Xbeta1[i][Y[i]-1] + Zgamma[i][Y[i]-1]);
+	  } 
+	  sumall1[i] += (exp(Xbeta1[i][j] + Zgamma[i][Y[i]-1]) - 
+			 exp(Xbeta[i][j] + Zgamma[i][Y[i]-1]));
+	  numer -= log(sumall1[i]);
+	  denom -= log(sumall[i]);
+	}
+	/** Rejection **/
+	if (unif_rand() < fmin2(1.0, exp(numer-denom))) {
+	  acc_fixed[j*n_fixed+k]++;
+	  beta[j*n_fixed+k] = propb[j*n_fixed+k];
+	  for (i = 0; i < n_samp; i++) {
+	    sumall[i] = sumall1[i];
+	    Xbeta[i][j] = Xbeta1[i][j];
+	  }
+	}
+      }
+
+    /** STEP 2: Update Random Effects Given Fixed Effects **/
+    for (j = 0; j < n_dim; j++) {
+      dinv(Psi[j], n_random, mtemp);
+      for (i = 0; i < n_random; i++)
+	for (k = 0; k < n_random; k++)
+	  mtemp[i][k] *= tune_random[j];
+      for (k = 0; k < n_grp; k++) {
+	rMVN(propg, gamma[j][k], mtemp, n_random);
+	/** Calculating the ratio (log scale) **/
+	/* prior */
+	numer = dMVN(propg, gamma0, Psi[j], n_random, 1);
+	denom = dMVN(gamma[j][k], gamma0, Psi[j], n_random, 1); 
+ 	/* likelihood */
+	for (k = 0; k < n_grp; k++)
+	  vitemp[k] = 0;
+	for (i = 0; i < n_samp; i++) {
+	  if (grp[i] == k)
+	    for (l = 0; l < n_random; l++)
+	      Zgamma1[i][j] -= Z[k][vitemp[k]][l]*(gamma[j][k][l]-propg[l]);
+	  vitemp[grp[i]]++;
+	  if (Y[i] > 0) {
+	    denom += (Xbeta[i][Y[i]-1] + Zgamma[i][Y[i]-1]);
+	    numer += (Xbeta[i][Y[i]-1] + Zgamma1[i][Y[i]-1]);
+	  } 
+	  sumall1[i] += (exp(Xbeta[i][j] + Zgamma1[i][j]) -
+			 exp(Xbeta[i][j] + Zgamma[i][j]));
+	  numer -= log(sumall1[i]);
+	  denom -= log(sumall[i]);
+	}
+	/* Rejection */
+	if (unif_rand() < fmin2(1.0, exp(numer-denom))) {
+	  acc_random[j]++;
+	  for (l = 0; l < n_random; l++)
+	    gamma[j][k][l] = propb[l];
+	  for (i = 0; i < n_samp; i++) {
+	    sumall[i] = sumall1[i];
+	    Zgamma[i][j] = Zgamma1[i][j];
+	  }      
+	}
+      }
+    }
+    /** STEP 3: Update Psi **/
+    for (j = 0; j < n_dim; j++) {
+      for (k = 0; k < n_random; k++)
+	for (l = 0; l < n_random; l++)
+	  mtemp[k][l] = T0[k][l];
+      for (i = 0; i < n_grp; i++)
+	for (k = 0; k < n_random; k++)
+	  for (l = 0; l < n_random; l++)
+	    mtemp[k][l] += gamma[j][i][k]*gamma[j][i][l];
+      dinv(mtemp, n_random, mtemp1);
+      rWish(Psi[j], mtemp1, tau0+n_grp, n_random);
+    }
+  }
+
+  /* freeing memory */
+  free(vitemp);
+  free(sumall);
+  free(sumall1);
+  free(propb);
+  free(propg);
+  free(gamma0);
+  FreeMatrix(Xbeta, n_samp);
+  FreeMatrix(Xbeta1, n_samp);
+  FreeMatrix(Zgamma, n_samp);
+  FreeMatrix(Zgamma1, n_samp);
+  FreeMatrix(mtemp, n_random);
+  FreeMatrix(mtemp, n_random);
+}
