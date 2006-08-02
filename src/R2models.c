@@ -414,3 +414,132 @@ void R2bNormalMixedGibbs(double *Y,        /* outcome variable */
   Free3DMatrix(Zgrp, *n_grp, *max_samp_grp + *n_random);
 }
 
+void R2logitMixedMetro(int *Y,        /* outcome variable: 0, 1, ..., J-1 */
+		       double *dX,    /* (N x K) covariate matrix for
+					 fixed effects */
+		       double *dZ,    /* covariates for random effects
+					 organized by groups */
+		       int *grp,      /* group indicator, 0, 1, ...,
+					   G-1 */
+		       double *beta,  /* (K(J-1)) stacked coefficient
+					   vector for fixed effects */
+		       double *dPsi,  /* LxL precision matrix for
+					 random effecs for each equation */
+		       int *n_samp,       /* # of obs */
+		       int *n_dim,        /* # of categories, J-1 */
+		       int *n_fixed,      /* # of fixed effects, K */
+		       int *n_random,     /* # of random effects, L */
+		       int *n_grp,        /* # of groups, G */
+		       int *max_samp_grp, /* max # of obs within each
+					     group */
+		       double *beta0,    /* (K(J-1)) prior mean vector */
+		       double *dA0,      /* (K(J-1) x K(J-1)) prior
+					    precision */
+		       int *tau0,        /* prior df for Psi */
+		       double *dT0,      /* prior scale for Psi */
+		       double *tune_fixed,  /* K(J-1) proposal variances */
+		       double *tune_random, /* tuning constant for random
+					       effects of each random effect */
+		       int *n_gen,        /* # of MCMC draws */
+		       int *acc_fixed,    /* # of acceptance for fixed effects */
+		       int *acc_random,   /* # of acceptance for random
+					     effects */
+		       double *betaStore,
+		       double *PsiStore
+		       ) {
+
+   /* storage parameters and loop counters */
+  int i, j, k, main_loop, itemp;  
+  int *vitemp = intArray(*n_grp);
+  int ibeta = 0, iPsi =0;
+
+  /* matrices */
+  double *gamma0 = doubleArray(*n_random);
+  double **X = doubleMatrix(*n_samp, *n_fixed);
+  double ***gamma = doubleMatrix3D(*n_dim, *n_grp, *n_random);
+  double ***Psi = doubleMatrix3D(*n_dim, *n_random, *n_random);
+  double **A0 = doubleMatrix(n_fixed[0]*n_dim[0], n_fixed[0]*n_dim[0]);
+  double **T0 = doubleMatrix(*n_random, *n_random);
+  double ***Zgrp = doubleMatrix3D(*n_grp, *max_samp_grp, *n_random);
+
+  /* get random seed */
+  GetRNGstate();
+
+  /* packing the data */
+  itemp = 0;
+  for (j = 0; j < *n_fixed; j++)
+    for (i = 0; i < *n_samp; i++) 
+      X[i][j] = dX[itemp++];
+
+  itemp = 0;
+  for (j = 0; j < *n_grp; j++)
+    vitemp[j] = 0;
+  for (i = 0; i < *n_samp; i++) {
+    for (j = 0; j < *n_random; j++)
+      Zgrp[grp[i]][vitemp[grp[i]]][j] = dZ[itemp++];
+    vitemp[grp[i]]++;
+  }
+  
+  /* packing the prior */
+  itemp = 0;
+  for (k = 0; k < *n_random; k++)
+    for (j = 0; j < *n_random; j++) {
+      for(i = 0; i < *n_dim; i++)
+	Psi[i][j][k] = dPsi[itemp];
+      itemp++;
+    }
+
+  itemp = 0;
+  for (j = 0; j < *n_random; j++)
+    gamma0[j] = 0;
+  for (i = 0; i < *n_dim; i++)
+    for (j = 0; j < *n_grp; j++)
+      rMVN(gamma[i][j], gamma0, Psi[i], *n_random);
+
+  itemp = 0; 
+  for (k = 0; k < n_fixed[0]*n_dim[0]; k++)
+    for (j = 0; j < n_fixed[0]*n_dim[0]; j++)
+      A0[j][k] = dA0[itemp++];
+
+  itemp = 0; 
+  for (k = 0; k < *n_random; k++)
+    for (j = 0; j < *n_random; j++)
+      T0[j][k] = dT0[itemp++];
+
+  for (j = 0; j < n_fixed[0]*n_dim[0]; j++) 
+    acc_fixed[j] = 0;
+  for (j = 0; j < n_grp[0]*n_dim[0]; j++) 
+    acc_random[j] = 0;
+
+  /* Gibbs Sampler! */
+  for(main_loop = 1; main_loop <= *n_gen; main_loop++) {
+    logitMixedMetro(Y, X, Zgrp, grp, beta, gamma, Psi, 
+		    *n_samp, *n_dim, *n_fixed, *n_random, *n_grp,
+		    beta0, A0, *tau0, T0, tune_fixed, tune_random,
+		    1, acc_fixed, acc_random);
+
+    R_FlushConsole(); 
+    /* Storing the output */
+    for (j = 0; j < n_fixed[0]*n_dim[0]; j++)
+      betaStore[ibeta++] = beta[j];
+    for (i = 0; i < *n_dim; i++)
+      for (j = 0; j < *n_random; j++)
+	for (k = j; k < *n_random; k++)
+	  PsiStore[iPsi++] = Psi[i][j][k];
+
+    R_FlushConsole(); 
+    R_CheckUserInterrupt();
+  } /* end of Gibbs sampler */
+
+  PutRNGstate();
+
+  /* freeing memory */
+  free(vitemp);
+  free(gamma0);
+  FreeMatrix(X, *n_samp);
+  Free3DMatrix(gamma, *n_dim, *n_grp);
+  Free3DMatrix(Psi, *n_dim, *n_random);
+  FreeMatrix(A0, n_fixed[0]*n_dim[0]);
+  FreeMatrix(T0, *n_random);
+  Free3DMatrix(Zgrp, *n_grp, *max_samp_grp);
+} 

@@ -673,7 +673,7 @@ void logitMixedMetro(int *Y,        /* outcome variable: 0, 1, ..., J-1 */
 	  }
 	}
       }
-
+ 
     /** STEP 2: Update Random Effects Given Fixed Effects **/
     for (j = 0; j < n_dim; j++) {
       dinv(Psi[j], n_random, mtemp);
@@ -687,8 +687,8 @@ void logitMixedMetro(int *Y,        /* outcome variable: 0, 1, ..., J-1 */
 	numer = dMVN(propg, gamma0, Psi[j], n_random, 1);
 	denom = dMVN(gamma[j][k], gamma0, Psi[j], n_random, 1); 
  	/* likelihood */
-	for (k = 0; k < n_grp; k++)
-	  vitemp[k] = 0;
+	for (l = 0; l < n_grp; l++)
+	  vitemp[l] = 0;
 	for (i = 0; i < n_samp; i++) {
 	  if (grp[i] == k)
 	    for (l = 0; l < n_random; l++)
@@ -715,6 +715,7 @@ void logitMixedMetro(int *Y,        /* outcome variable: 0, 1, ..., J-1 */
 	}
       }
     }
+
     /** STEP 3: Update Psi **/
     for (j = 0; j < n_dim; j++) {
       for (k = 0; k < n_random; k++)
@@ -741,5 +742,5 @@ void logitMixedMetro(int *Y,        /* outcome variable: 0, 1, ..., J-1 */
   FreeMatrix(Zgamma, n_samp);
   FreeMatrix(Zgamma1, n_samp);
   FreeMatrix(mtemp, n_random);
-  FreeMatrix(mtemp, n_random);
+  FreeMatrix(mtemp1, n_random);
 }
