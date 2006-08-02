@@ -28,18 +28,34 @@ void logitMetro(int *Y,        /* outcome variable: 0, 1, ..., J-1 */
 		int *counter   /* # of acceptance for each parameter */
 		) {
   
-  int i, j, k, main_loop, param;
+  int i, j, k, main_loop;
   double numer, denom;
-  double sumall, sumall1, dtemp, dtemp1;
+  double *sumall = doubleArray(n_samp); 
+  double *sumall1 = doubleArray(n_samp);
   double *prop = doubleArray(n_dim*n_cov);
+  double **Xbeta = doubleMatrix(n_samp, n_dim);
+  double **Xbeta1 = doubleMatrix(n_samp, n_dim);
 
   for (j = 0; j < n_cov*n_dim; j++)
     prop[j] = beta[j];
+  for (i = 0; i < n_samp; i++) {
+    sumall[i] = 1.0; 
+    for (j = 0; j < n_dim; j++) {
+      Xbeta[i][j] = 0;
+      for (k = 0; k < n_cov; k++) 
+	Xbeta[i][j] += X[i][k]*beta[j*n_cov+k];
+      Xbeta1[i][j] = Xbeta[i][j];
+      sumall[i] += exp(Xbeta[i][j]);
+    }
+    sumall1[i] = sumall[i];
+  }
 
   for (main_loop = 0; main_loop < n_gen; main_loop++) {
-    for (param = 0; param < n_dim*n_cov; param++) {
-      /** Sample from the proposal distribution **/
-      prop[param] = beta[param] + norm_rand()*sqrt(Var[param]);
+    for (j = 0; j < n_dim; j++)
+      for (k = 0; k < n_cov; k++) {
+	/** Sample from the proposal distribution **/
+	prop[j*n_cov+k] = beta[j*n_cov+k] + 
+	  norm_rand()*sqrt(Var[j*n_cov+k]);
       
       /** Calculating the ratio (log scale) **/
       /* prior */
@@ -47,33 +63,33 @@ void logitMetro(int *Y,        /* outcome variable: 0, 1, ..., J-1 */
       denom = dMVN(beta, beta0, A0, n_cov*n_dim, 1);   
       /* likelihood */
       for (i = 0; i < n_samp; i++) {
-	sumall = 1.0; sumall1 = 1.0;
-	for (j = 0; j < n_dim; j++) {
-	  dtemp = 0; dtemp1 = 0;
-	  for (k = 0; k < n_cov; k++) {
-	    dtemp += X[i][k]*beta[j*n_cov+k];
-	    dtemp1 += X[i][k]*prop[j*n_cov+k];
-	  }
-	  if (Y[i] == (j+1)) {
-	    denom += dtemp;
-	    numer += dtemp1;
-	  } 
-	  sumall += exp(dtemp);
-	  sumall1 += exp(dtemp1);
-	}
-	numer -= log(sumall1);
-	denom -= log(sumall);
+	Xbeta1[i][j] = Xbeta[i][j] - X[i][k]*(beta[j*n_cov+k]-prop[j*n_cov+k]);
+	if (Y[i] > 0) {
+	  denom += Xbeta[i][Y[i]-1];
+	  numer += Xbeta1[i][Y[i]-1];
+	} 
+	sumall1[i] += (exp(Xbeta1[i][j])-exp(Xbeta[i][j]));
+	numer -= log(sumall1[i]);
+	denom -= log(sumall[i]);
       }
       
       /** Rejection **/
       if (unif_rand() < fmin2(1.0, exp(numer-denom))) {
-	counter[param]++;
-	beta[param] = prop[param];
+	counter[j*n_cov+k]++;
+	beta[j*n_cov+k] = prop[j*n_cov+k];
+	for (i = 0; i < n_samp; i++) {
+	  sumall[i] = sumall1[i];
+	  Xbeta[i][j] = Xbeta1[i][j];
+	}
       }
     }
   }
-
+  
   free(prop);
+  free(sumall);
+  free(sumall1);
+  FreeMatrix(Xbeta, n_samp);
+  FreeMatrix(Xbeta1, n_samp);
 }
 
 /*** 
