@@ -47,12 +47,10 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 		    int *in_grp,     /* # of groups */
 		    int *n_samp_grp,/* # of obs within group */
 		    int *max_samp_grp, /* max # of obs within group */
-		    int *in_fixedC, /* # of fixed effects for compliance model */ 
-		    int *in_fixedO, /* # of fixed effects for outcome model */
-		    int *in_fixedR, /* # of covariates for response model */
-		    int *in_randomC,/* # of random effects for compliance model */ 
-		    int *in_randomO,/* # of random effects for outcome model */
-		    int *in_randomR,/* # of covariates for response model */
+		    int *in_fixed,  /* # of fixed effects for
+				       compliance, outcome, and response models */
+		    int *in_random, /* # of random effects for
+				       compliance, outcome, and response modeld */ 
 		    double *dPsiC,  /* precision for compliance model */
 		    double *dPsiA,  /* precision for always-takers model */
 		    double *dPsiO,  /* precision for outcome model */
@@ -63,10 +61,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 		    double *dA0C,   /* prior precision for betaC and betaA */ 
 		    double *dA0O,   /* prior precision for gamma */
 		    double *dA0R,   /* prior precision for delta */
-		    int *tau0C,     /* prior df for PsiC */
-		    int *tau0A,     /* prior df for PsiA */
-		    int *tau0O,     /* prior df for PsiO */
-		    int *tau0R,     /* prior df for PsiR */
+		    int *tau0s,     /* prior df for PsiC, PsiA, PsiO, PsiR */
 		    double *dT0C,   /* prior scale for PsiC */
 		    double *dT0A,   /* prior scale for PsiA */
 		    double *dT0O,   /* prior scale for PsiO */
@@ -97,10 +92,11 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 				       interest */		 
 		    ) {
    /** counters **/
-  int n_samp = *in_samp; int n_grp = *in_grp;
-  int n_fixedC = *in_fixedC; int n_randomC = *in_randomC;
-  int n_fixedO = *in_fixedO; int n_randomO = *in_randomO;
-  int n_fixedR = *in_fixedR; int n_randomR = *in_randomR;
+  int n_samp = *in_samp; 
+  int n_grp = *in_grp;
+  int n_fixedC = in_fixed[0]; int n_randomC = in_random[0];
+  int n_fixedO = in_fixed[1]; int n_randomO = in_random[1];
+  int n_fixedR = in_fixed[2]; int n_randomR = in_random[2];
   int n_miss = *Ymiss;
   int n_obs = n_samp - n_miss;
 
@@ -414,7 +410,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
     if (n_miss > 0) {
       bprobitMixedGibbs(R, Xr, Zr, grp, delta, xiR, PsiR, n_samp, 
 			n_fixedR, n_randomR, n_grp, n_samp_grp, 0, 
-			delta0, A0R, *tau0R, T0R, *mda, 1);
+			delta0, A0R, tau0s[3], T0R, *mda, 1);
  
       /* Compute probabilities of R = Robs */ 
       for (j = 0; j < n_grp; j++) vitemp[j] = 0;
@@ -465,7 +461,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
       /* complier vs. noncomplier */
       bprobitMixedGibbs(C, Xc, Zc, grp, betaC, xiC, PsiC, n_samp,
 			n_fixedC, n_randomC, n_grp, n_samp_grp, 0, 
-			beta0, A0C, *tau0C, T0C, *mda, 1);
+			beta0, A0C, tau0s[0], T0C, *mda, 1);
       if (*AT == 1) {
 	/* never-taker vs. always-taker */
 	/* subset the data */
@@ -491,7 +487,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	}
 	bprobitMixedGibbs(Atemp, Xtemp, Ztemp, grp_temp, betaA, xiA,
 			  PsiA, itemp-n_fixedC, n_fixedC, n_randomC,
-			  n_grp, vitemp1, 0, beta0, A0C, *tau0A, T0A, 
+			  n_grp, vitemp1, 0, beta0, A0C, tau0s[1], T0A, 
 			  *mda, 1); 
       }      
     }    
@@ -606,7 +602,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
     /** Step 4: OUTCOME MODEL **/
     bprobitMixedGibbs(Yobs, Xobs, Zobs, grp_obs, gamma, xiO, PsiO,
 		      n_obs, n_fixedO, n_randomO, n_grp, vitemp1, 0,
-		      gamma0, A0O, *tau0O, T0O, *mda, 1); 
+		      gamma0, A0O, tau0s[2], T0O, *mda, 1); 
     
     /** Compute probabilities of Y = 1 **/
     for (j = 0; j < n_grp; j++)
