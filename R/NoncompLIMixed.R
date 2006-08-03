@@ -1,7 +1,7 @@
 Noncomp.bprobitMixed <- function(formulae, Z, D, grp, data = parent.frame(),
                                  n.draws = 5000, param = TRUE,
                                  in.sample = FALSE, model.c = "probit", 
-                                 tune.c = 1, 
+                                 tune.fixed = 0.01, tune.random = 0.01, 
                                  p.mean.c = 0, p.prec.c = 0.001, p.mean.o = 0,
                                  p.prec.o = 0.001, p.mean.r = 0, p.prec.r = 0.001,
                                  mda = TRUE,
@@ -267,58 +267,53 @@ Noncomp.bprobitMixed <- function(formulae, Z, D, grp, data = parent.frame(),
   
   ## prior scale matrix for Psi's
   if(is.matrix(p.scale.c)) {
-    if (dim(p.scale.c) != rep(nrandomC*2, 2))
+    if (dim(p.scale.c) != rep(nrandomC, 2))
         stop(paste("the dimension of p.scale.c should be",
-                   rep(nrandomC*2, 2)))    
-  } else if (length(p.scale.c) == 1){
-    if (logit.c & AT)
-      p.scale.c <- diag(p.scale.c, nrandomC*2)
-    else
-      p.scale.c <- diag(p.scale.c, nrandomC)
-  } else {
+                   rep(nrandomC, 2)))    
+  } else if (length(p.scale.c) == 1)
+    p.scale.c <- diag(p.scale.c, nrandomC)
+  else 
     stop("Incorrect input for p.scale.c")
-  }
-
+  
   if(is.matrix(p.scale.o)) {
-    if (dim(p.scale.o) != rep(nrandomO*2, 2))
+    if (dim(p.scale.o) != rep(nrandomO, 2))
         stop(paste("the dimension of p.scale.o should be",
-                   rep(nrandomO*2, 2)))    
-  } else if (length(p.scale.o) == 1){
-    if (logit.c & AT)
-      p.scale.o <- diag(p.scale.o, nrandomO*2)
-    else
-      p.scale.o <- diag(p.scale.o, nrandomO)
-  } else {
+                   rep(nrandomO, 2)))    
+  } else if (length(p.scale.o) == 1)
+    p.scale.o <- diag(p.scale.o, nrandomO)
+  else 
     stop("Incorrect input for p.scale.o")
-  }
 
   if(is.matrix(p.scale.r)) {
-    if (dim(p.scale.r) != rep(nrandomR*2, 2))
+    if (dim(p.scale.r) != rep(nrandomR, 2))
         stop(paste("the dimension of p.scale.r should be",
-                   rep(nrandomR*2, 2)))    
-  } else if (length(p.scale.r) == 1){
-    if (logit.c & AT)
-      p.scale.r <- diag(p.scale.r, nrandomR*2)
-    else
-      p.scale.r <- diag(p.scale.r, nrandomR)
-  } else {
-    stop("Incorrect input for p.scale.r")
-  }
+                   rep(nrandomR, 2)))    
+  } else if (length(p.scale.r) == 1)
+    p.scale.r <- diag(p.scale.r, nrandomR)
+  else 
+   stop("Incorrect input for p.scale.r")
   
   
   ## proposal variance for logits
   if (AT) {
-    if (length(tune.c) != nfixedC*2)
-      if (length(tune.c) == 1)
-        tune.c <- rep(tune.c, nfixedC*2)
+    if (length(tune.fixed) != nfixedC*2)
+      if (length(tune.fixed) == 1)
+        tune.fixed <- rep(tune.fixed, nfixedC*2)
       else
-        stop(paste("the length of tune.c should be", nfixedC*2))
+        stop(paste("the length of tune.fixed should be", nfixedC*2))
+    if (length(tune.random) != 2)
+      if (length(tune.random) == 1)
+        tune.random <- rep(tune.random, 2)
+      else
+        stop("the length of tune.random should be 2")
   } else {
-    if (length(tune.c) != nfixedC)
-      if (length(tune.c) == 1)
-        tune.c <- rep(tune.c, nfixedC)
+    if (length(tune.fixed) != nfixedC)
+      if (length(tune.fixed) == 1)
+        tune.fixed <- rep(tune.fixed, nfixedC)
       else
-        stop(paste("the length of tune.c should be", nfixedC))
+        stop(paste("the length of tune.fixed should be", nfixedC))
+    if (length(tune.random) != 1)
+      stop("the length of tune.random should be 1")
   }
   
   ## checking thinnig and burnin intervals
@@ -350,7 +345,7 @@ Noncomp.bprobitMixed <- function(formulae, Z, D, grp, data = parent.frame(),
             as.integer(c(p.df.c,p.df.c,p.df.o,p.df.r)),
             as.double(p.scale.c), as.double(p.scale.c),
             as.double(p.scale.o), as.double(p.scale.r),
-            as.double(tune.c), as.integer(logit.c),
+            as.double(tune.fixed), as.double(tune.random), as.integer(logit.c),
             as.integer(param), as.integer(mda), as.integer(burnin),
             as.integer(keep), as.integer(verbose),
             coefC = double(nfixedC*(ceiling((n.draws-burnin)/keep))),
@@ -363,7 +358,6 @@ Noncomp.bprobitMixed <- function(formulae, Z, D, grp, data = parent.frame(),
             sPsiR = double(nrandomR*(nrandomR+1)*(ceiling((n.draws-burnin)/keep))/2),
             QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
             PACKAGE = "are")
-
   if (param) {
     res$coefC <- matrix(out$coefC, byrow = TRUE, ncol = nfixedC)
     colnames(res$coefC) <- colnames(Xc)

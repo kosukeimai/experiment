@@ -715,7 +715,6 @@ void logitMixedMetro(int *Y,        /* outcome variable: 0, 1, ..., J-1 */
 	}
       }
     }
-
     /** STEP 3: Update Psi **/
     for (j = 0; j < n_dim; j++) {
       for (k = 0; k < n_random; k++)

@@ -38,8 +38,8 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 		    double *dZo,    /* random effects for outcome model */
 		    double *dXr,    /* fixed effects for response model */
 		    double *dZr,    /* random effects for response model */
-		    double *betaC,  /* fixed effects for compliance model */
-		    double *betaA,  /* fixed effects for always-takers model */
+		    double *betaC,   /* fixed effects for compliance model */
+		    double *betaA,   /* fixed effects for always-takers model */
 		    double *gamma,  /* fixed effects for outcome model */
 		    double *delta,  /* fixed effects for response model */
 		    int *in_samp,   /* # of observations */
@@ -66,7 +66,8 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 		    double *dT0A,   /* prior scale for PsiA */
 		    double *dT0O,   /* prior scale for PsiO */
 		    double *dT0R,   /* prior scale for PsiR */
-		    double *Var,    /* proposal variance */
+		    double *tune_fixed, /* proposal variance */
+		    double *tune_random, /* proposal variance */
 		    int *logitC,    /* Use logistic regression for the
 				       compliance model? */
 		    int *param,     /* Want to keep paramters? */
@@ -132,14 +133,12 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 
   /*** model parameters ***/
   /* random effects */
-  double **xiC = doubleMatrix(n_grp, n_randomC);
-  double **xiA = doubleMatrix(n_grp, n_randomC);
+  double ***xiC = doubleMatrix3D(2, n_grp, n_randomC);
   double **xiO = doubleMatrix(n_grp, n_randomO);
   double **xiR = doubleMatrix(n_grp, n_randomR);
 
   /* covariances for random effects */
-  double **PsiC = doubleMatrix(n_randomC, n_randomC);
-  double **PsiA = doubleMatrix(n_randomC, n_randomC);
+  double ***Psi = doubleMatrix3D(2, n_randomC, n_randomC);
   double **PsiO = doubleMatrix(n_randomO, n_randomO);
   double **PsiR = doubleMatrix(n_randomR, n_randomR);
 
@@ -195,7 +194,8 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
   int *vitemp1 = intArray(n_grp);
   int progress = 1;
   int keep = 1;
-  int *accept = intArray(n_fixedC*2);      /* number of acceptance */
+  int *acc_fixed = intArray(n_fixedC*2);      /* number of acceptance */
+  int *acc_random = intArray(2);      /* number of acceptance */
   int i, j, k, l, main_loop;
   int itempP = ftrunc((double) *n_gen/10);
   int itemp, itempA, itempC, itempO, itempQ, itempR;
@@ -233,26 +233,23 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	Xobs[itemp][j] = Xo[i][j];
       itemp++;
     }
-  
+
   /** pack random effects **/
   itemp = 0;
   for (k = 0; k < n_randomC; k++)
     for (j = 0; j < n_grp; j++)
-      xiC[j][k] = 0;
-
-  for (k = 0; k < n_randomC; k++)
-    for (j = 0; j < n_grp; j++)
-      xiA[j][k] = 0;
+      for (i = 0; i < 2; i++)
+	xiC[i][j][k] = norm_rand();
 
   itemp = 0;
   for (k = 0; k < n_randomO; k++)
     for (j = 0; j < n_grp; j++)
-      xiO[j][k] = 0;
+      xiO[j][k] = norm_rand();
 
   itemp = 0;
   for (k = 0; k < n_randomR; k++)
     for (j = 0; j < n_grp; j++)
-      xiR[j][k] = 0;
+      xiR[j][k] = norm_rand();
 
   /** pack random effects covariates **/
   itemp = 0;
@@ -299,8 +296,9 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
   /* covariance parameters and its prior */
   itemp = 0;
   for (k = 0; k < n_randomC; k++)
-    for (j = 0; j < n_randomC; j++)
-      PsiC[j][k] = dPsiC[itemp++];
+    for (j = 0; j < n_randomC; j++) 
+      Psi[0][j][k] = dPsiC[itemp++];
+ 
   itemp = 0;
   for (k = 0; k < n_randomC; k++)
     for (j = 0; j < n_randomC; j++)
@@ -308,8 +306,9 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 
   itemp = 0;
   for (k = 0; k < n_randomC; k++)
-    for (j = 0; j < n_randomC; j++)
-      PsiA[j][k] = dPsiA[itemp++];
+    for (j = 0; j < n_randomC; j++) 
+      Psi[1][j][k] = dPsiA[itemp++];
+
   itemp = 0;
   for (k = 0; k < n_randomC; k++)
     for (j = 0; j < n_randomC; j++)
@@ -403,9 +402,9 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
   itempA = 0; itempC = 0; itempO = 0; itempQ = 0; itempR = 0;   
   itempAv = 0; itempCv = 0; itempOv = 0; itempRv = 0;   
   for (j = 0; j < n_fixedC*2; j++)
-    accept[j] = 0;
+    acc_fixed[j] = 0;
+  acc_random[0] = 0; acc_random[1] = 0;
   for (main_loop = 1; main_loop <= *n_gen; main_loop++){
-
     /* Step 1: RESPONSE MODEL */
     if (n_miss > 0) {
       bprobitMixedGibbs(R, Xr, Zr, grp, delta, xiR, PsiR, n_samp, 
@@ -452,14 +451,17 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
     /** Step 2: COMPLIANCE MODEL **/
     if (*logitC == 1) 
       if (*AT == 1) 
-	logitMetro(C, Xc, betaC, n_samp, 2, n_fixedC, beta0, A0C, Var, 1,
-		   accept); 
+	logitMixedMetro(C, Xc, Zc, grp, betaC, xiC, Psi, n_samp, 2,
+			n_fixedC, n_randomC, n_grp, beta0, A0C, tau0s[0],
+			T0C, tune_fixed, tune_random, 1, acc_fixed, acc_random);
       else 
-	logitMetro(C, Xc, betaC, n_samp, 1, n_fixedC, beta0, A0C, Var, 1,
-		   accept);  
+	logitMixedMetro(C, Xc, Zc, grp, betaC, xiC, Psi, n_samp, 1,
+			n_fixedC, n_randomC, n_grp, beta0, A0C,
+			tau0s[0], T0C, tune_fixed, tune_random, 1,
+			acc_fixed, acc_random);
     else {
       /* complier vs. noncomplier */
-      bprobitMixedGibbs(C, Xc, Zc, grp, betaC, xiC, PsiC, n_samp,
+      bprobitMixedGibbs(C, Xc, Zc, grp, betaC, xiC[0], Psi[0], n_samp,
 			n_fixedC, n_randomC, n_grp, n_samp_grp, 0, 
 			beta0, A0C, tau0s[0], T0C, *mda, 1);
       if (*AT == 1) {
@@ -485,8 +487,8 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	    Xtemp[itemp][j] = Xc[i][j];
 	  itemp++;
 	}
-	bprobitMixedGibbs(Atemp, Xtemp, Ztemp, grp_temp, betaA, xiA,
-			  PsiA, itemp-n_fixedC, n_fixedC, n_randomC,
+	bprobitMixedGibbs(Atemp, Xtemp, Ztemp, grp_temp, betaA, xiC[1],
+			  Psi[1], itemp-n_fixedC, n_fixedC, n_randomC,
 			  n_grp, vitemp1, 0, beta0, A0C, tau0s[1], T0A, 
 			  *mda, 1); 
       }      
@@ -503,9 +505,11 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
       for (j = 0; j < n_fixedC; j++) 
 	meanc[i] += Xc[i][j]*betaC[j];
       for (j = 0; j < n_randomC; j++)
-	meanc[i] += Zc[grp[i]][vitemp[grp[i]]][j]*xiC[grp[i]][j];
+	meanc[i] += Zc[grp[i]][vitemp[grp[i]]][j]*xiC[0][grp[i]][j];
       if (*AT == 1) { /* some always-takers */
 	meana[i] = 0;
+	for (j = 0; j < n_randomC; j++)
+	  meana[i] += Zc[grp[i]][vitemp[grp[i]]][j]*xiC[1][grp[i]][j];
 	if (*logitC == 1) { /* if logistic regression is used */
 	  for (j = 0; j < n_fixedC; j++) 
 	    meana[i] += Xc[i][j]*betaC[j+n_fixedC];
@@ -514,8 +518,6 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	} else { /* double probit regressions */
 	  for (j = 0; j < n_fixedC; j++) 
 	    meana[i] += Xc[i][j]*betaA[j];
-	  for (j = 0; j < n_randomC; j++)
-	    meana[i] += Zc[grp[i]][vitemp[grp[i]]][j]*xiA[grp[i]][j];
 	  qC[i] = pnorm(meanc[i], 0, 1, 1, 0);
 	  qN[i] = (1-qC[i])*pnorm(meana[i], 0, 1, 0, 0);
 	}
@@ -711,39 +713,39 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	QoI[itempQ++] = Y1barC;
 	QoI[itempQ++] = Y0barC;
 	QoI[itempQ++] = YbarN;
-	if (*AT == 1)
+	if (*AT) 
 	  QoI[itempQ++] = YbarA;
 
-	if (*param == 1) {
+	if (*param) {
 	  for (j = 0; j < n_fixedC; j++)
 	    coefC[itempC++] = betaC[j];
-	  /* for (j = 0; j < n_randomC; j++)
-	     for (k = j; k < n_randomC; k++)
-	     sPsiC[itempCv++] = PsiC[j][k]; */
-	  if (*AT == 1) {
-	    if (*logitC == 1)
+	  for (j = 0; j < n_randomC; j++)
+	    for (k = j; k < n_randomC; k++) 
+	      sPsiC[itempCv++] = Psi[0][j][k]; 
+	  if (*AT) {
+	    if (*logitC)
 	      for (j = 0; j < n_fixedC; j++)
 		coefA[itempA++] = betaC[j+n_fixedC];
 	    else
 	      for (j = 0; j < n_fixedC; j++)
 		coefA[itempA++] = betaA[j];
-	    /* for (j = 0; j < n_randomC; j++)
+	    for (j = 0; j < n_randomC; j++)
 	      for (k = j; k < n_randomC; k++)
-	      sPsiA[itempAv++] = PsiA[j][k]; */
+		sPsiA[itempAv++] = Psi[1][j][k];
 	  }
 
 	  for (j = 0; j < n_fixedO; j++)
 	    coefO[itempO++] = gamma[j];
-	  /* for (j = 0; j < n_randomO; j++)
+	  for (j = 0; j < n_randomO; j++)
 	    for (k = j; k < n_randomO; k++)
-	    sPsiO[itempOv++] = PsiO[j][k]; */
+	      sPsiO[itempOv++] = PsiO[j][k];
 	  
 	  if (n_miss > 0) { 
 	    for (j = 0; j < n_fixedR; j++)
 	      coefR[itempR++] = delta[j];
-	    /* for (j = 0; j < n_randomR; j++)
-	       for (k = j; k < n_randomR; k++)
-	       sPsiR[itempRv++] = PsiR[j][k]; */
+	    for (j = 0; j < n_randomR; j++)
+	      for (k = j; k < n_randomR; k++)
+		sPsiR[itempRv++] = PsiR[j][k]; 
 	  }
 	}
 	keep = 1;
@@ -755,16 +757,23 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
     if (*verbose) {
       if (main_loop == itempP) {
 	Rprintf("%3d percent done.\n", progress*10);
-	if (*logitC == 1) {
-	  Rprintf("  Current Acceptance Ratio:");
-	  if (*AT == 1)
+       	if (*logitC) {
+	  Rprintf("  Current Acceptance Ratio for fixed effects:");
+	  if (*AT)
 	    for (j = 0; j < n_fixedC*2; j++)
-	      Rprintf("%10g", (double)accept[j]/(double)main_loop);
+	      Rprintf("%10g", (double)acc_fixed[j]/(double)main_loop);
 	  else
 	    for (j = 0; j < n_fixedC; j++)
-	      Rprintf("%10g", (double)accept[j]/(double)main_loop);
+	      Rprintf("%10g", (double)acc_fixed[j]/(double)main_loop);
 	  Rprintf("\n");
-	}
+	  Rprintf("  Current Acceptance Ratio for random effects:");
+	  if (*AT)
+	    for (j = 0; j < 2; j++)
+	      Rprintf("%10g", (double)acc_random[j]/(double)main_loop);
+	  else
+	    Rprintf("%10g", (double)acc_random[0]/(double)main_loop);
+	  Rprintf("\n");
+	} 
 	itempP += ftrunc((double) *n_gen/10); 
 	progress++;
 	R_FlushConsole(); 
@@ -786,39 +795,40 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
   Free3DMatrix(Zo, n_grp, *max_samp_grp + n_randomO);
   FreeMatrix(Xobs, n_obs+n_fixedO);
   Free3DMatrix(Zobs, n_grp, *max_samp_grp + n_randomO);
-  FreeMatrix(Xr, n_samp+n_fixedO);
+  FreeMatrix(Xr, n_samp+n_fixedR);
   Free3DMatrix(Zr, n_grp, *max_samp_grp + n_randomR);
-  FreeMatrix(xiC, n_grp);
-  FreeMatrix(xiA, n_grp);
+  Free3DMatrix(xiC, 2, n_grp);
   FreeMatrix(xiO, n_grp);
   FreeMatrix(xiR, n_grp);
-  FreeMatrix(PsiC, n_randomC);
-  FreeMatrix(PsiA, n_randomC);
+  Free3DMatrix(Psi, 2, n_randomC);
   FreeMatrix(PsiO, n_randomO);
   FreeMatrix(PsiR, n_randomR);
   free(meano);
   free(meanc);
   free(pC);
   free(pN);
-  free(pA);
   free(prC);
   free(prN);
   free(prA);
+  free(qC);
+  free(qN);
+  free(pA);
   free(meana);
   FreeMatrix(A0C, n_fixedC*2);
   FreeMatrix(A0O, n_fixedO);
-  FreeMatrix(A0R, n_fixedO);
+  FreeMatrix(A0R, n_fixedR);
   FreeMatrix(T0C, n_randomC);
   FreeMatrix(T0A, n_randomC);
   FreeMatrix(T0O, n_randomO);
   FreeMatrix(T0R, n_randomR);
   FreeMatrix(Xtemp, n_samp+n_fixedC);
+  free(Atemp);
   Free3DMatrix(Ztemp, n_grp, *max_samp_grp + n_randomC);
   free(grp_temp);
-  free(Atemp);
   free(vitemp);
   free(vitemp1);
-  free(accept);
+  free(acc_fixed);
+  free(acc_random);
   FreeMatrix(mtempC, n_fixedC);
   FreeMatrix(mtempO, n_fixedO);
   FreeMatrix(mtempR, n_fixedR);

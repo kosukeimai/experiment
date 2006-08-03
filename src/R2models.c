@@ -162,7 +162,6 @@ void R2bprobitMixedGibbs(int *Y,           /* binary outcome variable */
 					      effects */
 			 int *grp,         /* group indicator: 0, 1, 2,... */
 			 double *beta,     /* fixed effects coefficients */
-			 double *dgamma,   /* random effects coefficients */
 			 double *dPsi,     /* covariance for random
 					      effects */
 			 int *n_samp,      /* # of obs */ 
@@ -192,6 +191,7 @@ void R2bprobitMixedGibbs(int *Y,           /* binary outcome variable */
   /* matrices */
   double **X = doubleMatrix(*n_samp+*n_fixed, *n_fixed+1);
   double **gamma = doubleMatrix(*n_grp, *n_random);
+  double *gamma0 = doubleArray(*n_random);
   double **Psi = doubleMatrix(*n_random, *n_random);
   double **A0 = doubleMatrix(*n_fixed, *n_fixed);
   double **T0 = doubleMatrix(*n_random, *n_random);
@@ -222,10 +222,10 @@ void R2bprobitMixedGibbs(int *Y,           /* binary outcome variable */
     for (j = 0; j < *n_random; j++)
       Psi[j][k] = dPsi[itemp++];
   
-  itemp = 0;
-  for (k = 0; k < *n_random; k++)
-    for (j = 0; j < *n_grp; j++)
-      gamma[j][k] = dgamma[itemp++];
+  for (j = 0; j < *n_random; j++)
+    gamma0[j] = 0;
+  for (j = 0; j < *n_grp; j++)
+    rMVN(gamma[j], gamma0, Psi, *n_random);
 
   itemp = 0; 
   for (k = 0; k < *n_fixed; k++)
@@ -272,6 +272,7 @@ void R2bprobitMixedGibbs(int *Y,           /* binary outcome variable */
   /* freeing memory */
   free(vitemp);
   FreeMatrix(X, *n_samp+*n_fixed);
+  free(gamma0);
   FreeMatrix(gamma, *n_grp);
   FreeMatrix(Psi, *n_random);
   FreeMatrix(A0, *n_fixed);
