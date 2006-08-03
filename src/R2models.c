@@ -168,7 +168,6 @@ void R2bprobitMixedGibbs(int *Y,           /* binary outcome variable */
 			 int *n_fixed,     /* # of fixed effects */
 			 int *n_random,    /* # of random effects */
 			 int *n_grp,       /* # of groups */
-			 int *n_samp_grp,  /* # of obs within group */
 			 int *max_samp_grp, /* max # of obs within group */
 			 double *beta0,    /* prior mean */
 			 double *dA0,      /* prior precision */
@@ -250,7 +249,7 @@ void R2bprobitMixedGibbs(int *Y,           /* binary outcome variable */
   /* Gibbs Sampler! */
   for(main_loop = 1; main_loop <= *n_gen; main_loop++) {
     bprobitMixedGibbs(Y, X, Zgrp, grp, beta, gamma, Psi, *n_samp,
-		      *n_fixed, *n_random, *n_grp, n_samp_grp,
+		      *n_fixed, *n_random, *n_grp,
 		      0, beta0, A0, *tau0, T0, *mda, 1);
 
     /* Storing the output */
@@ -299,7 +298,6 @@ void R2bNormalMixedGibbs(double *Y,        /* outcome variable */
 			 int *n_fixed,     /* # of fixed effects */
 			 int *n_random,    /* # of random effects */
 			 int *n_grp,       /* # of groups */
-			 int *n_samp_grp,  /* # of obs within group */
 			 int *max_samp_grp, /* max # of obs within group */
 			 double *beta0,    /* prior mean */
 			 double *dA0,      /* prior precision */
@@ -384,7 +382,7 @@ void R2bNormalMixedGibbs(double *Y,        /* outcome variable */
   /* Gibbs Sampler! */
   for(main_loop = 1; main_loop <= *n_gen; main_loop++) {
     bNormalMixedGibbs(Y, X, Zgrp, grp, beta, gamma, sig2, Psi, 
-		      *n_samp, *n_fixed, *n_random, *n_grp, n_samp_grp,
+		      *n_samp, *n_fixed, *n_random, *n_grp, 
 		      0, beta0, A0, *imp, *nu0, *s0, *tau0, T0, 1);
 
     /* Storing the output */

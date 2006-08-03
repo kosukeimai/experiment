@@ -319,7 +319,6 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
 		       int n_fixed,     /* # of fixed effects */
 		       int n_random,    /* # of random effects */
 		       int n_grp,       /* # of groups */
-		       int *n_samp_grp, /* # of obs within group */
 		       int prior,       /* include prior for fixed effects in X? */
 		       double *beta0,   /* prior mean */
 		       double **A0,     /* prior precision */
@@ -392,7 +391,7 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
       vitemp[grp[i]]++;
     }
     for (j = 0; j < n_grp; j++)
-      bNormalReg(Zgrp[j], gamma[j], vdtemp, n_samp_grp[j], n_random,
+      bNormalReg(Zgrp[j], gamma[j], vdtemp, vitemp[j], n_random,
 		 1, 1, gamma0, Psi, 0, 0, 1, 1);
 
     /** STEP 4: Update Covariance Matrix Given Random Effects **/
@@ -455,7 +454,6 @@ void bNormalMixedGibbs(double *Y,       /* outcome variable */
 		       int n_fixed,     /* # of fixed effects */
 		       int n_random,    /* # of random effects */
 		       int n_grp,       /* # of groups */
-		       int *n_samp_grp, /* # of obs within group */
 		       int prior,       /* include prior for fixed effects in X? */
 		       double *beta0,   /* prior mean */
 		       double **A0,     /* prior precision */
@@ -524,7 +522,7 @@ void bNormalMixedGibbs(double *Y,       /* outcome variable */
       vitemp[grp[i]]++;
     }
     for (j = 0; j < n_grp; j++)
-      bNormalReg(Zgrp[j], gamma[j], sig2, n_samp_grp[j], n_random,
+      bNormalReg(Zgrp[j], gamma[j], sig2, vitemp[j], n_random,
 		 1, 1, gamma0, Psi, 0, 0, 1, 1);
 
     /** STEP 3: Update Covariance Matrix Given Random Effects **/
