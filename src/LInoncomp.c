@@ -368,12 +368,12 @@ void LIbinary(int *Y,         /* binary outcome variable */
 	  else 
 	    dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+qN[i]*prN[i]);
 	  if (unif_rand() < dtemp) {
-	    C[i] = 1; Xr[i][1] = 1;
+	    C[i] = 1; Xo[i][1] = 1; Xr[i][1] = 1;
 	    if (R[i] == 1)
 	      Xobs[itemp][1] = 1; 
 	  }
 	  else {
-	    C[i] = 0; Xr[i][1] = 0;
+	    C[i] = 0; Xo[i][1] = 0; Xr[i][1] = 0;
 	    if (R[i] == 1)
 	      Xobs[itemp][1] = 0; 
 	  }  
@@ -385,8 +385,8 @@ void LIbinary(int *Y,         /* binary outcome variable */
 	  else
 	    dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+(1-qC[i]-qN[i])*prA[i]);
 	  if (unif_rand() < dtemp) {
-	    C[i] = 1; Xr[i][0] = 1;
-	    A[i] = 0; Xr[i][2] = 0;
+	    C[i] = 1; Xo[i][0] = 1; Xr[i][0] = 1;
+	    A[i] = 0; Xo[i][2] = 0; Xr[i][2] = 0;
 	    if (R[i] == 1) {
 	      Xobs[itemp][0] = 1; 
 	      Xobs[itemp][2] = 0; 
@@ -397,7 +397,7 @@ void LIbinary(int *Y,         /* binary outcome variable */
 	      C[i] = 2;
 	    else
 	      C[i] = 0; 
-	    A[i] = 1; Xr[i][0] = 0; Xr[i][2] = 1;
+	    A[i] = 1; Xo[i][0] = 0; Xr[i][0] = 0; Xo[i][2] = 1; Xr[i][2] = 1;
 	    if (R[i] == 1) {
 	      Xobs[itemp][0] = 0; 
 	      Xobs[itemp][2] = 1;
@@ -416,12 +416,12 @@ void LIbinary(int *Y,         /* binary outcome variable */
 	  else
 	    dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+(1-qC[i])*prN[i]);
 	  if (unif_rand() < dtemp) {
-	    C[i] = 1; Xr[i][1] = 1;
+	    C[i] = 1; Xo[i][1] = 1; Xr[i][1] = 1;
 	    if (R[i] == 1)
 	      Xobs[itemp][1] = 1; 
 	  }
 	  else {
-	    C[i] = 0; Xr[i][1] = 0;
+	    C[i] = 0; Xo[i][1] = 0; Xr[i][1] = 0;
 	    if (R[i] == 1)
 	      Xobs[itemp][1] = 0; 
 	  }
@@ -1020,12 +1020,12 @@ void LIgaussian(double *Y,      /* gaussian outcome variable */
 	  else 
 	    dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+qN[i]*prN[i]);
 	  if (unif_rand() < dtemp) {
-	    C[i] = 1; Xr[i][1] = 1;
+	    C[i] = 1; Xo[i][1] = 1; Xr[i][1] = 1;
 	    if (R[i] == 1)
 	      Xobs[itemp][1] = 1; 
 	  }
 	  else {
-	    C[i] = 0; Xr[i][1] = 0;
+	    C[i] = 0; Xo[i][1] = 0; Xr[i][1] = 0;
 	    if (R[i] == 1)
 	      Xobs[itemp][1] = 0; 
 	  }  
@@ -1037,8 +1037,8 @@ void LIgaussian(double *Y,      /* gaussian outcome variable */
 	  else
 	    dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+(1-qC[i]-qN[i])*prA[i]);
 	  if (unif_rand() < dtemp) {
-	    C[i] = 1; Xr[i][0] = 1;
-	    A[i] = 0; Xr[i][2] = 0;
+	    C[i] = 1; Xo[i][0] = 1; Xr[i][0] = 1;
+	    A[i] = 0; Xo[i][2] = 0; Xr[i][2] = 0;
 	    if (R[i] == 1) {
 	      Xobs[itemp][0] = 1; 
 	      Xobs[itemp][2] = 0; 
@@ -1049,7 +1049,7 @@ void LIgaussian(double *Y,      /* gaussian outcome variable */
 	      C[i] = 2;
 	    else
 	      C[i] = 0; 
-	    A[i] = 1; Xr[i][0] = 0; Xr[i][2] = 1;
+	    A[i] = 1; Xo[i][0] = 0; Xr[i][0] = 0; Xo[i][2] = 1; Xr[i][2] = 1;
 	    if (R[i] == 1) {
 	      Xobs[itemp][0] = 0; 
 	      Xobs[itemp][2] = 1;
@@ -1068,12 +1068,12 @@ void LIgaussian(double *Y,      /* gaussian outcome variable */
 	  else
 	    dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+(1-qC[i])*prN[i]);
 	  if (unif_rand() < dtemp) {
-	    C[i] = 1; Xr[i][1] = 1;
+	    C[i] = 1; Xo[i][1] = 1; Xr[i][1] = 1;
 	    if (R[i] == 1)
 	      Xobs[itemp][1] = 1; 
 	  }
 	  else {
-	    C[i] = 0; Xr[i][1] = 0;
+	    C[i] = 0; Xo[i][1] = 0; Xr[i][1] = 0;
 	    if (R[i] == 1)
 	      Xobs[itemp][1] = 0; 
 	  }
@@ -1181,14 +1181,14 @@ void LIgaussian(double *Y,      /* gaussian outcome variable */
 	QoI[itempQ++] = Y1barC;
 	QoI[itempQ++] = Y0barC;
 	QoI[itempQ++] = YbarN;
-	if (*AT == 1)
+	if (*AT)
 	  QoI[itempQ++] = YbarA;
 
-	if (*param == 1) {
+	if (*param) {
 	  for (j = 0; j < n_covC; j++)
 	    coefC[itempC++] = betaC[j];
-	  if (*AT == 1)
-	    if (*logitC == 1)
+	  if (*AT)
+	    if (*logitC)
 	      for (j = 0; j < n_covC; j++)
 		coefA[itempA++] = betaC[j+n_covC];
 	    else
