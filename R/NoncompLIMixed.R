@@ -2,8 +2,8 @@ Noncomp.bprobitMixed <- function(formulae, Z, D, grp, data = parent.frame(),
                                  n.draws = 5000, param = TRUE,
                                  in.sample = FALSE, model.c = "probit", 
                                  tune.fixed = 0.01, tune.random = 0.01, 
-                                 p.mean.c = 0, p.prec.c = 0.001, p.mean.o = 0,
-                                 p.prec.o = 0.001, p.mean.r = 0, p.prec.r = 0.001,
+                                 p.mean.c = 0, p.prec.c = 0.01, p.mean.o = 0,
+                                 p.prec.o = 0.01, p.mean.r = 0, p.prec.r = 0.01,
                                  mda = TRUE,
                                  coef.start.c = 0, coef.start.o = 0,
                                  coef.start.r = 0, Psi.start.c = 1,
@@ -108,39 +108,39 @@ Noncomp.bprobitMixed <- function(formulae, Z, D, grp, data = parent.frame(),
   X1 <- Xr
   W1 <- Wr
   if (AT) { # when some always-takers exist
-  ## Xo = [c1 c0 a X] where c1 for compliers with encouragement
-  ##                        c0 for compliers without encouragement
-  ##                        a for always-takers with/without encouragement  
+    ## X and W include an intercept
+    ## Xo = [c1 c0 a X] where c1 for compliers with encouragement
+    ##                        c0 for compliers without encouragement
+    ##                        a for always-takers with/without encouragement  
+    ## Wo = [c a W] - no Z for parsimony
     Xo <- cbind(0, 0, 0, X)
-    Wo <- cbind(0, 0, 0, W)
+    Wo <- cbind(0, 0, W)
     Xr <- cbind(0, 0, 0, X1)
-    Wr <- cbind(0, 0, 0, W1)
-    Xo[A == 1, 3] <- Wo[A == 1, 3] <- 1
-    Xr[A == 1, 3] <- Wr[A == 1, 3] <- 1
+    Wr <- cbind(0, 0, W1)
+    Xo[A == 1, 3] <- Wo[A == 1, 2] <- 1
+    Xr[A == 1, 3] <- Wr[A == 1, 2] <- 1
     colnames(Xo) <- c("Complier1", "Complier0", "AlwaysTaker",
                       colnames(X))
-    colnames(Wo) <- c("Complier1", "Complier0", "AlwaysTaker",
-                      colnames(W))
+    colnames(Wo) <- c("Complier", "AlwaysTaker", colnames(W))
     colnames(Xr) <- c("Complier1", "Complier0", "AlwaysTaker",
                       colnames(X1))
-    colnames(Wr) <- c("Complier1", "Complier0", "AlwaysTaker",
-                      colnames(W1))
+    colnames(Wr) <- c("Complier", "AlwaysTaker", colnames(W1))
   } else { # when always-takers do not exist
-  ## Xo = [c1 c0 X] where c1 for compliers with encouragement
-  ##                      c0 for compliers without encouragement
+    ## Xo = [c1 c0 X] where c1 for compliers with encouragement
+    ##                      c0 for compliers without encouragement
+    ## Wo = [c W] for parsimony
     Xo <- cbind(0, 0, X)
-    Wo <- cbind(0, 0, W)
+    Wo <- cbind(0, W)
     Xr <- cbind(0, 0, X1)
-    Wr <- cbind(0, 0, W1)
+    Wr <- cbind(0, W1)
     colnames(Xo) <- c("Complier1", "Complier0", colnames(X))
-    colnames(Wo) <- c("Complier1", "Complier0", colnames(W))
+    colnames(Wo) <- c("Complier", colnames(W))
     colnames(Xr) <- c("Complier1", "Complier0", colnames(X1))
-    colnames(Wr) <- c("Complier1", "Complier0", colnames(W1))
+    colnames(Wr) <- c("Complier", colnames(W1))
   }
-  Xo[C == 1 & Z == 1, 1] <- Wo[C == 1 & Z == 1, 1] <- 1
-  Xo[C == 1 & Z == 0, 2] <- Wo[C == 1 & Z == 0, 2] <- 1
-  Xr[C == 1 & Z == 1, 1] <- Wr[C == 1 & Z == 1, 1] <- 1
-  Xr[C == 1 & Z == 0, 2] <- Wr[C == 1 & Z == 0, 2] <- 1
+  Wo[C == 1, 1] <- Wr[C == 1, 1] <- 1
+  Xo[C == 1 & Z == 1, 1] <- Xr[C == 1 & Z == 1, 1] <- 1
+  Xo[C == 1 & Z == 0, 2] <- Xr[C == 1 & Z == 0, 2] <- 1
   
   ## dimensions
   nfixedC <- ncol(Xc)
@@ -335,7 +335,7 @@ Noncomp.bprobitMixed <- function(formulae, Z, D, grp, data = parent.frame(),
             as.double(Wr), as.double(coef.start.c),
             as.double(coef.start.c), as.double(coef.start.o), as.double(coef.start.r),
             as.integer(N), as.integer(n.draws), as.integer(ngrp),
-            as.integer(table(grp)), as.integer(max(table(grp))),
+            as.integer(max(table(grp))),
             as.integer(c(nfixedC,nfixedO,nfixedR)),
             as.integer(c(nrandomC, nrandomO, nrandomR)),
             as.double(Psi.start.c), as.double(Psi.start.c),
