@@ -22,20 +22,17 @@ Noncomp.bprobitMixed <- function(formulae, Z, D, grp, data = parent.frame(),
     stop("missing values not allowed in covariates")
   Y <- as.integer(model.response(mf))
   ## outcome model: random effects
-  mf <- model.frame(formulae[[2]], data=data, na.action='na.pass')
-  Wo <- model.matrix(formulae[[2]], data=mf)
+  Wo <- model.matrix(formulae[[2]], data=data)
 
   ## compliance model
   mf <- model.frame(formulae[[3]], data=data, na.action='na.fail')
   Xc <- model.matrix(formulae[[3]], data=mf)
-  mf <- model.frame(formulae[[4]], data=data, na.action='na.fail')
-  Wc <- model.matrix(formulae[[4]], data=mf)
+  Wc <- model.matrix(formulae[[4]], data=data)
   
   ## response model
   mf <- model.frame(formulae[[5]], data=data, na.action='na.pass')
   Xr <- model.matrix(formulae[[5]], data=mf)
-  mf <- model.frame(formulae[[6]], data=data, na.action='na.pass')
-  Wr <- model.matrix(formulae[[6]], data=mf)
+  Wr <- model.matrix(formulae[[6]], data=data)
 
   ## other variables 
   N <- length(Y)
