@@ -1,7 +1,7 @@
 useDynLib(are)
 
 importFrom(MASS, mvrnorm)
-export(Noncomp.mom, Noncomp.bayes, Noncomp.bprobitMixed, 
+export(Noncomp.mom, Noncomp.bayes, Noncomp.bayesMixed, 
        NIbprobit, bNormalReg, bprobitMixed, bNormalMixed, 
        blogit, blogitMixed)
 

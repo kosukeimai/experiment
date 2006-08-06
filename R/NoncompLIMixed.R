@@ -1,18 +1,27 @@
-Noncomp.bprobitMixed <- function(formulae, Z, D, grp, data = parent.frame(),
-                                 n.draws = 5000, param = TRUE,
-                                 in.sample = FALSE, model.c = "probit", 
-                                 tune.fixed = 0.01, tune.random = 0.01, 
-                                 p.mean.c = 0, p.prec.c = 0.01, p.mean.o = 0,
-                                 p.prec.o = 0.01, p.mean.r = 0, p.prec.r = 0.01,
-                                 mda = TRUE,
-                                 coef.start.c = 0, coef.start.o = 0,
-                                 coef.start.r = 0, Psi.start.c = 1,
-                                 Psi.start.o = 1, Psi.start.r = 1,
-                                 p.df.c = 5, p.df.o = 5, p.df.r = 5,
-                                 p.scale.c = 1, p.scale.o = 1,
-                                 p.scale.r = 1,
-                                 burnin = 0, thin = 0, verbose = TRUE) {  
-
+Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
+                               n.draws = 5000, param = TRUE,
+                               in.sample = FALSE, model.c = "probit",
+                               model.o = "probit",
+                               tune.fixed = 0.01, tune.random = 0.01, 
+                               p.mean.c = 0, p.prec.c = 0.01, p.mean.o = 0,
+                               p.prec.o = 0.01, p.mean.r = 0, p.prec.r = 0.01,
+                               p.df.var = 10, p.scale.var = 1,
+                               mda.probit = TRUE,
+                               coef.start.c = 0, coef.start.o = 0,
+                               coef.start.r = 0, var.start.o = 1,
+                               Psi.start.c = 1,
+                               Psi.start.o = 1, Psi.start.r = 1,
+                               p.df.c = 5, p.df.o = 5, p.df.r = 5,
+                               p.scale.c = 1, p.scale.o = 1,
+                               p.scale.r = 1,
+                               burnin = 0, thin = 0, verbose = TRUE) {  
+  
+  ## models
+  if (!(model.o %in% c("probit", "gaussian")))
+    stop("no such model is supported as the outcome model")
+  if (!(model.c %in% c("probit", "logit")))
+    stop("no such model is supported as the compliance model")
+  
   ## getting the data
   call <- match.call()
   ## outcome model: fixed effects
@@ -20,7 +29,8 @@ Noncomp.bprobitMixed <- function(formulae, Z, D, grp, data = parent.frame(),
   Xo <- model.matrix(formulae[[1]], data=mf)
   if (sum(is.na(Xo)) > 0)
     stop("missing values not allowed in covariates")
-  Y <- as.integer(model.response(mf))
+  if (model.o == "probit")
+    Y <- as.integer(model.response(mf))
   ## outcome model: random effects
   Wo <- model.matrix(formulae[[2]], data=data)
 
@@ -55,8 +65,11 @@ Noncomp.bprobitMixed <- function(formulae, Z, D, grp, data = parent.frame(),
   R <- (!is.na(Y))*1
   NR <- is.na(Y)
   Ymiss <- sum(NR)
-  if (Ymiss > 0) 
-    Y[NR] <- (runif(Ymiss) > 0.5)*1
+  if (Ymiss > 0)
+    if (model.o == "probit")
+      Y[NR] <- (runif(Ymiss) > 0.5)*1
+    else
+      Y[NR] <- rnorm(Ymiss)
   
   ## Compliance status: 0 = noncomplier, 1 = complier
   C <- rep(NA, N)
@@ -316,38 +329,77 @@ Noncomp.bprobitMixed <- function(formulae, Z, D, grp, data = parent.frame(),
   keep <- thin + 1
 
   ## calling C function
-  out <- .C("LIbprobitMixed",
-            as.integer(Y), as.integer(R), as.integer(Z),
-            as.integer(D), as.integer(C), as.integer(A),
-            as.integer(grp), as.integer(Ymiss), as.integer(AT),
-            as.integer(in.sample), as.double(Xc), as.double(Wc),
-            as.double(Xo), as.double(Wo), as.double(Xr),
-            as.double(Wr), as.double(coef.start.c),
-            as.double(coef.start.c), as.double(coef.start.o), as.double(coef.start.r),
-            as.integer(N), as.integer(n.draws), as.integer(ngrp),
-            as.integer(max(table(grp))),
-            as.integer(c(nfixedC,nfixedO,nfixedR)),
-            as.integer(c(nrandomC, nrandomO, nrandomR)),
-            as.double(Psi.start.c), as.double(Psi.start.c),
-            as.double(Psi.start.o), as.double(Psi.start.r),
-            as.double(p.mean.c), as.double(p.mean.o), as.double(p.mean.r),
-            as.double(p.prec.c), as.double(p.prec.o), as.double(p.prec.r),
-            as.integer(c(p.df.c,p.df.c,p.df.o,p.df.r)),
-            as.double(p.scale.c), as.double(p.scale.c),
-            as.double(p.scale.o), as.double(p.scale.r),
-            as.double(tune.fixed), as.double(tune.random), as.integer(logit.c),
-            as.integer(param), as.integer(mda), as.integer(burnin),
-            as.integer(keep), as.integer(verbose),
-            coefC = double(nfixedC*(ceiling((n.draws-burnin)/keep))),
-            coefA = double(nfixedC*(ceiling((n.draws-burnin)/keep))),
-            coefO = double(nfixedO*(ceiling((n.draws-burnin)/keep))),
-            coefR = double(nfixedR*(ceiling((n.draws-burnin)/keep))),
-            sPsiC = double(nrandomC*(nrandomC+1)*(ceiling((n.draws-burnin)/keep))/2),
-            sPsiA = double(nrandomC*(nrandomC+1)*(ceiling((n.draws-burnin)/keep))/2),
-            sPsiO = double(nrandomO*(nrandomO+1)*(ceiling((n.draws-burnin)/keep))/2),
-            sPsiR = double(nrandomR*(nrandomR+1)*(ceiling((n.draws-burnin)/keep))/2),
-            QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
-            PACKAGE = "are")
+  if (model.o == "probit") 
+    out <- .C("LIbprobitMixed",
+              as.integer(Y), as.integer(R), as.integer(Z),
+              as.integer(D), as.integer(C), as.integer(A),
+              as.integer(grp), as.integer(Ymiss), as.integer(AT),
+              as.integer(in.sample), as.double(Xc), as.double(Wc),
+              as.double(Xo), as.double(Wo), as.double(Xr),
+              as.double(Wr), as.double(coef.start.c),
+              as.double(coef.start.c), as.double(coef.start.o), as.double(coef.start.r),
+              as.integer(N), as.integer(n.draws), as.integer(ngrp),
+              as.integer(max(table(grp))),
+              as.integer(c(nfixedC,nfixedO,nfixedR)),
+              as.integer(c(nrandomC, nrandomO, nrandomR)),
+              as.double(Psi.start.c), as.double(Psi.start.c),
+              as.double(Psi.start.o), as.double(Psi.start.r),
+              as.double(p.mean.c), as.double(p.mean.o), as.double(p.mean.r),
+              as.double(p.prec.c), as.double(p.prec.o), as.double(p.prec.r),
+              as.integer(c(p.df.c,p.df.c,p.df.o,p.df.r)),
+              as.double(p.scale.c), as.double(p.scale.c),
+              as.double(p.scale.o), as.double(p.scale.r),
+              as.double(tune.fixed), as.double(tune.random), as.integer(logit.c),
+              as.integer(param), as.integer(mda.probit), as.integer(burnin),
+              as.integer(keep), as.integer(verbose),
+              coefC = double(nfixedC*(ceiling((n.draws-burnin)/keep))),
+              coefA = double(nfixedC*(ceiling((n.draws-burnin)/keep))),
+              coefO = double(nfixedO*(ceiling((n.draws-burnin)/keep))),
+              coefR = double(nfixedR*(ceiling((n.draws-burnin)/keep))),
+              sPsiC = double(nrandomC*(nrandomC+1)*(ceiling((n.draws-burnin)/keep))/2),
+              sPsiA = double(nrandomC*(nrandomC+1)*(ceiling((n.draws-burnin)/keep))/2),
+              sPsiO = double(nrandomO*(nrandomO+1)*(ceiling((n.draws-burnin)/keep))/2),
+              sPsiR = double(nrandomR*(nrandomR+1)*(ceiling((n.draws-burnin)/keep))/2),
+              QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
+              PACKAGE = "are")
+  else
+    out <- .C("LINormalMixed",
+              as.double(Y), as.integer(R), as.integer(Z),
+              as.integer(D), as.integer(C), as.integer(A),
+              as.integer(grp), as.integer(Ymiss), as.integer(AT),
+              as.integer(in.sample), as.double(Xc), as.double(Wc),
+              as.double(Xo), as.double(Wo), as.double(Xr),
+              as.double(Wr), as.double(coef.start.c),
+              as.double(coef.start.c), as.double(coef.start.o),
+              as.double(coef.start.r), as.double(var.start.o),
+              as.integer(N), as.integer(n.draws), as.integer(ngrp),
+              as.integer(max(table(grp))),
+              as.integer(c(nfixedC,nfixedO,nfixedR)),
+              as.integer(c(nrandomC, nrandomO, nrandomR)),
+              as.double(Psi.start.c), as.double(Psi.start.c),
+              as.double(Psi.start.o), as.double(Psi.start.r),
+              as.double(p.mean.c), as.double(p.mean.o), as.double(p.mean.r),
+              as.double(p.prec.c), as.double(p.prec.o),
+              as.double(p.prec.r),
+              as.integer(p.df.var), as.double(p.scale.var),
+              as.integer(c(p.df.c,p.df.c,p.df.o,p.df.r)),
+              as.double(p.scale.c), as.double(p.scale.c),
+              as.double(p.scale.o), as.double(p.scale.r),
+              as.double(tune.fixed), as.double(tune.random), as.integer(logit.c),
+              as.integer(param), as.integer(mda.probit), as.integer(burnin),
+              as.integer(keep), as.integer(verbose),
+              coefC = double(nfixedC*(ceiling((n.draws-burnin)/keep))),
+              coefA = double(nfixedC*(ceiling((n.draws-burnin)/keep))),
+              coefO = double(nfixedO*(ceiling((n.draws-burnin)/keep))),
+              coefR = double(nfixedR*(ceiling((n.draws-burnin)/keep))),
+              ssig2 = double(ceiling((n.draws-burnin)/keep)),
+              sPsiC = double(nrandomC*(nrandomC+1)*(ceiling((n.draws-burnin)/keep))/2),
+              sPsiA = double(nrandomC*(nrandomC+1)*(ceiling((n.draws-burnin)/keep))/2),
+              sPsiO = double(nrandomO*(nrandomO+1)*(ceiling((n.draws-burnin)/keep))/2),
+              sPsiR = double(nrandomR*(nrandomR+1)*(ceiling((n.draws-burnin)/keep))/2),
+              QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
+              PACKAGE = "are")
+    
   if (param) {
     res$coefC <- matrix(out$coefC, byrow = TRUE, ncol = nfixedC)
     colnames(res$coefC) <- colnames(Xc)
@@ -365,6 +417,8 @@ Noncomp.bprobitMixed <- function(formulae, Z, D, grp, data = parent.frame(),
       res$PsiR <- matrix(out$sPsiR, byrow = TRUE, ncol = nrandomR*(nrandomR+1)/2)
       colnames(res$coefR) <- colnames(Xr)
     }
+    if (model.o == "gaussian")
+      res$sig2 <- out$ssig2
   }
   QoI <- matrix(out$QoI, byrow = TRUE, ncol = nqoi)
   res$ITT <- QoI[,1]
