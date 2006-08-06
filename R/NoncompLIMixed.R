@@ -66,12 +66,12 @@ Noncomp.bprobitMixed <- function(formulae, Z, D, grp, data = parent.frame(),
   if (sum(Z == 0 & D == 1)>0) { # some always-takers
     AT <- TRUE
     A <- rep(NA, N)
+    A[D == 0] <- 0            # never-takers or compliers
+    A[Z == 0 & D == 1] <- 1  
     if (logit.c)
       C[Z == 0 & D == 1] <- 2 # always-takers
     else
       C[Z == 0 & D == 1] <- 0 # always-takers
-    A[Z == 0 & D == 1] <- 1  
-    A[Z == 1 & D == 0] <- 0 # never-takers
   } else { # no always-takers
     A <- rep(0, N)
     AT <- FALSE
@@ -83,20 +83,13 @@ Noncomp.bprobitMixed <- function(formulae, Z, D, grp, data = parent.frame(),
   
   ## Random starting values for missing compliance status
   if (AT) {
+    A[is.na(A)] <- (runif(sum(is.na(A))) > 0.5)*1
     if (logit.c)
-      C[is.na(C) & Z == 1] <- 1 + (runif(sum(is.na(C) & Z == 1)) > 0.5)*1
+      C[A == 1] <- 2
     else
-      C[is.na(C) & Z == 1] <- (runif(sum(is.na(C) & Z == 1)) > 0.5)*1
-    C[is.na(C) & Z == 0] <- (runif(sum(is.na(C) & Z == 0)) > 0.5)*1
-    if (logit.c)
-      A[is.na(A)] <- (C[is.na(A)] == 2)*1
-    else {
-      A[is.na(A) & Z == 1] <- (C[is.na(A) & Z == 1] == 0)*1
-      A[is.na(A)] <- 0
-    }
+      C[A == 1] <- 0
   }
-  else
-    C[is.na(C)] <- (runif(sum(is.na(C))) > 0.5)*1
+  C[is.na(C)] <- (runif(sum(is.na(C))) > 0.5)*1
   
   ## Completing the outcome model matrix 
   ## The default category is never-takers

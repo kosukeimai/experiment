@@ -496,8 +496,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
     /* Step 3: SAMPLE COMPLIANCE COVARITE */
     itemp = 0;
     for (j = 0; j < n_grp; j++) {
-      vitemp[j] = 0;
-      vitemp1[j] = 0;
+      vitemp[j] = 0; vitemp1[j] = 0;
     }
     for (i = 0; i < n_samp; i++) {
       meanc[i] = 0;
@@ -561,15 +560,16 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	    }
 	  }
 	  else {
-	    if (*logitC == 1)
+	    if (*logitC)
 	      C[i] = 2;
 	    else
 	      C[i] = 0; 
-	    A[i] = 1; Xr[i][0] = 0; Xr[i][2] = 1; Xo[i][0] = 0; Xo[i][2] = 1;
-	    Zr[grp[i]][vitemp[grp[i]]][0] = 0; 
-	    Zr[grp[i]][vitemp[grp[i]]][1] = 1;
+	    A[i] = 1; Xo[i][0] = 0; Xr[i][0] = 0; 
+	    Xo[i][2] = 1; Xr[i][2] = 1; 
 	    Zo[grp[i]][vitemp[grp[i]]][0] = 0; 
+	    Zr[grp[i]][vitemp[grp[i]]][0] = 0; 
 	    Zo[grp[i]][vitemp[grp[i]]][1] = 1;
+	    Zr[grp[i]][vitemp[grp[i]]][1] = 1;
 	    if (R[i] == 1) {
 	      Xobs[itemp][0] = 0; Zobs[grp[i]][vitemp1[grp[i]]][0] = 0;
 	      Xobs[itemp][2] = 1; Zobs[grp[i]][vitemp1[grp[i]]][1] = 1;
@@ -578,7 +578,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	}
       } else { /* no always-takers */
 	if (Z[i] == 0){
-	  if (*logitC == 1)
+	  if (*logitC)
 	    qC[i] = 1/(1+exp(-meanc[i]));
 	  else
 	    qC[i] = pnorm(meanc[i], 0, 1, 1, 0);
