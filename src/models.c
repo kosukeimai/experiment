@@ -264,8 +264,8 @@ void boprobitGibbs(int *Y,        /* ordinal outcome variable: 0, 1,
 	dtemp += X[i][j]*beta[j]; 
       if (Y[i] == 0) 
 	W[i] = TruncNorm(dtemp-1000,0,dtemp,1,0);
-      else if (Y[i] == n_cat) {
-	W[i] = TruncNorm(tau[n_cat],dtemp+1000,dtemp,1,0);
+      else if (Y[i] == (n_cat-1)) {
+	W[i] = TruncNorm(tau[n_cat-2],dtemp+1000,dtemp,1,0);
 	Wmin[n_cat-1] = fmin2(Wmin[n_cat-1], W[i]);
       } else {
 	W[i] = TruncNorm(tau[Y[i]-1],tau[Y[i]],dtemp,1,0);
@@ -296,7 +296,7 @@ void boprobitGibbs(int *Y,        /* ordinal outcome variable: 0, 1,
     rMVN(beta, mean, V, n_cov);
 
     /* sampling taus */
-    for (j = 1; j < n_cat-1; j++)
+    for (j = 1; j < n_cat-1; j++) 
       tau[j] = runif(Wmax[j], Wmin[j+1]);
 
     R_CheckUserInterrupt();

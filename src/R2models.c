@@ -157,10 +157,10 @@ void R2boprobit(int *Y,          /* ordinal outcome variable: 0, 1,
 
   /* setting Wmax and Wmin */
   Wmax[0] = tau[0]; Wmin[0] = 0; 
-  Wmax[*n_cat-1] = 0; Wmin[*n_cat-1] = tau[*n_cat-2];
+  Wmax[*n_cat-1] = 0; Wmin[*n_cat-1] = tau[*n_cat-2]+0.5;
   for (j = 1; j < *n_cat-1; j++) {
-    Wmin[j] = tau[j-1];
-    Wmax[j] = tau[j];
+    Wmin[j] = (tau[j-1]+tau[j])/3;
+    Wmax[j] = 2*(tau[j-1]+tau[j])/3;
   }
 
   /* Gibbs Sampler! */
