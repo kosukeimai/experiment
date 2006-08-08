@@ -271,7 +271,7 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
               coefO = double(ncovO*(ceiling((n.draws-burnin)/keep))),
               coefR = double(ncovR*(ceiling((n.draws-burnin)/keep))),
               QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
-              PACKAGE = "are")
+              PACKAGE = "experiment")
   
   if (model.o == "gaussian")
     out <- .C("LIgaussian",
@@ -300,7 +300,7 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
               coefR = double(ncovR*(ceiling((n.draws-burnin)/keep))),
               var = double(ceiling((n.draws-burnin)/keep)),
               QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
-              PACKAGE = "are")
+              PACKAGE = "experiment")
 
   if (param) {
     res$coefC <- matrix(out$coefC, byrow = TRUE, ncol = ncovC)

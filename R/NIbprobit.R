@@ -68,7 +68,7 @@ NIbprobit <- function(Y, D, X, data = parent.frame(),
             coef.o = double(k*(ceiling((n.draws-burnin)/keep))),
             coef.r = double(k*(ceiling((n.draws-burnin)/keep))),
             ATE = double(3*(ceiling((n.draws-burnin)/keep))),
-            PACKAGE="are")
+            PACKAGE="experiment")
   if (param) {
     res$coef.o <- matrix(par$coef.o, byrow = TRUE, ncol = k)
     res$coef.r <- matrix(par$coef.r, byrow = TRUE, ncol = k)

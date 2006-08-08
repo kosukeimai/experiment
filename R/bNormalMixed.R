@@ -16,7 +16,7 @@ bNormalMixed <- function(Y, X, Z, grp, beta.start, gamma.start,
             gammaStore = double(sims*ncol(Z)*ngrp),
             sig2Store = double(sims),
             PsiStore = double(sims*ncol(Z)*(ncol(Z)+1)/2),
-            PACKAGE = "are")
+            PACKAGE = "experiment")
 
   return(list(beta = matrix(res$betaStore, byrow = TRUE, ncol = ncol(X)),
               sig2 = res$sig2Store,

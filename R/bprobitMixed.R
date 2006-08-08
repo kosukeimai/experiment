@@ -13,7 +13,7 @@ bprobitMixed <- function(Y, X, Z, grp, beta.start,
             as.integer(sims), betaStore = double(sims*ncol(X)),
             gammaStore = double(sims*ncol(Z)*ngrp),
             PsiStore = double(sims*ncol(Z)*(ncol(Z)+1)/2),
-            PACKAGE = "are")
+            PACKAGE = "experiment")
 
   return(list(beta = matrix(res$betaStore, byrow = TRUE, ncol = ncol(X)),
               gamma = array(res$gammaStore, dim = c(ncol(Z), ngrp, sims)),

@@ -361,7 +361,7 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
               sPsiO = double(nrandomO*(nrandomO+1)*(ceiling((n.draws-burnin)/keep))/2),
               sPsiR = double(nrandomR*(nrandomR+1)*(ceiling((n.draws-burnin)/keep))/2),
               QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
-              PACKAGE = "are")
+              PACKAGE = "experiment")
   else
     out <- .C("LINormalMixed",
               as.double(Y), as.integer(R), as.integer(Z),
@@ -398,7 +398,7 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
               sPsiO = double(nrandomO*(nrandomO+1)*(ceiling((n.draws-burnin)/keep))/2),
               sPsiR = double(nrandomR*(nrandomR+1)*(ceiling((n.draws-burnin)/keep))/2),
               QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
-              PACKAGE = "are")
+              PACKAGE = "experiment")
     
   if (param) {
     res$coefC <- matrix(out$coefC, byrow = TRUE, ncol = nfixedC)

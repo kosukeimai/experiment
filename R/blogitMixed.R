@@ -18,7 +18,7 @@ blogitMixed <- function(Y, X, Z, grp, beta.start,
             acc_random = integer(length(table(grp))*max(Y)),
             betaStore = double(sims*ncol(X)*max(Y)),
             PsiStore = double(sims*max(Y)*ncol(Z)*(ncol(Z)+1)/2),
-            PACKAGE = "are")
+            PACKAGE = "experiment")
 
   return(list(beta = matrix(res$betaStore, byrow = TRUE,
                 ncol = ncol(X)*max(Y)),

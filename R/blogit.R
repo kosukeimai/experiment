@@ -10,7 +10,7 @@ blogit <- function(Y, X, beta.start, sims, beta0, A0, tune) {
             as.double(beta0), as.double(A0), as.double(tune),
             as.integer(sims), counter = as.integer(counter),
             store = double(sims*ncol(X)*ndim),
-            PACKAGE = "are")
+            PACKAGE = "experiment")
 
   res <- list(beta = matrix(tmp$store, byrow = TRUE, ncol =
                 ndim*ncov), accept = tmp$counter/sims)

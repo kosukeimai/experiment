@@ -9,7 +9,7 @@ bNormalReg <- function(Y, X, beta.start, sig2.start, sims, beta0, A0,
             as.integer(sig2.fixed),
             betaStore = double(sims*ncol(X)),
             sig2Store = double(sims),
-            PACKAGE = "are")
+            PACKAGE = "experiment")
 
   res <- list(beta = matrix(tmp$betaStore, byrow = TRUE, ncol = ncol(X)),
               sig2 = tmp$sig2Store)
