@@ -21,6 +21,10 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
     stop("no such model is supported as the outcome model")
   if (!(model.c %in% c("probit", "logit")))
     stop("no such model is supported as the compliance model")
+  if (model.c == "logit") 
+    logit.c <- TRUE
+  else
+    logit.c <- FALSE
   
   ## getting the data
   call <- match.call()
@@ -56,10 +60,6 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
     stop("missing values not allowed in the treatment variable")
   if (sum(is.na(grp)) > 0)
     stop("missing values not allowed in the group variable")
-  if (model.c == "logit") 
-    logit.c <- TRUE
-  else
-    logit.c <- FALSE
   
   ## Random starting values for missing Y using Bernoulli(0.5)
   R <- (!is.na(Y))*1

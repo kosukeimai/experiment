@@ -1069,6 +1069,7 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
   for (i = 0; i < n_samp; i++) 
     if (R[i] == 1) {
       Yobs[itemp] = Y[i];
+      Xobs[itemp][n_fixedO] = Y[i];
       grp_obs[itemp] = grp[i];
       for (j = 0; j < n_fixedO; j++)
 	Xobs[itemp][j] = Xo[i][j];
@@ -1296,8 +1297,8 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
     }
 
     /** Step 2: COMPLIANCE MODEL **/
-    if (*logitC == 1) 
-      if (*AT == 1) 
+    if (*logitC) 
+      if (*AT) 
 	logitMixedMetro(C, Xc, Zc, grp, betaC, xiC, Psi, n_samp, 2,
 			n_fixedC, n_randomC, n_grp, beta0, A0C, tau0s[0],
 			T0C, tune_fixed, tune_random, 1, acc_fixed, acc_random);
@@ -1319,7 +1320,7 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
 	  vitemp[j] = 0; vitemp1[j] = 0;
 	}
 	for (i = 0; i < n_samp; i++) {
-	  if (C[i] == 0) {
+	  if (C[i] != 1) {
 	    Atemp[itemp] = A[i]; grp_temp[itemp] = grp[i];
 	    for (j = 0; j < n_fixedC; j++)
 	      Xtemp[itemp][j] = Xc[i][j];
@@ -1356,7 +1357,7 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
 	meana[i] = 0;
 	for (j = 0; j < n_randomC; j++)
 	  meana[i] += Zc[grp[i]][vitemp[grp[i]]][j]*xiC[1][grp[i]][j];
-	if (*logitC == 1) { /* if logistic regression is used */
+	if (*logitC) { /* if logistic regression is used */
 	  for (j = 0; j < n_fixedC; j++) 
 	    meana[i] += Xc[i][j]*betaC[j+n_fixedC];
 	  qC[i] = exp(meanc[i])/(1 + exp(meanc[i]) + exp(meana[i]));
