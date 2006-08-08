@@ -231,7 +231,8 @@ void boprobitGibbs(int *Y,        /* ordinal outcome variable: 0, 1,
 		   int prior,     /* Should prior be included in X? */
 		   double *beta0, /* prior mean */
 		   double **A0,   /* prior precision */
-		   int n_gen      /* # of gibbs draws */
+		   int n_gen,      /* # of gibbs draws */
+		   int mda
 		  ) {
   
   /* model parameters */
@@ -245,6 +246,11 @@ void boprobitGibbs(int *Y,        /* ordinal outcome variable: 0, 1,
   int i, j, k, main_loop;  
   double dtemp;
   
+  /* marginal data augmentation */
+  double sig2 = 1;
+  int nu0 = 1;
+  double s0 = 1;
+
   /* read the prior as additional data points */
   if (prior) {
     dcholdc(A0, n_cov, mtemp);
@@ -258,6 +264,7 @@ void boprobitGibbs(int *Y,        /* ordinal outcome variable: 0, 1,
   /* Gibbs Sampler! */
   for(main_loop = 1; main_loop <= n_gen; main_loop++){
     /* Sampling the Latent Variable */
+    if (mda) sig2 = s0/rchisq((double)nu0);
     for (i = 0; i < n_samp; i++){
       dtemp = 0;
       for (j = 0; j < n_cov; j++) 
@@ -272,7 +279,7 @@ void boprobitGibbs(int *Y,        /* ordinal outcome variable: 0, 1,
 	Wmax[Y[i]] = fmax2(Wmax[Y[i]], W[i]);
 	Wmin[Y[i]] = fmin2(Wmin[Y[i]], W[i]);
       }
-      X[i][n_cov] = W[i];
+      X[i][n_cov] = W[i]*sqrt(sig2);
     }
 
     /* SS matrix */
@@ -292,13 +299,18 @@ void boprobitGibbs(int *Y,        /* ordinal outcome variable: 0, 1,
     for(j = 0; j < n_cov; j++)
       mean[j] = SS[j][n_cov];
     for(j = 0; j < n_cov; j++)
-      for(k = 0; k < n_cov; k++) V[j][k]=-SS[j][k];
+      for(k = 0; k < n_cov; k++) V[j][k]=-SS[j][k]*sig2;
     rMVN(beta, mean, V, n_cov);
+ 
+   /* rescaling the parameters */
+    if (mda)
+      for (j = 0; j < n_cov; j++) beta[j] /= sqrt(sig2);
 
     /* sampling taus */
-    for (j = 1; j < n_cat-1; j++) 
+    for (j = 1; j < n_cat; j++) 
       tau[j] = runif(Wmax[j], Wmin[j+1]);
-
+    Rprintf("%5d", n_cat);
+    PdoubleArray(tau, n_cat-1);
     R_CheckUserInterrupt();
   } /* end of Gibbs sampler */
 
