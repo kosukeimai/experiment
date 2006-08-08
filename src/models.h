@@ -1,23 +1,26 @@
-void logitMetro(int *Y, double **X, double *beta, int n_samp,      
-		int n_dim, int n_cov, double *beta0, double **A0,     
-		double *Var, int n_gen, int *counter);
-
+/* normal regression */
 void bNormalReg(double **D, double *beta, double *sig2, 
 		int n_samp, int n_cov, int addprior, int pbeta, 
 		double *beta0, double **A0, int psig2, double s0, 
 		int nu0, int sig2fixed);
   
+/* binomial probit regression */
 void bprobitGibbs(int *Y, double **X, double *beta, int n_samp, 
 		  int n_cov, int prior, double *beta0, double **A0, 
 		  int mda, int n_gen);
 
-void bprobitMixedGibbs(int *Y, double **X, double ***Zgrp, 
-		       int *grp, double *beta, double **gamma, 
-		       double **Psi, int n_samp, int n_fixed, 
-		       int n_random, int n_grp, 
-		       int prior, double *beta0, double **A0, 
-		       int tau0, double **T0, int mda, int n_gen);
+/* ordinal probit regression */
+void boprobitGibbs(int *Y, double **X, double *beta, double *tau,
+		   int n_samp, int n_cov, int n_cat, double *Wmax,
+		   double *Wmin, int prior, double *beta0,
+		   double **A0, int mda, int n_gen);
 
+/* binomial and mulitnomial logistic regression */
+void logitMetro(int *Y, double **X, double *beta, int n_samp,      
+		int n_dim, int n_cov, double *beta0, double **A0,     
+		double *Var, int n_gen, int *counter);
+
+/* Normal mixed effects regression */
 void bNormalMixedGibbs(double *Y, double **X, double ***Zgrp,
 		       int *grp, double *beta, double **gamma, double *sig2,    
 		       double **Psi, int n_samp, int n_fixed, int n_random,
@@ -25,6 +28,15 @@ void bNormalMixedGibbs(double *Y, double **X, double ***Zgrp,
 		       int imp, int nu0, double s0, int tau0, double **T0, 
 		       int n_gen0); 
 
+/* binomial mixed effects probit regression */
+void bprobitMixedGibbs(int *Y, double **X, double ***Zgrp, 
+		       int *grp, double *beta, double **gamma, 
+		       double **Psi, int n_samp, int n_fixed, 
+		       int n_random, int n_grp, 
+		       int prior, double *beta0, double **A0, 
+		       int tau0, double **T0, int mda, int n_gen);
+
+/* (binomial/multinomial) logistic mixed effects regression */
 void logitMixedMetro(int *Y, double **X, double ***Z, int *grp,
 		     double *beta, double ***gamma, double ***Psi,
 		     int n_samp, int n_dim, int n_fixed,
