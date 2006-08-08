@@ -13,7 +13,7 @@ void bprobitGibbs(int *Y, double **X, double *beta, int n_samp,
 void boprobitGibbs(int *Y, double **X, double *beta, double *tau,
 		   int n_samp, int n_cov, int n_cat, double *Wmax,
 		   double *Wmin, int prior, double *beta0,
-		   double **A0, int mda, int n_gen);
+		   double **A0, int n_gen);
 
 /* binomial and mulitnomial logistic regression */
 void logitMetro(int *Y, double **X, double *beta, int n_samp,      

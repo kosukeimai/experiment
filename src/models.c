@@ -231,7 +231,6 @@ void boprobitGibbs(int *Y,        /* ordinal outcome variable: 0, 1,
 		   int prior,     /* Should prior be included in X? */
 		   double *beta0, /* prior mean */
 		   double **A0,   /* prior precision */
-		   int mda,       /* Want to use marginal data augmentation? */ 
 		   int n_gen      /* # of gibbs draws */
 		  ) {
   
@@ -246,29 +245,19 @@ void boprobitGibbs(int *Y,        /* ordinal outcome variable: 0, 1,
   int i, j, k, main_loop;  
   double dtemp;
   
-  /* marginal data augmentation */
-  double sig2 = 1;
-  int nu0 = 1;
-  double s0 = 1;
-  
   /* read the prior as additional data points */
   if (prior) {
     dcholdc(A0, n_cov, mtemp);
     for(i = 0; i < n_cov; i++) {
       X[n_samp+i][n_cov] = 0;
-      for(j = 0; j < n_cov; j++) {
-	if (!mda)
-	  X[n_samp+i][n_cov] += mtemp[i][j]*beta0[j];
-	X[n_samp+i][j] = mtemp[i][j];
-      }
+      for(j = 0; j < n_cov; j++) 
+	X[n_samp+i][n_cov] += mtemp[i][j]*beta0[j];
     }
   }
 
   /* Gibbs Sampler! */
   for(main_loop = 1; main_loop <= n_gen; main_loop++){
-    /* marginal data augmentation */
-    if (mda) sig2 = s0/rchisq((double)nu0);
-    
+    /* Sampling the Latent Variable */
     for (i = 0; i < n_samp; i++){
       dtemp = 0;
       for (j = 0; j < n_cov; j++) 
@@ -283,20 +272,15 @@ void boprobitGibbs(int *Y,        /* ordinal outcome variable: 0, 1,
 	Wmax[Y[i]] = fmax2(Wmax[Y[i]], W[i]);
 	Wmin[Y[i]] = fmin2(Wmin[Y[i]], W[i]);
       }
-      X[i][n_cov] = W[i]*sqrt(sig2);
-      W[i] *= sqrt(sig2);
+      X[i][n_cov] = W[i];
     }
 
     /* SS matrix */
     for(j = 0; j <= n_cov; j++)
       for(k = 0; k <= n_cov; k++)
 	SS[j][k]=0;
-    for(i = 0;i < n_samp; i++)
-      for(j = 0;j <= n_cov; j++)
-	for(k = 0; k <= n_cov; k++) 
-	  SS[j][k] += X[i][j]*X[i][k];
-    for(i = n_samp;i < n_samp+n_cov; i++)
-      for(j = 0;j <= n_cov; j++)
+    for(i = 0; i < n_samp+n_cov; i++)
+      for(j = 0; j <= n_cov; j++)
 	for(k = 0; k <= n_cov; k++) 
 	  SS[j][k] += X[i][j]*X[i][k];
 
@@ -307,15 +291,9 @@ void boprobitGibbs(int *Y,        /* ordinal outcome variable: 0, 1,
     /* draw beta */    
     for(j = 0; j < n_cov; j++)
       mean[j] = SS[j][n_cov];
-    if (mda) 
-      sig2=(SS[n_cov][n_cov]+s0)/rchisq((double)n_samp+nu0);
     for(j = 0; j < n_cov; j++)
-      for(k = 0; k < n_cov; k++) V[j][k]=-SS[j][k]*sig2;
+      for(k = 0; k < n_cov; k++) V[j][k]=-SS[j][k];
     rMVN(beta, mean, V, n_cov);
- 
-    /* rescaling the parameters */
-    if(mda) 
-      for (j = 0; j < n_cov; j++) beta[j] /= sqrt(sig2);
 
     /* sampling taus */
     for (j = 1; j < n_cat-1; j++)
