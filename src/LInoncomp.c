@@ -129,8 +129,9 @@ void LIbinary(int *Y,         /* binary outcome variable */
   /* quantities of interest: ITT, CACE  */
   double ITT, CACE;
   double Y1barC, Y0barC, YbarN, YbarA;
-  int n_comp;          /* number of compliers */
-  int n_never;
+  int *n_comp = intArray(2);          /* number of compliers */
+  int *n_never = intArray(2);
+  int *n_always = intArray(2);
   double p_comp, p_never; /* prob. of being a particular type */
 
   /*** storage parameters and loop counters **/
@@ -489,28 +490,37 @@ void LIbinary(int *Y,         /* binary outcome variable */
     if (main_loop > *burnin) {
       if (keep == *iKeep) {
 	/** Computing Quantities of Interest **/
-	n_comp = 0; n_never = 0; p_comp = 0; p_never = 0; 
+	n_comp[0] = 0; n_comp[1] = 0; 
+	n_never[0] = 0; n_never[1] = 0;
+	n_always[0] = 0; n_always[1] = 0;
+	p_comp = 0; p_never = 0; 
 	Y1barC = 0; Y0barC = 0; YbarN = 0; YbarA = 0;
 	for (i = 0; i < n_samp; i++){
 	  p_comp += qC[i];
 	  p_never += qN[i];
 	  if (C[i] == 1) { /* ITT effects */
-	    n_comp++;
-	    if (*Insample == 1) { /* insample QoI */
-	      if ((Z[i] == 1) && (R[i] == 1))
-		Y1barC += (double)Y[i];
-	      else if (Z[i] == 1 && (R[i] == 0)) {
-		if (*logitO)
-		  Y1barC += (double)(1/(1+exp(-meano[i]-gamma[0])) > unif_rand());
-		else
-		  Y1barC += (double)((meano[i]+gamma[0]+norm_rand()) > 0);
-	      } else if ((Z[i] == 0) && (R[i] == 1))
-		Y0barC += (double)Y[i];
-	      else {
-		if (*logitO)
-		  Y0barC += (double)(1/(1+exp(-meano[i]-gamma[1])) > unif_rand());
-		else
-		  Y0barC += (double)((meano[i]+gamma[1]+norm_rand()) > 0);
+	    if (Z[i] == 1) 
+	      n_comp[1]++;
+	    else
+	      n_comp[0]++;
+	    if (*Insample) { /* insample QoI */
+	      if (Z[i] == 1) {
+		if (R[i] == 1)
+		  Y1barC += (double)Y[i];
+		else 
+		  if (*logitO)
+		    Y1barC += (double)(1/(1+exp(-meano[i]-gamma[0])) > unif_rand());
+		  else
+		    Y1barC += (double)((meano[i]+gamma[0]+norm_rand()) > 0);
+	      } else {
+		if (R[i] == 1)
+		  Y0barC += (double)Y[i];
+		else {
+		  if (*logitO)
+		    Y0barC += (double)(1/(1+exp(-meano[i]-gamma[1])) > unif_rand());
+		  else
+		    Y0barC += (double)((meano[i]+gamma[1]+norm_rand()) > 0);
+		}
 	      }
 	    } else { /* population QoI */
 	      if (*logitO) {
@@ -522,8 +532,12 @@ void LIbinary(int *Y,         /* binary outcome variable */
 	      }
 	    }
 	  } else { /* Estimates for always-takers and never-takers */
-	    if (A[i] == 1)
-	      if (*Insample == 1)
+	    if (A[i] == 1) {
+	      if (Z[i] == 1)
+		n_always[1]++;
+	      else
+		n_always[0]++;
+	      if (*Insample)
 		if (R[i] == 1)
 		  YbarA += (double)Y[i];
 		else {
@@ -538,9 +552,12 @@ void LIbinary(int *Y,         /* binary outcome variable */
 		else
 		  YbarA += pnorm(meano[i]+gamma[2], 0, 1, 1, 0);
 	      }
-	    else {
-	      n_never++;
-	      if (*Insample == 1)
+	    } else {
+	      if (Z[i] == 1)
+		n_never[1]++;
+	      else
+		n_never[0]++;
+	      if (*Insample)
 		if (R[i] == 1)
 		  YbarN += (double)Y[i];
 		else {
@@ -558,21 +575,25 @@ void LIbinary(int *Y,         /* binary outcome variable */
 	    }
 	  }
 	}
-	ITT = (Y1barC-Y0barC)/(double)n_samp;     /* ITT effect */
-	CACE = (Y1barC-Y0barC)/(double)n_comp;     /* CACE */
-	if (*Insample == 1) { 
-	  p_comp = (double)n_comp/(double)n_samp;
-	  p_never = (double)n_never/(double)n_samp;
+	if (*Insample) { 
+	  ITT = Y1barC/(double)(n_comp[1]+n_never[1]+n_always[1]) -
+	    Y0barC/(double)(n_comp[0]+n_never[0]+n_always[0]);
+	  Y1barC /= (double)n_comp[1];  
+	  Y0barC /= (double)n_comp[0]; 
+	  p_comp = (double)(n_comp[0]+n_comp[1])/(double)n_samp;
+	  p_never = (double)(n_never[0]+n_never[1])/(double)n_samp;
 	} else {
+	  ITT = (Y1barC-Y0barC)/(double)n_samp;     /* ITT effect */
+	  Y1barC /= (double)(n_comp[0]+n_comp[1]);  
+	  Y0barC /= (double)(n_comp[0]+n_comp[1]); 
 	  p_comp /= (double)n_samp;  /* ITT effect on D; Prob. of being
-					a complier */ 
+					   a complier */ 
 	  p_never /= (double)n_samp; /* Prob. of being a never-taker */
 	}
-	Y1barC /= (double)n_comp;  /* E[Y_i(j)|C_i=1] for j=0,1 */ 
-	Y0barC /= (double)n_comp; 
-	YbarN /= (double)n_never;
-	if (*AT == 1)
-	  YbarA /= (double)(n_samp-n_comp-n_never);
+	CACE = Y1barC-Y0barC;    /* CACE */
+	YbarN /= (double)(n_never[0]+n_never[1]);
+	if (*AT)
+	  YbarA /= (double)(n_always[0]+n_always[1]);
 	
 	QoI[itempQ++] = ITT;   
 	QoI[itempQ++] = CACE;   
@@ -581,7 +602,7 @@ void LIbinary(int *Y,         /* binary outcome variable */
 	QoI[itempQ++] = Y1barC;
 	QoI[itempQ++] = Y0barC;
 	QoI[itempQ++] = YbarN;
-	if (*AT == 1)
+	if (*AT)
 	  QoI[itempQ++] = YbarA;
 
 	if (*param == 1) {
@@ -661,6 +682,9 @@ void LIbinary(int *Y,         /* binary outcome variable */
   free(acceptO);
   FreeMatrix(Xtemp, n_samp+n_covC);
   free(Atemp);
+  free(n_comp);
+  free(n_never);
+  free(n_always);
   FreeMatrix(A0C, n_covC*2);
   FreeMatrix(A0O, n_covO);
   FreeMatrix(A0R, n_covR);
@@ -669,6 +693,8 @@ void LIbinary(int *Y,         /* binary outcome variable */
   FreeMatrix(mtempR, n_covR);
 
 } /* end of LIbinary */
+
+
 
 
 /*

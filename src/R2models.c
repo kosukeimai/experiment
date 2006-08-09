@@ -113,6 +113,7 @@ void R2boprobit(int *Y,          /* ordinal outcome variable: 0, 1,
 				    for beta alone
 				 */
 		int *n_gen,      /* # of gibbs draws */
+		int *mda,        /* marginal data augmentation? */
 		double *betaStore, 
 		double *tauStore
 		) {
@@ -166,7 +167,7 @@ void R2boprobit(int *Y,          /* ordinal outcome variable: 0, 1,
   /* Gibbs Sampler! */
   for(main_loop = 1; main_loop <= *n_gen; main_loop++) {
     boprobitGibbs(Y, X, beta, tau, *n_samp, *n_cov, *n_cat, Wmax,
-		  Wmin, 0, beta0, A0, 1);
+		  Wmin, 0, beta0, A0, 1, *mda);
 
     /* Storing the output */
     for (j = 0; j < *n_cov; j++)
