@@ -314,12 +314,6 @@ void boprobitGibbs(int *Y,        /* ordinal outcome variable: 0, 1,
     /* sampling taus */
     for (j = 1; j < n_cat-1; j++) 
       tau[j] = runif(Wmax[j], Wmin[j+1]);
-    Rprintf("\ntau");
-    PdoubleArray(tau, n_cat-1);
-    Rprintf("\nWmax");
-    PdoubleArray(Wmax, n_cat);
-    Rprintf("\nWmin");
-    PdoubleArray(Wmin, n_cat);
     R_CheckUserInterrupt();
   } /* end of Gibbs sampler */
   
