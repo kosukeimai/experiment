@@ -123,10 +123,6 @@ void R2boprobit(int *Y,          /* ordinal outcome variable: 0, 1,
   int ibeta = 0, itau = 0; 
 
   /* matrices */
-  double *Wmax = doubleArray(*n_cat);  /* max of W in each categry: 0, 1,
-					 ..., J-1 */
-  double *Wmin = doubleArray(*n_cat);  /* min of W in each category: 0, 1, 
-					 ..., J-1 */
   double **X = doubleMatrix(*n_samp+*n_cov, *n_cov+1);
   double **A0 = doubleMatrix(*n_cov, *n_cov);
   double **mtemp = doubleMatrix(*n_cov, *n_cov);
@@ -156,18 +152,10 @@ void R2boprobit(int *Y,          /* ordinal outcome variable: 0, 1,
     }
   }
 
-  /* setting Wmax and Wmin */
-  Wmax[0] = tau[0]; Wmin[0] = 0; 
-  Wmax[*n_cat-1] = 0; Wmin[*n_cat-1] = tau[*n_cat-2]+0.5;
-  for (j = 1; j < *n_cat-1; j++) {
-    Wmin[j] = (tau[j-1]+tau[j])/3;
-    Wmax[j] = 2*(tau[j-1]+tau[j])/3;
-  }
-
   /* Gibbs Sampler! */
   for(main_loop = 1; main_loop <= *n_gen; main_loop++) {
-    boprobitGibbs(Y, X, beta, tau, *n_samp, *n_cov, *n_cat, Wmax,
-		  Wmin, 0, beta0, A0, 1, *mda);
+    boprobitGibbs(Y, X, beta, tau, *n_samp, *n_cov, *n_cat,
+		  0, beta0, A0, 1, *mda);
 
     /* Storing the output */
     for (j = 0; j < *n_cov; j++)
@@ -182,8 +170,6 @@ void R2boprobit(int *Y,          /* ordinal outcome variable: 0, 1,
   PutRNGstate();
 
   /* freeing memory */
-  free(Wmin);
-  free(Wmax);
   FreeMatrix(X, *n_samp+*n_cov);
   FreeMatrix(A0, *n_cov);
   FreeMatrix(mtemp, *n_cov);

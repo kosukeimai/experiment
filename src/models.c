@@ -224,10 +224,6 @@ void boprobitGibbs(int *Y,        /* ordinal outcome variable: 0, 1,
 		   int n_samp,    /* # of obs */ 
 		   int n_cov,     /* # of covariates */
 		   int n_cat,     /* # of categories: J */
-		   double *Wmax,  /* max of W in each categry: 0, 1,
-				     ..., J-1 */
-		   double *Wmin,  /* min of W in each category: 0, 1, 
-				     ..., J-1 */
 		   int prior,     /* Should prior be included in X? */
 		   double *beta0, /* prior mean */
 		   double **A0,   /* prior precision */
@@ -240,11 +236,15 @@ void boprobitGibbs(int *Y,        /* ordinal outcome variable: 0, 1,
   double *mean = doubleArray(n_cov);            /* means for beta */
   double **V = doubleMatrix(n_cov, n_cov);      /* variances for beta */
   double *W = doubleArray(n_samp);
-  double **mtemp = doubleMatrix(n_cov, n_cov);
-
+  double *Wmax = doubleArray(n_cat);  /* max of W in each categry: 0, 1,
+					 ..., J-1 */
+  double *Wmin = doubleArray(n_cat);  /* min of W in each category: 0, 1, 
+					 ..., J-1 */
+  
   /* storage parameters and loop counters */
   int i, j, k, main_loop;  
   double dtemp;
+  double **mtemp = doubleMatrix(n_cov, n_cov);
   
   /* marginal data augmentation */
   double sig2 = 1;
@@ -264,6 +264,13 @@ void boprobitGibbs(int *Y,        /* ordinal outcome variable: 0, 1,
   /* Gibbs Sampler! */
   for(main_loop = 1; main_loop <= n_gen; main_loop++){
     /* Sampling the Latent Variable */
+    Wmin[0] = tau[0]; Wmax[0] = tau[0]-10;
+    for (j = 1; j < n_cat-1; j++) {
+      Wmin[j] = tau[j];
+      Wmax[j] = tau[j-1];
+    }
+    Wmin[n_cat-1] = tau[n_cat-2]+10;
+    Wmax[n_cat-1] = tau[n_cat-2];
     if (mda) sig2 = s0/rchisq((double)nu0);
     for (i = 0; i < n_samp; i++){
       dtemp = 0;
@@ -271,17 +278,15 @@ void boprobitGibbs(int *Y,        /* ordinal outcome variable: 0, 1,
 	dtemp += X[i][j]*beta[j]; 
       if (Y[i] == 0) 
 	W[i] = TruncNorm(dtemp-1000,0,dtemp,1,0);
-      else if (Y[i] == (n_cat-1)) {
+      else if (Y[i] == (n_cat-1)) 
 	W[i] = TruncNorm(tau[n_cat-2],dtemp+1000,dtemp,1,0);
-	Wmin[n_cat-1] = fmin2(Wmin[n_cat-1], W[i]);
-      } else {
+      else 
 	W[i] = TruncNorm(tau[Y[i]-1],tau[Y[i]],dtemp,1,0);
-	Wmax[Y[i]] = fmax2(Wmax[Y[i]], W[i]);
-	Wmin[Y[i]] = fmin2(Wmin[Y[i]], W[i]);
-      }
+      Wmax[Y[i]] = fmax2(Wmax[Y[i]], W[i]);
+      Wmin[Y[i]] = fmin2(Wmin[Y[i]], W[i]);
       X[i][n_cov] = W[i]*sqrt(sig2);
     }
-
+    
     /* SS matrix */
     for(j = 0; j <= n_cov; j++)
       for(k = 0; k <= n_cov; k++)
@@ -290,32 +295,38 @@ void boprobitGibbs(int *Y,        /* ordinal outcome variable: 0, 1,
       for(j = 0; j <= n_cov; j++)
 	for(k = 0; k <= n_cov; k++) 
 	  SS[j][k] += X[i][j]*X[i][k];
-
+    
     /* SWEEP SS matrix */
     for(j = 0; j < n_cov; j++)
       SWP(SS, j, n_cov+1);
-
+    
     /* draw beta */    
     for(j = 0; j < n_cov; j++)
       mean[j] = SS[j][n_cov];
     for(j = 0; j < n_cov; j++)
       for(k = 0; k < n_cov; k++) V[j][k]=-SS[j][k]*sig2;
     rMVN(beta, mean, V, n_cov);
- 
-   /* rescaling the parameters */
+    
+    /* rescaling the parameters */
     if (mda)
       for (j = 0; j < n_cov; j++) beta[j] /= sqrt(sig2);
-
+    
     /* sampling taus */
-    for (j = 1; j < n_cat; j++) 
+    for (j = 1; j < n_cat-1; j++) 
       tau[j] = runif(Wmax[j], Wmin[j+1]);
-    Rprintf("%5d", n_cat);
+    Rprintf("\ntau");
     PdoubleArray(tau, n_cat-1);
+    Rprintf("\nWmax");
+    PdoubleArray(Wmax, n_cat);
+    Rprintf("\nWmin");
+    PdoubleArray(Wmin, n_cat);
     R_CheckUserInterrupt();
   } /* end of Gibbs sampler */
-
+  
   /* freeing memory */
   free(W);
+  free(Wmin);
+  free(Wmax);
   free(mean);
   FreeMatrix(SS, n_cov+1);
   FreeMatrix(V, n_cov);
