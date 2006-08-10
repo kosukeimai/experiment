@@ -1,9 +1,10 @@
 /****
+
      This file contains models for randomized experiments with
      noncompliance under the assumptions of latent ignorability of
      Frangakis and Rubin (1999, Biometrika).
-****/
 
+****/
 
 #include <stddef.h>
 #include <stdio.h>      
@@ -1230,9 +1231,10 @@ void LIgaussian(double *Y,      /* gaussian outcome variable */
 	if (*AT)
 	  QoI[itempQ++] = YbarA;
 
-	if (*param == 1) {
+	if (*param) {
 	  for (j = 0; j < n_covC; j++)
 	    coefC[itempC++] = betaC[j];
+	  var[itempS++] = sig2[0];
 	  if (*AT == 1)
 	    if (*logitC == 1)
 	      for (j = 0; j < n_covC; j++)

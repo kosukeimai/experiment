@@ -1,3 +1,12 @@
+/****
+
+     This file contains models for clustered randomized experiments
+     (Frangakis, Rubin, and Zhou Biostatistics) with noncompliance
+     under the assumptions of latent ignorability of Frangakis and
+     Rubin (1999, Biometrika) .
+
+****/
+
 #include <stddef.h>
 #include <stdio.h>      
 #include <string.h>
@@ -184,8 +193,9 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
   /* quantities of interest: ITT, CACE  */
   double ITT, CACE;
   double Y1barC, Y0barC, YbarN, YbarA;
-  int n_comp;          /* number of compliers */
-  int n_never;
+  int *n_comp = intArray(2);          /* number of compliers */
+  int *n_never = intArray(2);
+  int *n_always = intArray(2);
   double p_comp, p_never; /* prob. of being a particular type */
 
   /*** storage parameters and loop counters **/
@@ -659,62 +669,82 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
     if (main_loop > *burnin) {
       if (keep == *iKeep) {
 	/** Computing Quantities of Interest **/
-	n_comp = 0; n_never = 0; p_comp = 0; p_never = 0; 
+	n_comp[0] = 0; n_comp[1] = 0; 
+	n_never[0] = 0; n_never[1] = 0;
+	n_always[0] = 0; n_always[1] = 0;
+	p_comp = 0; p_never = 0; 
 	Y1barC = 0; Y0barC = 0; YbarN = 0; YbarA = 0;
 	for (i = 0; i < n_samp; i++){
 	  p_comp += qC[i];
 	  p_never += qN[i];
 	  if (C[i] == 1) { /* ITT effects */
-	    n_comp++;
-	    if (*Insample == 1) { /* insample QoI */
-	      if ((Z[i] == 1) && (R[i] == 1))
-		Y1barC += (double)Y[i];
-	      else if (Z[i] == 1 && (R[i] == 0))
-		Y1barC += (double)((meano[i]+gamma[0]+xiO[grp[i]][0]+norm_rand()) > 0);
-	      else if ((Z[i] == 0) && (R[i] == 1))
-		Y0barC += (double)Y[i];
-	      else
-		Y0barC += (double)((meano[i]+gamma[1]+xiO[grp[i]][0]+norm_rand()) > 0);
+	    if (Z[i] == 1) 
+	      n_comp[1]++;
+	    else
+	      n_comp[0]++;
+	    if (*Insample) { /* insample QoI */
+	      if (Z[i] == 1) {
+		if (R[i] == 1)
+		  Y1barC += (double)Y[i];
+		else 
+		  Y1barC += (double)((meano[i]+gamma[0]+xiO[grp[i]][0]+norm_rand()) > 0);
+	      } else {
+		if (R[i] == 1)
+		  Y0barC += (double)Y[i];
+		else 
+		  Y0barC += (double)((meano[i]+gamma[1]+xiO[grp[i]][0]+norm_rand()) > 0);
+	      }
 	    } else { /* population QoI */
 	      Y1barC += pnorm(meano[i]+gamma[0]+xiO[grp[i]][0], 0, 1, 1, 0);
 	      Y0barC += pnorm(meano[i]+gamma[1]+xiO[grp[i]][0], 0, 1, 1, 0); 
 	    }
 	  } else { /* Estimates for always-takers and never-takers */
-	    if (A[i] == 1)
-	      if (*Insample == 1)
+	    if (A[i] == 1) {
+	      if (Z[i] == 1)
+		n_always[1]++;
+	      else
+		n_always[0]++;
+	      if (*Insample)
 		if (R[i] == 1)
 		  YbarA += (double)Y[i];
-		else
+		else 
 		  YbarA += (double)((meano[i]+gamma[2]+xiO[grp[i]][1]+norm_rand()) > 0);
-	      else
+	      else 
 		YbarA += pnorm(meano[i]+gamma[2]+xiO[grp[i]][1], 0, 1, 1, 0);
-	    else {
-	      n_never++;
-	      if (*Insample == 1)
+	    } else {
+	      if (Z[i] == 1)
+		n_never[1]++;
+	      else
+		n_never[0]++;
+	      if (*Insample)
 		if (R[i] == 1)
 		  YbarN += (double)Y[i];
-		else
+		else 
 		  YbarN += (double)((meano[i]+norm_rand()) > 0);
-	      else
+	      else 
 		YbarN += pnorm(meano[i], 0, 1, 1, 0);
 	    }
 	  }
 	}
-	ITT = (Y1barC-Y0barC)/(double)n_samp;     /* ITT effect */
-	CACE = (Y1barC-Y0barC)/(double)n_comp;     /* CACE */
-	if (*Insample == 1) { 
-	  p_comp = (double)n_comp/(double)n_samp;
-	  p_never = (double)n_never/(double)n_samp;
+	if (*Insample) { 
+	  ITT = Y1barC/(double)(n_comp[1]+n_never[1]+n_always[1]) -
+	    Y0barC/(double)(n_comp[0]+n_never[0]+n_always[0]);
+	  Y1barC /= (double)n_comp[1];  
+	  Y0barC /= (double)n_comp[0]; 
+	  p_comp = (double)(n_comp[0]+n_comp[1])/(double)n_samp;
+	  p_never = (double)(n_never[0]+n_never[1])/(double)n_samp;
 	} else {
+	  ITT = (Y1barC-Y0barC)/(double)n_samp;     /* ITT effect */
+	  Y1barC /= (double)(n_comp[0]+n_comp[1]);  
+	  Y0barC /= (double)(n_comp[0]+n_comp[1]); 
 	  p_comp /= (double)n_samp;  /* ITT effect on D; Prob. of being
-					a complier */ 
+					   a complier */ 
 	  p_never /= (double)n_samp; /* Prob. of being a never-taker */
 	}
-	Y1barC /= (double)n_comp;  /* E[Y_i(j)|C_i=1] for j=0,1 */ 
-	Y0barC /= (double)n_comp; 
-	YbarN /= (double)n_never;
-	if (*AT == 1)
-	  YbarA /= (double)(n_samp-n_comp-n_never);
+	CACE = Y1barC-Y0barC;    /* CACE */
+	YbarN /= (double)(n_never[0]+n_never[1]);
+	if (*AT)
+	  YbarA /= (double)(n_always[0]+n_always[1]);
 	
 	QoI[itempQ++] = ITT;   
 	QoI[itempQ++] = CACE;   
@@ -723,40 +753,24 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	QoI[itempQ++] = Y1barC;
 	QoI[itempQ++] = Y0barC;
 	QoI[itempQ++] = YbarN;
-	if (*AT) 
+	if (*AT)
 	  QoI[itempQ++] = YbarA;
 
-	if (*param) {
+	if (*param == 1) {
 	  for (j = 0; j < n_fixedC; j++)
 	    coefC[itempC++] = betaC[j];
-	  for (j = 0; j < n_randomC; j++)
-	    for (k = j; k < n_randomC; k++) 
-	      sPsiC[itempCv++] = Psi[0][j][k]; 
-	  if (*AT) {
-	    if (*logitC)
+	  if (*AT == 1)
+	    if (*logitC == 1)
 	      for (j = 0; j < n_fixedC; j++)
 		coefA[itempA++] = betaC[j+n_fixedC];
 	    else
 	      for (j = 0; j < n_fixedC; j++)
 		coefA[itempA++] = betaA[j];
-	    for (j = 0; j < n_randomC; j++)
-	      for (k = j; k < n_randomC; k++)
-		sPsiA[itempAv++] = Psi[1][j][k];
-	  }
-
 	  for (j = 0; j < n_fixedO; j++)
 	    coefO[itempO++] = gamma[j];
-	  for (j = 0; j < n_randomO; j++)
-	    for (k = j; k < n_randomO; k++)
-	      sPsiO[itempOv++] = PsiO[j][k];
-	  
-	  if (n_miss > 0) { 
+	  if (n_miss > 0) 
 	    for (j = 0; j < n_fixedR; j++)
 	      coefR[itempR++] = delta[j];
-	    for (j = 0; j < n_randomR; j++)
-	      for (k = j; k < n_randomR; k++)
-		sPsiR[itempRv++] = PsiR[j][k]; 
-	  }
 	}
 	keep = 1;
       }
@@ -824,6 +838,9 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
   free(qN);
   free(pA);
   free(meana);
+  free(n_comp);
+  free(n_never);
+  free(n_always);
   FreeMatrix(A0C, n_fixedC*2);
   FreeMatrix(A0O, n_fixedO);
   FreeMatrix(A0R, n_fixedR);
@@ -1026,8 +1043,9 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
   /* quantities of interest: ITT, CACE  */
   double ITT, CACE;
   double Y1barC, Y0barC, YbarN, YbarA;
-  int n_comp;          /* number of compliers */
-  int n_never;
+  int *n_comp = intArray(2);          /* number of compliers */
+  int *n_never = intArray(2);
+  int *n_always = intArray(2);
   double p_comp, p_never; /* prob. of being a particular type */
 
   /*** storage parameters and loop counters **/
@@ -1494,62 +1512,81 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
     if (main_loop > *burnin) {
       if (keep == *iKeep) {
 	/** Computing Quantities of Interest **/
-	n_comp = 0; n_never = 0; p_comp = 0; p_never = 0; 
+	n_comp[0] = 0; n_comp[1] = 0; 
+	n_never[0] = 0; n_never[1] = 0;
+	n_always[0] = 0; n_always[1] = 0;
+	p_comp = 0; p_never = 0; 
 	Y1barC = 0; Y0barC = 0; YbarN = 0; YbarA = 0;
 	for (i = 0; i < n_samp; i++){
 	  p_comp += qC[i];
 	  p_never += qN[i];
 	  if (C[i] == 1) { /* ITT effects */
-	    n_comp++;
+	    if (Z[i] == 1) 
+	      n_comp[1]++;
+	    else
+	      n_comp[0]++;
 	    if (*Insample) { /* insample QoI */
-	      if ((Z[i] == 1) && (R[i] == 1))
-		Y1barC += Y[i];
-	      else if (Z[i] == 1 && (R[i] == 0))
-		Y1barC += rnorm(meano[i]+gamma[0]+xiO[grp[i]][0], sqrt(*sig2));
-	      else if ((Z[i] == 0) && (R[i] == 1))
-		Y0barC += Y[i];
-	      else
-		Y0barC += rnorm(meano[i]+gamma[1]+xiO[grp[i]][0], sqrt(*sig2));
+	      if (Z[i] == 1) 
+		if (R[i] == 1)
+		  Y1barC += Y[i];
+		else 
+		  Y1barC += rnorm(meano[i]+gamma[0]+xiO[grp[i]][0], sqrt(*sig2));
+	      else 
+		if (R[i] == 1)
+		  Y0barC += Y[i];
+		else
+		  Y0barC += rnorm(meano[i]+gamma[1]+xiO[grp[i]][0], sqrt(*sig2));
 	    } else { /* population QoI */
 	      Y1barC += (meano[i]+gamma[0]+xiO[grp[i]][0]);
-	      Y0barC += (meano[i]+gamma[1]+xiO[grp[i]][0]);
+	      Y0barC += (meano[i]+gamma[1]+xiO[grp[i]][0]); 
 	    }
 	  } else { /* Estimates for always-takers and never-takers */
-	    if (A[i] == 1)
+	    if (A[i] == 1) {
+	      if (Z[i] == 1)
+		n_always[1]++;
+	      else
+		n_always[0]++;
 	      if (*Insample)
 		if (R[i] == 1)
 		  YbarA += Y[i];
-		else
+		else 
 		  YbarA += rnorm(meano[i]+gamma[2]+xiO[grp[i]][1], sqrt(*sig2));
-	      else
+	      else 
 		YbarA += (meano[i]+gamma[2]+xiO[grp[i]][1]);
-	    else {
-	      n_never++;
+	    } else {
+	      if (Z[i] == 1)
+		n_never[1]++;
+	      else
+		n_never[0]++;
 	      if (*Insample)
 		if (R[i] == 1)
 		  YbarN += Y[i];
-		else
+		else 
 		  YbarN += rnorm(meano[i], sqrt(*sig2));
-	      else
+	      else 
 		YbarN += meano[i];
 	    }
 	  }
 	}
-	ITT = (Y1barC-Y0barC)/(double)n_samp;     /* ITT effect */
-	CACE = (Y1barC-Y0barC)/(double)n_comp;     /* CACE */
-	if (*Insample == 1) { 
-	  p_comp = (double)n_comp/(double)n_samp;
-	  p_never = (double)n_never/(double)n_samp;
+	if (*Insample) { 
+	  ITT = Y1barC/(double)(n_comp[1]+n_never[1]+n_always[1]) -
+	    Y0barC/(double)(n_comp[0]+n_never[0]+n_always[0]);
+	  Y1barC /= (double)n_comp[1];  
+	  Y0barC /= (double)n_comp[0]; 
+	  p_comp = (double)(n_comp[0]+n_comp[1])/(double)n_samp;
+	  p_never = (double)(n_never[0]+n_never[1])/(double)n_samp;
 	} else {
+	  ITT = (Y1barC-Y0barC)/(double)n_samp;     /* ITT effect */
+	  Y1barC /= (double)(n_comp[0]+n_comp[1]);  
+	  Y0barC /= (double)(n_comp[0]+n_comp[1]); 
 	  p_comp /= (double)n_samp;  /* ITT effect on D; Prob. of being
-					a complier */ 
+					   a complier */ 
 	  p_never /= (double)n_samp; /* Prob. of being a never-taker */
 	}
-	Y1barC /= (double)n_comp;  /* E[Y_i(j)|C_i=1] for j=0,1 */ 
-	Y0barC /= (double)n_comp; 
-	YbarN /= (double)n_never;
-	if (*AT == 1)
-	  YbarA /= (double)(n_samp-n_comp-n_never);
+	CACE = Y1barC-Y0barC;    /* CACE */
+	YbarN /= (double)(n_never[0]+n_never[1]);
+	if (*AT)
+	  YbarA /= (double)(n_always[0]+n_always[1]);
 	
 	QoI[itempQ++] = ITT;   
 	QoI[itempQ++] = CACE;   
@@ -1558,46 +1595,32 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
 	QoI[itempQ++] = Y1barC;
 	QoI[itempQ++] = Y0barC;
 	QoI[itempQ++] = YbarN;
-	if (*AT) 
+	if (*AT)
 	  QoI[itempQ++] = YbarA;
 
 	if (*param) {
 	  for (j = 0; j < n_fixedC; j++)
 	    coefC[itempC++] = betaC[j];
-	  for (j = 0; j < n_randomC; j++)
-	    for (k = j; k < n_randomC; k++) 
-	      sPsiC[itempCv++] = Psi[0][j][k]; 
-	  if (*AT) {
+	  ssig2[itempS++] = sig2[0];
+	  if (*AT)
 	    if (*logitC)
 	      for (j = 0; j < n_fixedC; j++)
 		coefA[itempA++] = betaC[j+n_fixedC];
 	    else
 	      for (j = 0; j < n_fixedC; j++)
 		coefA[itempA++] = betaA[j];
-	    for (j = 0; j < n_randomC; j++)
-	      for (k = j; k < n_randomC; k++)
-		sPsiA[itempAv++] = Psi[1][j][k];
-	  }
 	  for (j = 0; j < n_fixedO; j++)
 	    coefO[itempO++] = gamma[j];
-	  ssig2[itempS++] = sig2[0];
-	  for (j = 0; j < n_randomO; j++)
-	    for (k = j; k < n_randomO; k++)
-	      sPsiO[itempOv++] = PsiO[j][k];
-	  
-	  if (n_miss > 0) { 
+	  if (n_miss > 0) 
 	    for (j = 0; j < n_fixedR; j++)
 	      coefR[itempR++] = delta[j];
-	    for (j = 0; j < n_randomR; j++)
-	      for (k = j; k < n_randomR; k++)
-		sPsiR[itempRv++] = PsiR[j][k]; 
-	  }
 	}
 	keep = 1;
       }
       else
 	keep++;
     }
+
 
     if (*verbose) {
       if (main_loop == itempP) {
@@ -1659,6 +1682,9 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
   free(qN);
   free(pA);
   free(meana);
+  free(n_comp);
+  free(n_never);
+  free(n_always);
   FreeMatrix(A0C, n_fixedC*2);
   FreeMatrix(A0O, n_fixedO);
   FreeMatrix(A0R, n_fixedR);
