@@ -7,8 +7,8 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
                           p.prec.o = 0.001, p.mean.r = 0, p.prec.r = 0.001,
                           p.df.o = 10, p.scale.o = 1,
                           mda.probit = TRUE, coef.start.c = 0,
-                          coef.start.o = 0, coef.start.r = 0,
-                          var.start.o = 1,
+                          coef.start.o = 0, tau.start.o = NULL,
+                          coef.start.r = 0, var.start.o = 1,
                           burnin = 0, thin = 0, verbose = TRUE) {  
 
   ## getting the data
@@ -18,7 +18,7 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
   if (!(model.c %in% c("logit", "probit"))) 
     stop("no such model is supported for the compliance model.")
   
-  if (!(model.o %in% c("logit", "probit", "gaussian"))) 
+  if (!(model.o %in% c("logit", "probit", "oprobit", "gaussian"))) 
     stop("no such model is supported for the outcome model.")
   
   if (!(model.r %in% c("logit", "probit"))) 
@@ -48,7 +48,8 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
   if (sum(is.na(D)) > 0)
     stop("missing values not allowed in the treatment variable")
 
-  ## Random starting values for missing Y using Bernoulli(0.5)
+  ## Random starting values for missing Y using Bernoulli(0.5) for
+  ## binary and ordinal
   R <- (!is.na(Y))*1
   NR <- is.na(Y)
   Ymiss <- sum(NR)
@@ -57,6 +58,17 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
       Y[NR] <- rnorm(Ymiss)
     else
       Y[NR] <- (runif(Ymiss) > 0.5)*1
+  if (model.o == "oprobit") {
+    ncat <- max(Y, na.rm = TRUE)
+    if (is.null(tau.start.o))
+      tau.start.o <- seq(from = 0, length = ncat-1)/10
+    if (length(tau.start.o) != (ncat-1))
+      stop("incorrect length for tau.start.o")
+    if (!identical(sort(tau.start.o), tau.start.o))
+      stop("incorrect input for tau.start.o")
+    if (length(unique(tau.start.o)) != (ncat-1))
+      stop("incorrect input for tau.start.o")
+  }
   
   ## Compliance status: 0 = noncomplier, 1 = complier
   C <- rep(NA, N)
@@ -123,11 +135,17 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
   ncovC <- ncol(Xc)
   ncovO <- ncol(Xo)
   ncovR <- ncol(Xr)
-  if (AT)
-    nqoi <- 8
+  if (model.o == "oprobit")
+    if (AT)
+      nqoi <- 2 + (ncat-1)*6
+    else
+      nqoi <- 2 + (ncat-1)*5
   else
-    nqoi <- 7
-  
+    if (AT)
+      nqoi <- 8
+    else
+      nqoi <- 7
+
   ## checking starting values and prior
   if (model.c == "logit" & AT) {
     if(length(p.mean.c) != ncovC*2)
@@ -272,6 +290,34 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
               coefR = double(ncovR*(ceiling((n.draws-burnin)/keep))),
               QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
               PACKAGE = "experiment")
+
+  if (model.o == "oprobit")
+        out <- .C("LIordinal",
+                  as.integer(Y), as.integer(R), as.integer(Z),
+                  as.integer(D), as.integer(C), as.integer(A),
+                  as.integer(Ymiss), as.integer(AT), as.integer(in.sample), 
+                  as.double(Xc), as.double(Xo), as.double(Xr),
+                  as.double(coef.start.c), as.double(coef.start.c),
+                  as.double(coef.start.o), as.double(tau.start.o),
+                  as.double(coef.start.r), 
+                  as.integer(N), as.integer(n.draws),
+                  as.integer(ncovC), as.integer(ncovO), as.integer(ncovR),
+                  as.double(p.mean.c), as.double(p.mean.o),
+                  as.double(p.mean.r),
+                  as.double(p.prec.c), as.double(p.prec.o),
+                  as.double(p.prec.r),
+                  as.double(tune.c), as.double(tune.o), as.double(tune.r),
+                  as.integer(model.c == "logit"),
+                  as.integer(model.r == "logit"),
+                  as.integer(param), as.integer(mda.probit), as.integer(burnin),
+                  as.integer(keep), as.integer(verbose),
+                  coefC = double(ncovC*(ceiling((n.draws-burnin)/keep))),
+                  coefA = double(ncovC*(ceiling((n.draws-burnin)/keep))),
+                  coefO = double(ncovO*(ceiling((n.draws-burnin)/keep))),
+                  coefR = double(ncovR*(ceiling((n.draws-burnin)/keep))),
+                  tauO = double((ncat-1)*(ceiling((n.draws-burnin)/keep))),
+                  QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
+                  PACKAGE = "experiment")
   
   if (model.o == "gaussian")
     out <- .C("LIgaussian",
@@ -311,6 +357,8 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
     }
     res$coefO <- matrix(out$coefO, byrow = TRUE, ncol = ncovO)
     colnames(res$coefO) <- colnames(Xo)
+    if (model.o == "oprobit")
+      res$tau <- matrix(out$tauO, byrow = TRUE, ncol = ncat - 1)
     if (Ymiss > 0) {
       res$coefR <- matrix(out$coefR, byrow = TRUE, ncol = ncovR)
       colnames(res$coefR) <- colnames(Xr)
@@ -318,18 +366,31 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
     if (model.o == "gaussian")
       res$sig2 <- out$var
   }
-  QoI <- matrix(out$QoI, byrow = TRUE, ncol = nqoi)
-  res$ITT <- QoI[,1]
-  res$CACE <- QoI[,2]
-  res$pC <- QoI[,3]
-  res$pN <- QoI[,4]
-  if (AT)
-    res$pA <- 1-QoI[,3]-QoI[,4]
-  res$Y1barC <- QoI[,5]
-  res$Y0barC <- QoI[,6]
-  res$YbarN <- QoI[,7]
-  if (AT) 
-    res$YbarA <- QoI[,8]
 
+  QoI <- matrix(out$QoI, byrow = TRUE, ncol = nqoi)
+  if (model.o == "oprobit") {
+    res$ITT <- QoI[, 1:(ncat-1)]
+    res$CACE <- QoI[, ncat:2*(ncat-1)]
+    res$Y1barC <- QoI[,(2*(ncat-1)+1):3*(ncat-1)]
+    res$Y0barC <- QoI[,(3*(ncat-1)+1):4*(ncat-1)]
+    res$YbarN <- QoI[,(4*(ncat-1)+1):5*(ncat-1)]
+    res$pC <- QoI[,5*(ncat-1)+1]
+    res$pN <- QoI[,5*(ncat-1)+2]
+    if (AT) 
+      res$YbarA <- QoI[,(5*(ncat-1)+3):(6*(ncat-1)+2)]
+  } else {
+    res$ITT <- QoI[,1]
+    res$CACE <- QoI[,2]
+    res$pC <- QoI[,3]
+    res$pN <- QoI[,4]
+    res$Y1barC <- QoI[,5]
+    res$Y0barC <- QoI[,6]
+    res$YbarN <- QoI[,7]
+    if (AT) 
+      res$YbarA <- QoI[,8]
+  }
+  if (AT) 
+    res$pA <- 1-res$pC-res$pN
+  
   return(res)
 }
