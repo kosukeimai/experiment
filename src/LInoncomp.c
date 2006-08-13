@@ -249,6 +249,8 @@ void LIbinary(int *Y,         /* binary outcome variable */
     acceptC[j] = 0;
   for (j = 0; j < n_covO; j++)
     acceptO[j] = 0;
+  for (j = 0; j < n_covR; j++)
+    acceptR[j] = 0;
   for (main_loop = 1; main_loop <= *n_gen; main_loop++){
 
     /* Step 1: RESPONSE MODEL */
@@ -927,9 +929,11 @@ void LIgaussian(double *Y,      /* gaussian outcome variable */
   }
 
   /*** Gibbs Sampler! ***/
-  itempA = 0; itempC = 0; itempO = 0; itempQ = 0; itempR = 0; itempS = 0;   
+  itempA = 0; itempC = 0; itempO = 0; itempQ = 0; itempR = 0; itempS = 0;
   for (j = 0; j < n_covC*2; j++)
     acceptC[j] = 0;
+  for (j = 0; j < n_covR; j++)
+    acceptR[j] = 0;
   for (main_loop = 1; main_loop <= *n_gen; main_loop++){
 
     /* Step 1: RESPONSE MODEL */
@@ -1451,7 +1455,7 @@ void LIordinal(int *Y,         /* binary outcome variable */
   int *acceptR = intArray(n_covR);      /* number of acceptance */
   int i, j, k, l, main_loop;
   int itempP = ftrunc((double) *n_gen/10);
-  int itemp, itempA, itempC, itempO, itempQ, itempR;
+  int itemp, itempA, itempC, itempO, itempQ, itempR, itempT;
   double dtemp;
   double **mtempC = doubleMatrix(n_covC, n_covC); 
   double **mtempO = doubleMatrix(n_covO, n_covO); 
@@ -1553,7 +1557,7 @@ void LIordinal(int *Y,         /* binary outcome variable */
   }
 
   /*** Gibbs Sampler! ***/
-  itempA = 0; itempC = 0; itempO = 0; itempQ = 0; itempR = 0;   
+  itempA = 0; itempC = 0; itempO = 0; itempQ = 0; itempR = 0; itempT = 0;  
   for (j = 0; j < n_covC*2; j++)
     acceptC[j] = 0;
   for (j = 0; j < n_covR; j++)
@@ -1943,6 +1947,8 @@ void LIordinal(int *Y,         /* binary outcome variable */
 	    QoI[itempQ++] = YbarA[j];
 
 	if (*param) {
+	  for (j = 0; j < *n_cat-1; j++)
+	    tauO[itempT++] = tau[j];
 	  for (j = 0; j < n_covC; j++)
 	    coefC[itempC++] = betaC[j];
 	  if (*AT)
