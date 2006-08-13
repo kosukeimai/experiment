@@ -59,7 +59,7 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
     else
       Y[NR] <- (runif(Ymiss) > 0.5)*1
   if (model.o == "oprobit") {
-    ncat <- max(Y, na.rm = TRUE)
+    ncat <- max(Y, na.rm = TRUE) + 1
     if (is.null(tau.start.o))
       tau.start.o <- seq(from = 0, length = ncat-1)/10
     if (length(tau.start.o) != (ncat-1))
@@ -69,7 +69,7 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
     if (length(unique(tau.start.o)) != (ncat-1))
       stop("incorrect input for tau.start.o")
   }
-  
+
   ## Compliance status: 0 = noncomplier, 1 = complier
   C <- rep(NA, N)
   C[Z == 1 &  D == 0] <- 0 # never-takers
@@ -367,13 +367,13 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
 
   QoI <- matrix(out$QoI, byrow = TRUE, ncol = nqoi)
   if (model.o == "oprobit") {
-    res$ITT <- QoI[, 1:(ncat-1)]
-    res$CACE <- QoI[, ncat:2*(ncat-1)]
-    res$Y1barC <- QoI[,(2*(ncat-1)+1):3*(ncat-1)]
-    res$Y0barC <- QoI[,(3*(ncat-1)+1):4*(ncat-1)]
-    res$YbarN <- QoI[,(4*(ncat-1)+1):5*(ncat-1)]
-    res$pC <- QoI[,5*(ncat-1)+1]
-    res$pN <- QoI[,5*(ncat-1)+2]
+    res$ITT <- QoI[,1:(ncat-1)]
+    res$CACE <- QoI[,ncat:2*(ncat-1)]
+    res$Y1barC <- QoI[,(2*(ncat-1)+1):(3*(ncat-1))]
+    res$Y0barC <- QoI[,(3*(ncat-1)+1):(4*(ncat-1))]
+    res$YbarN <- QoI[,(4*(ncat-1)+1):(5*(ncat-1))]
+    res$pC <- QoI[,(5*(ncat-1)+1)]
+    res$pN <- QoI[,(5*(ncat-1)+2)]
     if (AT) 
       res$YbarA <- QoI[,(5*(ncat-1)+3):(6*(ncat-1)+2)]
   } else {

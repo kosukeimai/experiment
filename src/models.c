@@ -271,6 +271,7 @@ void boprobitGibbs(int *Y,        /* ordinal outcome variable: 0, 1,
     }
     Wmin[n_cat-1] = tau[n_cat-2]+10;
     Wmax[n_cat-1] = tau[n_cat-2];
+
     if (mda) sig2 = s0/rchisq((double)nu0);
     for (i = 0; i < n_samp; i++){
       dtemp = 0;
@@ -318,12 +319,12 @@ void boprobitGibbs(int *Y,        /* ordinal outcome variable: 0, 1,
   } /* end of Gibbs sampler */
   
   /* freeing memory */
+  FreeMatrix(SS, n_cov+1);
+  free(mean);
+  FreeMatrix(V, n_cov);
   free(W);
   free(Wmin);
   free(Wmax);
-  free(mean);
-  FreeMatrix(SS, n_cov+1);
-  FreeMatrix(V, n_cov);
   FreeMatrix(mtemp, n_cov);
 }
 
