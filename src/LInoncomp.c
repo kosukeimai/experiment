@@ -674,21 +674,24 @@ void LIbinary(int *Y,         /* binary outcome variable */
   free(meanc);
   free(pC);
   free(pN);
-  free(pA);
   free(prC);
   free(prN);
   free(prA);
+  free(qC);
+  free(qN);
+  free(pA);
   free(meana);
-  free(acceptC);
-  free(acceptO);
-  FreeMatrix(Xtemp, n_samp+n_covC);
-  free(Atemp);
-  free(n_comp);
-  free(n_never);
-  free(n_always);
   FreeMatrix(A0C, n_covC*2);
   FreeMatrix(A0O, n_covO);
   FreeMatrix(A0R, n_covR);
+  FreeMatrix(Xtemp, n_samp+n_covC);
+  free(Atemp);
+  free(acceptC);
+  free(acceptO);
+  free(acceptR);
+  free(n_comp);
+  free(n_never);
+  free(n_always);
   FreeMatrix(mtempC, n_covC);
   FreeMatrix(mtempO, n_covO);
   FreeMatrix(mtempR, n_covR);
@@ -1293,21 +1296,23 @@ void LIgaussian(double *Y,      /* gaussian outcome variable */
   free(meanc);
   free(pC);
   free(pN);
-  free(pA);
   free(prC);
   free(prN);
   free(prA);
+  free(qC);
+  free(qN);
+  free(pA);
   free(meana);
-  free(acceptC);
-  free(acceptR);
-  FreeMatrix(Xtemp, n_samp+n_covC);
-  free(Atemp);
-  free(n_comp);
-  free(n_never);
-  free(n_always);
   FreeMatrix(A0C, n_covC*2);
   FreeMatrix(A0O, n_covO);
   FreeMatrix(A0R, n_covR);
+  FreeMatrix(Xtemp, n_samp+n_covC);
+  free(Atemp);
+  free(acceptC);
+  free(acceptR);
+  free(n_comp);
+  free(n_never);
+  free(n_always);
   FreeMatrix(mtempC, n_covC);
   FreeMatrix(mtempO, n_covO);
   FreeMatrix(mtempR, n_covR);
@@ -1358,7 +1363,6 @@ void LIordinal(int *Y,         /* binary outcome variable */
 	       double *dA0R,   /* prior precision for delta */
 	       double *VarC,   /* proposal variance for compliance
 				  model */
-	       double *VarO,   /* proposal variance for outcome model */
 	       double *VarR,   /* proposal variance for response model */
 	       int *logitC,    /* Use logistic regression for the
 				  compliance model? */
@@ -1444,7 +1448,6 @@ void LIordinal(int *Y,         /* binary outcome variable */
   int progress = 1;
   int keep = 1;
   int *acceptC = intArray(n_covC*2);      /* number of acceptance */
-  int *acceptO = intArray(n_covO);      /* number of acceptance */
   int *acceptR = intArray(n_covR);      /* number of acceptance */
   int i, j, k, l, main_loop;
   int itempP = ftrunc((double) *n_gen/10);
@@ -1553,8 +1556,8 @@ void LIordinal(int *Y,         /* binary outcome variable */
   itempA = 0; itempC = 0; itempO = 0; itempQ = 0; itempR = 0;   
   for (j = 0; j < n_covC*2; j++)
     acceptC[j] = 0;
-  for (j = 0; j < n_covO; j++)
-    acceptO[j] = 0;
+  for (j = 0; j < n_covR; j++)
+    acceptR[j] = 0;
   for (main_loop = 1; main_loop <= *n_gen; main_loop++){
 
     /* Step 1: RESPONSE MODEL */
@@ -1617,9 +1620,9 @@ void LIordinal(int *Y,         /* binary outcome variable */
       }
     }
 
-    /** Step 2: COMPLIANCE MODEL **/
-    if (*logitC == 1) 
-      if (*AT == 1) 
+    /** Step 2: COMPLIANCE MODEL **/    
+    if (*logitC) 
+      if (*AT) 
 	logitMetro(C, Xc, betaC, n_samp, 2, n_covC, beta0, A0C, VarC, 1,
 		   acceptC); 
       else 
@@ -1629,7 +1632,7 @@ void LIordinal(int *Y,         /* binary outcome variable */
       /* complier vs. noncomplier */
       bprobitGibbs(C, Xc, betaC, n_samp, n_covC, 0, beta0, A0C,
 		   *mda, 1);
-      if (*AT == 1) {
+      if (*AT) {
 	/* never-taker vs. always-taker */
 	/* subset the data */
 	itemp = 0;
@@ -2001,27 +2004,29 @@ void LIordinal(int *Y,         /* binary outcome variable */
   free(meanc);
   free(pC);
   free(pN);
-  free(pA);
   free(prC);
   free(prN);
   free(prA);
+  free(qC);
+  free(qN);
+  free(pA);
   free(meana);
-  free(n_comp);
-  free(n_never);
-  free(n_always);
-  free(acceptC);
-  free(acceptO);
+  FreeMatrix(A0C, n_covC*2);
+  FreeMatrix(A0O, n_covO);
+  FreeMatrix(A0R, n_covR);
+  FreeMatrix(Xtemp, n_samp+n_covC);
+  free(Atemp);
   free(ITT);
   free(CACE);
   free(Y1barC);
   free(Y0barC);
   free(YbarN);
   free(YbarA);
-  FreeMatrix(Xtemp, n_samp+n_covC);
-  free(Atemp);
-  FreeMatrix(A0C, n_covC*2);
-  FreeMatrix(A0O, n_covO);
-  FreeMatrix(A0R, n_covR);
+  free(n_comp);
+  free(n_never);
+  free(n_always);
+  free(acceptC);
+  free(acceptR);
   FreeMatrix(mtempC, n_covC);
   FreeMatrix(mtempO, n_covO);
   FreeMatrix(mtempR, n_covR);

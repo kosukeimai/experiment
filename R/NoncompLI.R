@@ -95,7 +95,7 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
   ## Random starting values for missing compliance status
   if (AT) {
     A[is.na(A)] <- (runif(sum(is.na(A))) > 0.5)*1
-    if (logit.c)
+    if (model.c == "logit")
       C[A == 1] <- 2
     else
       C[A == 1] <- 0
@@ -290,36 +290,34 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
               coefR = double(ncovR*(ceiling((n.draws-burnin)/keep))),
               QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
               PACKAGE = "experiment")
-
-  if (model.o == "oprobit")
-        out <- .C("LIordinal",
-                  as.integer(Y), as.integer(R), as.integer(Z),
-                  as.integer(D), as.integer(C), as.integer(A),
-                  as.integer(Ymiss), as.integer(AT), as.integer(in.sample), 
-                  as.double(Xc), as.double(Xo), as.double(Xr),
-                  as.double(coef.start.c), as.double(coef.start.c),
-                  as.double(coef.start.o), as.double(tau.start.o),
-                  as.double(coef.start.r), 
-                  as.integer(N), as.integer(n.draws),
-                  as.integer(ncovC), as.integer(ncovO), as.integer(ncovR),
-                  as.double(p.mean.c), as.double(p.mean.o),
-                  as.double(p.mean.r),
-                  as.double(p.prec.c), as.double(p.prec.o),
-                  as.double(p.prec.r),
-                  as.double(tune.c), as.double(tune.o), as.double(tune.r),
-                  as.integer(model.c == "logit"),
-                  as.integer(model.r == "logit"),
-                  as.integer(param), as.integer(mda.probit), as.integer(burnin),
-                  as.integer(keep), as.integer(verbose),
-                  coefC = double(ncovC*(ceiling((n.draws-burnin)/keep))),
-                  coefA = double(ncovC*(ceiling((n.draws-burnin)/keep))),
-                  coefO = double(ncovO*(ceiling((n.draws-burnin)/keep))),
-                  coefR = double(ncovR*(ceiling((n.draws-burnin)/keep))),
-                  tauO = double((ncat-1)*(ceiling((n.draws-burnin)/keep))),
-                  QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
-                  PACKAGE = "experiment")
-  
-  if (model.o == "gaussian")
+  else if (model.o == "oprobit")
+    out <- .C("LIordinal",
+              as.integer(Y), as.integer(R), as.integer(Z),
+              as.integer(D), as.integer(C), as.integer(A),
+              as.integer(Ymiss), as.integer(AT), as.integer(in.sample), 
+              as.double(Xc), as.double(Xo), as.double(Xr),
+              as.double(coef.start.c), as.double(coef.start.c),
+              as.double(coef.start.o), as.double(tau.start.o),
+              as.double(coef.start.r), 
+              as.integer(N), as.integer(n.draws), as.integer(ncat),
+              as.integer(ncovC), as.integer(ncovO), as.integer(ncovR),
+              as.double(p.mean.c), as.double(p.mean.o),
+              as.double(p.mean.r),
+              as.double(p.prec.c), as.double(p.prec.o),
+              as.double(p.prec.r),
+              as.double(tune.c), as.double(tune.r),
+              as.integer(model.c == "logit"),
+              as.integer(model.r == "logit"),
+              as.integer(param), as.integer(mda.probit), as.integer(burnin),
+              as.integer(keep), as.integer(verbose),
+              coefC = double(ncovC*(ceiling((n.draws-burnin)/keep))),
+              coefA = double(ncovC*(ceiling((n.draws-burnin)/keep))),
+              coefO = double(ncovO*(ceiling((n.draws-burnin)/keep))),
+              coefR = double(ncovR*(ceiling((n.draws-burnin)/keep))),
+              tauO = double((ncat-1)*(ceiling((n.draws-burnin)/keep))),
+              QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
+              PACKAGE = "experiment")
+  else if (model.o == "gaussian")
     out <- .C("LIgaussian",
               as.double(Y), as.integer(R), as.integer(Z),
               as.integer(D), as.integer(C), as.integer(A),
