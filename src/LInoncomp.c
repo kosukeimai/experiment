@@ -1367,6 +1367,7 @@ void LIordinal(int *Y,         /* binary outcome variable */
 	       double *dA0R,   /* prior precision for delta */
 	       double *VarC,   /* proposal variance for compliance
 				  model */
+	       double *VarO,   /* proposal variance for taus */
 	       double *VarR,   /* proposal variance for response model */
 	       int *logitC,    /* Use logistic regression for the
 				  compliance model? */

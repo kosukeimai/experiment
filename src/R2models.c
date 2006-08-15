@@ -125,6 +125,7 @@ void R2boprobit(int *Y,          /* ordinal outcome variable: 0, 1,
   /* storage parameters and loop counters */
   int i, j, k, main_loop, itemp;  
   int ibeta = 0, itau = 0; 
+  double dtemp;
 
   /* matrices */
   double **X = doubleMatrix(*n_samp+*n_cov, *n_cov+1);
@@ -156,18 +157,29 @@ void R2boprobit(int *Y,          /* ordinal outcome variable: 0, 1,
     }
   }
 
+  if (*mh) {
+    for (i = 0; i < *n_samp; i++){
+      dtemp = 0;
+      for (j = 0; j < *n_cov; j++) 
+	dtemp += X[i][j]*beta[j]; 
+      if (Y[i] == 0) 
+        X[i][*n_cov] = TruncNorm(dtemp-1000,0,dtemp,1,0);
+      else 
+	X[i][*n_cov] = TruncNorm(tau[Y[i]-1],tau[Y[i]],dtemp,1,0);
+    }
+  }
+  
   accept[0] = 0;
   /* Gibbs Sampler! */
   for(main_loop = 1; main_loop <= *n_gen; main_loop++) {
     boprobitMCMC(Y, X, beta, tau, *n_samp, *n_cov, *n_cat,
-		 0, beta0, A0, *mda, *mh, *prop, accept, 1);
+		 0, beta0, A0, *mda, *mh, prop, accept, 1);
 
     /* Storing the output */
     for (j = 0; j < *n_cov; j++)
       betaStore[ibeta++] = beta[j];
     for (j = 0; j < *n_cat-1; j++)
       tauStore[itau++] = tau[j];
-
     R_FlushConsole(); 
     R_CheckUserInterrupt();
   } /* end of Gibbs sampler */
