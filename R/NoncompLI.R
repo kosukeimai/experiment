@@ -2,7 +2,7 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
                           n.draws = 5000, param = TRUE,
                           in.sample = FALSE, model.c = "probit", 
                           model.o = "probit", model.r = "probit", 
-                          tune.c = 1, tune.o = 1, tune.r = 1,
+                          tune.c = 1, tune.o = 1, tune.r = 0.1,
                           p.mean.c = 0, p.prec.c = 1000, p.mean.o = 0,
                           p.prec.o = 0.001, p.mean.r = 0, p.prec.r = 0.001,
                           p.df.o = 10, p.scale.o = 1,
@@ -68,6 +68,7 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
       stop("incorrect input for tau.start.o")
     if (length(unique(tau.start.o)) != (ncat-1))
       stop("incorrect input for tau.start.o")
+    tau.start.o <- c(tau.start.o, tau.start.o[ncat-1]+1000)
   }
 
   ## Compliance status: 0 = noncomplier, 1 = complier
@@ -247,6 +248,12 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
         tune.o <- rep(tune.o, ncovO)
       else
         stop(paste("the length of tune.o should be", ncovO))
+  if (model.o == "oprobit")
+    if (length(tune.o) != ncat-2)
+      if (length(tune.o) == 1)
+        tune.o <- rep(tune.o, ncat-2)
+      else
+        stop(paste("the length of tune.o should be", ncat-2))
   if (model.r == "logit")
     if (length(tune.r) != ncovR)
       if (length(tune.r) == 1)
@@ -305,7 +312,7 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
               as.double(p.mean.r),
               as.double(p.prec.c), as.double(p.prec.o),
               as.double(p.prec.r),
-              as.double(tune.c), as.double(tune.r),
+              as.double(tune.c), as.double(tune.o), as.double(tune.r),
               as.integer(model.c == "logit"),
               as.integer(model.r == "logit"),
               as.integer(param), as.integer(mda.probit), as.integer(burnin),
@@ -368,7 +375,7 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
   QoI <- matrix(out$QoI, byrow = TRUE, ncol = nqoi)
   if (model.o == "oprobit") {
     res$ITT <- QoI[,1:(ncat-1)]
-    res$CACE <- QoI[,ncat:2*(ncat-1)]
+    res$CACE <- QoI[,ncat:(2*(ncat-1))]
     res$Y1barC <- QoI[,(2*(ncat-1)+1):(3*(ncat-1))]
     res$Y0barC <- QoI[,(3*(ncat-1)+1):(4*(ncat-1))]
     res$YbarN <- QoI[,(4*(ncat-1)+1):(5*(ncat-1))]

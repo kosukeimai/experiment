@@ -1350,8 +1350,9 @@ void LIordinal(int *Y,         /* binary outcome variable */
 	       double *betaC,  /* coefficients for compliance model */
 	       double *betaA,  /* coefficients for always-takers model */
 	       double *gamma,  /* coefficients for outcome model */
-	       double *tau,    /* J-1 cutpoints where the first
-				  cutpoint is set to 0 */
+	       double *tau,    /* J cutpoints where the first
+				  cutpoint is set to 0 and last set to
+				  tau_{J-1} + 1000 */
 	       double *delta,  /* coefficients for response model */
 	       int *in_samp,   /* # of observations */
 	       int *n_gen,     /* # of Gibbs draws */
@@ -1452,8 +1453,9 @@ void LIordinal(int *Y,         /* binary outcome variable */
   /*** storage parameters and loop counters **/
   int progress = 1;
   int keep = 1;
-  int *acceptC = intArray(n_covC*2);      /* number of acceptance */
+  int *acceptC = intArray(n_covC*2);    /* number of acceptance */
   int *acceptR = intArray(n_covR);      /* number of acceptance */
+  int *acceptO = intArray(1); acceptO[0] = 0;
   int i, j, k, l, main_loop;
   int itempP = ftrunc((double) *n_gen/10);
   int itemp, itempA, itempC, itempO, itempQ, itempR, itempT;
@@ -1519,6 +1521,20 @@ void LIordinal(int *Y,         /* binary outcome variable */
 	Xc[n_samp+i][n_covC] += mtempC[i][j]*beta0[j];
 	Xc[n_samp+i][j] = mtempC[i][j];
       }
+    }
+  }
+
+  itemp = 0;
+  for (i = 0; i < n_samp; i++) {
+    if (R[i] == 1) {
+      dtemp = 0;
+      for (j = 0; j < n_covO; j++)
+	dtemp += Xo[i][j]*gamma[j];
+      if (Y[i] == 0)
+	Xobs[itemp][n_covO] = TruncNorm(dtemp-1000,0,dtemp,1,0);
+      else
+	Xobs[itemp][n_covO] = TruncNorm(tau[Y[i]-1],tau[Y[i]],dtemp,1,0);
+      itemp++;
     }
   }
 
@@ -1746,9 +1762,9 @@ void LIordinal(int *Y,         /* binary outcome variable */
       if (R[i] == 1) itemp++;
     }
 
-    /** Step 4: OUTCOME MODEL 
+    /** Step 4: OUTCOME MODEL **/
     boprobitMCMC(Yobs, Xobs, gamma, tau, n_obs, n_covO, *n_cat,
-		 0, gamma0, A0O, *mda, 1, prop, acceptO, 1); **/
+		 0, gamma0, A0O, *mda, 1, VarO, acceptO, 1);
 
     /** Compute probabilities of Y = 1 **/
     for (i = 0; i < n_samp; i++) {
@@ -1934,13 +1950,16 @@ void LIordinal(int *Y,         /* binary outcome variable */
 	    YbarA[j] /= (double)(n_always[0]+n_always[1]);
 	}
 	
-	for (j = 0; j < *n_cat-1; j++) {
+	for (j = 0; j < *n_cat-1; j++) 
 	  QoI[itempQ++] = ITT[j];   
+	for (j = 0; j < *n_cat-1; j++) 
 	  QoI[itempQ++] = CACE[j];   
+	for (j = 0; j < *n_cat-1; j++) 
 	  QoI[itempQ++] = Y1barC[j];
+	for (j = 0; j < *n_cat-1; j++) 
 	  QoI[itempQ++] = Y0barC[j];
+	for (j = 0; j < *n_cat-1; j++) 
 	  QoI[itempQ++] = YbarN[j];
-	}
 	QoI[itempQ++] = p_comp; 	  
 	QoI[itempQ++] = p_never;
 	if (*AT)
@@ -1989,6 +2008,8 @@ void LIordinal(int *Y,         /* binary outcome variable */
 	    Rprintf("%10g", (double)acceptR[j]/(double)main_loop);
 	  Rprintf("\n");
 	}
+	Rprintf("\n  Current Acceptance Ratio for the outcome model:");
+	Rprintf("%10g\n", (double)acceptO[0]/(double)main_loop);
 	itempP += ftrunc((double) *n_gen/10); 
 	progress++;
 	R_FlushConsole(); 
