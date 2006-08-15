@@ -1745,9 +1745,9 @@ void LIordinal(int *Y,         /* binary outcome variable */
       if (R[i] == 1) itemp++;
     }
 
-    /** Step 4: OUTCOME MODEL **/
-    boprobitGibbs(Yobs, Xobs, gamma, tau, n_obs, n_covO, *n_cat,
-		  0, gamma0, A0O, 1, *mda);
+    /** Step 4: OUTCOME MODEL 
+    boprobitMCMC(Yobs, Xobs, gamma, tau, n_obs, n_covO, *n_cat,
+		 0, gamma0, A0O, *mda, 1, prop, acceptO, 1); **/
 
     /** Compute probabilities of Y = 1 **/
     for (i = 0; i < n_samp; i++) {

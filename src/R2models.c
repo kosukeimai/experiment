@@ -102,8 +102,9 @@ void R2boprobit(int *Y,          /* ordinal outcome variable: 0, 1,
 				    ..., J-1 */
 		double *dX,      /* model matrix */
 		double *beta,    /* fixed effects coefficients */
-		double *tau,     /* J-1 cut points; the first cut
-				    point is set to 0 */
+		double *tau,     /* J cut points; the first cut
+				    point is set to 0 and the last one
+				    set to tau_{J-1}+1000 */
 		int *n_samp,     /* # of obs */ 
 		int *n_cov,      /* # of covariates */
 		int *n_cat,      /* # of categories: J */
@@ -114,6 +115,9 @@ void R2boprobit(int *Y,          /* ordinal outcome variable: 0, 1,
 				 */
 		int *n_gen,      /* # of gibbs draws */
 		int *mda,        /* marginal data augmentation? */
+		int *mh,         /* Metropolis-Hasting step? */
+		double *prop,    /* proposal variance for MH step */
+		int *accept,     /* acceptance counter */
 		double *betaStore, 
 		double *tauStore
 		) {
@@ -152,10 +156,11 @@ void R2boprobit(int *Y,          /* ordinal outcome variable: 0, 1,
     }
   }
 
+  accept[0] = 0;
   /* Gibbs Sampler! */
   for(main_loop = 1; main_loop <= *n_gen; main_loop++) {
-    boprobitGibbs(Y, X, beta, tau, *n_samp, *n_cov, *n_cat,
-		  0, beta0, A0, 1, *mda);
+    boprobitMCMC(Y, X, beta, tau, *n_samp, *n_cov, *n_cat,
+		 0, beta0, A0, *mda, *mh, *prop, accept, 1);
 
     /* Storing the output */
     for (j = 0; j < *n_cov; j++)
