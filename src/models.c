@@ -210,13 +210,13 @@ void bprobitGibbs(int *Y,        /* binary outcome variable */
    Marginal Data Augmentation
    
    Marginal Data Augmentation for updating coefficients: 
-      p.318 of Imai and van Dyk (2005) Journal of Econometrics.
-      Prior mean for beta will be set to zero. 
-      Improper prior allowed (set A0 to be a matrix of zeros).
-
-   Metropolis-Hasting Step for updating cutpoints:
-      Cowles (1996). Statistics and Computing
-
+   p.318 of Imai and van Dyk (2005) Journal of Econometrics.
+   Prior mean for beta will be set to zero. 
+   Improper prior allowed (set A0 to be a matrix of zeros).
+   
+   Metropolis-Hasting Blocking Step for updating cutpoints:
+   Cowles (1996). Statistics and Computing
+   
 ***/ 
 
 void boprobitMCMC(int *Y,        /* ordinal outcome variable: 0, 1,
@@ -303,12 +303,15 @@ void boprobitMCMC(int *Y,        /* ordinal outcome variable: 0, 1,
 	accept[0]++;
 	for (j = 1; j < n_cat; j++)
 	  tau[j] = dvtemp[j];
+	if (mda) /* marginal data augmentation */ 
+	  sig2 = s0/rchisq((double)nu0);
 	for (i = 0; i < n_samp; i++){
 	  if (Y[i] == 0) 
-	    X[i][n_cov] = TruncNorm(mean[i]-1000,0,mean[i],1,0);
+	    W[i] = TruncNorm(mean[i]-1000,0,mean[i],1,0);
 	  else 
-	    X[i][n_cov] = TruncNorm(tau[Y[i]-1],tau[Y[i]],mean[i],1,0);
+	    W[i] = TruncNorm(tau[Y[i]-1],tau[Y[i]],mean[i],1,0);
 	}
+	X[i][n_cov] = W[i]*sqrt(sig2);
       }
     } else {
       /* Sampling the Latent Variable */
@@ -349,13 +352,12 @@ void boprobitMCMC(int *Y,        /* ordinal outcome variable: 0, 1,
     for(j = 0; j < n_cov; j++)
       for(k = 0; k < n_cov; k++) V[j][k]=-SS[j][k]*sig2;
     rMVN(beta, mbeta, V, n_cov);
+    /* rescaling the parameters */
+    if (mda)
+      for (j = 0; j < n_cov; j++) beta[j] /= sqrt(sig2);
     
     /* sampling taus without MH-step */
     if (!mh) { 
-      /* rescaling the parameters */
-      if (mda)
-	for (j = 0; j < n_cov; j++) beta[j] /= sqrt(sig2);
-      
       for (j = 1; j < n_cat-1; j++) 
 	tau[j] = runif(fmax2(tau[j-1], Wmax[j]), 
 		       fmin2(tau[j+1], Wmin[j+1]));
