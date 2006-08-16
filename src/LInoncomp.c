@@ -2063,6 +2063,7 @@ void LIordinal(int *Y,         /* binary outcome variable */
   free(n_never);
   free(n_always);
   free(acceptC);
+  free(acceptO);
   free(acceptR);
   FreeMatrix(mtempC, n_covC);
   FreeMatrix(mtempO, n_covO);

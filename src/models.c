@@ -367,12 +367,13 @@ void boprobitMCMC(int *Y,        /* ordinal outcome variable: 0, 1,
   } /* end of Gibbs sampler */
   
   /* freeing memory */
-  free(W);
   FreeMatrix(SS, n_cov+1);
+  free(mean);
   free(mbeta);
   FreeMatrix(V, n_cov);
-  free(Wmin);
+  free(W);
   free(Wmax);
+  free(Wmin);
   free(dvtemp);
   FreeMatrix(mtemp, n_cov);
 }
