@@ -1837,12 +1837,22 @@ void LIordinal(int *Y,         /* binary outcome variable */
 	for (i = 0; i < n_samp; i++){
 	  p_comp += qC[i];
 	  p_never += qN[i];
+	  if (Z[i] == 1) 
+	    if (C[i] == 1)
+	      n_comp[1]++;
+	    else if (A[i] == 1)
+	      n_always[1]++;
+	    else
+	      n_never[1]++;
+	  else
+	    if (C[i] == 1)
+	      n_comp[0]++;
+	    else if (A[i] == 1)
+	      n_always[0]++;
+	    else 
+	      n_never[0]++;
 	  for (j = 1; j < *n_cat; j++) {
 	    if (C[i] == 1) { /* ITT effects */
-	      if (Z[i] == 1) 
-		n_comp[1]++;
-	      else
-		n_comp[0]++;
 	      if (*Insample) { /* insample QoI */
 		if (Z[i] == 1) {
 		  if (R[i] == 1)
@@ -1861,25 +1871,28 @@ void LIordinal(int *Y,         /* binary outcome variable */
 		  else
 		    if (j == (*n_cat-1))
 		      Y0barC[j-1] += (double)(unif_rand() <
-					      pnorm(tau[*n_cat-2], meano[i]+gamma[0], 1, 0, 0));
+					      pnorm(tau[*n_cat-2], meano[i]+gamma[1], 1, 0, 0));
 		    else
 		      Y0barC[j-1] += (double)(unif_rand() < 
-					      (pnorm(tau[j], meano[i]+gamma[0], 1, 1, 0) 
-					       -pnorm(tau[j-1], meano[i]+gamma[0], 1, 1, 0)));		
+					      (pnorm(tau[j], meano[i]+gamma[1], 1, 1, 0) 
+					       -pnorm(tau[j-1], meano[i]+gamma[1], 1, 1, 0)));		
 		}
 	      } else { /* population QoI */
-		if (j == (*n_cat-1))
-		  Y0barC[j-1] += pnorm(tau[*n_cat-2], meano[i]+gamma[0], 1, 0, 0);
+		if (Z[i] == 1)
+		  if (j == (*n_cat-1))
+		    Y1barC[j-1] += pnorm(tau[*n_cat-2], meano[i]+gamma[0], 1, 0, 0);
+		  else
+		    Y1barC[j-1] += (pnorm(tau[j], meano[i]+gamma[0], 1, 1, 0) 
+				    -pnorm(tau[j-1], meano[i]+gamma[0], 1, 1, 0));
 		else
-		  Y0barC[j-1] += (pnorm(tau[j], meano[i]+gamma[0], 1, 1, 0) 
-				  -pnorm(tau[j-1], meano[i]+gamma[0], 1, 1, 0));
+		  if (j == (*n_cat-1))
+		    Y0barC[j-1] += pnorm(tau[*n_cat-2], meano[i]+gamma[1], 1, 0, 0);
+		  else
+		    Y0barC[j-1] += (pnorm(tau[j], meano[i]+gamma[1], 1, 1, 0) 
+				    -pnorm(tau[j-1], meano[i]+gamma[1], 1, 1, 0));
 	      }
 	    } else { /* Estimates for always-takers and never-takers */
 	      if (A[i] == 1) {
-		if (Z[i] == 1)
-		  n_always[1]++;
-		else
-		  n_always[0]++;
 		if (*Insample)
 		  if (R[i] == 1)
 		    YbarA[j-1] += (double)(Y[i] == j);
@@ -1898,10 +1911,6 @@ void LIordinal(int *Y,         /* binary outcome variable */
 		    YbarA[j-1] += (pnorm(tau[j], meano[i]+gamma[2], 1, 1, 0) 
 				   -pnorm(tau[j-1], meano[i]+gamma[2], 1, 1, 0));
 	      } else {
-		if (Z[i] == 1)
-		  n_never[1]++;
-		else
-		  n_never[0]++;
 		if (*Insample)
 		  if (R[i] == 1)
 		    YbarN[j-1] += (double)(Y[i] == j);
@@ -1925,7 +1934,7 @@ void LIordinal(int *Y,         /* binary outcome variable */
 	}
 
 	if (*Insample) { 
-	  for (j = 0; j < *n_cat-1; j++) {
+	  for (j = 0; j < (*n_cat-1); j++) {
 	    ITT[j] = Y1barC[j]/(double)(n_comp[1]+n_never[1]+n_always[1]) -
 	      Y0barC[j]/(double)(n_comp[0]+n_never[0]+n_always[0]);
 	    Y1barC[j] /= (double)n_comp[1];  
@@ -1934,7 +1943,7 @@ void LIordinal(int *Y,         /* binary outcome variable */
 	  p_comp = (double)(n_comp[0]+n_comp[1])/(double)n_samp;
 	  p_never = (double)(n_never[0]+n_never[1])/(double)n_samp;
 	} else {
-	  for (j = 0; j < *n_cat-1; j++) {
+	  for (j = 0; j < (*n_cat-1); j++) {
 	    ITT[j] = (Y1barC[j]-Y0barC[j])/(double)n_samp;     /* ITT effect */
 	    Y1barC[j] /= (double)(n_comp[0]+n_comp[1]);  
 	    Y0barC[j] /= (double)(n_comp[0]+n_comp[1]);
@@ -1943,31 +1952,31 @@ void LIordinal(int *Y,         /* binary outcome variable */
 					   a complier */ 
 	  p_never /= (double)n_samp; /* Prob. of being a never-taker */
 	}
-	for (j = 0; j < *n_cat-1; j++) {
+	for (j = 0; j < (*n_cat-1); j++) {
 	  CACE[j] = Y1barC[j]-Y0barC[j];    /* CACE */
 	  YbarN[j] /= (double)(n_never[0]+n_never[1]);
 	  if (*AT)
 	    YbarA[j] /= (double)(n_always[0]+n_always[1]);
 	}
 	
-	for (j = 0; j < *n_cat-1; j++) 
+	for (j = 0; j < (*n_cat-1); j++) 
 	  QoI[itempQ++] = ITT[j];   
-	for (j = 0; j < *n_cat-1; j++) 
+	for (j = 0; j < (*n_cat-1); j++) 
 	  QoI[itempQ++] = CACE[j];   
-	for (j = 0; j < *n_cat-1; j++) 
+	for (j = 0; j < (*n_cat-1); j++) 
 	  QoI[itempQ++] = Y1barC[j];
-	for (j = 0; j < *n_cat-1; j++) 
+	for (j = 0; j < (*n_cat-1); j++) 
 	  QoI[itempQ++] = Y0barC[j];
-	for (j = 0; j < *n_cat-1; j++) 
+	for (j = 0; j < (*n_cat-1); j++) 
 	  QoI[itempQ++] = YbarN[j];
 	QoI[itempQ++] = p_comp; 	  
 	QoI[itempQ++] = p_never;
 	if (*AT)
-	  for (j = 0; j < *n_cat-1; j++) 
+	  for (j = 0; j < (*n_cat-1); j++) 
 	    QoI[itempQ++] = YbarA[j];
 
 	if (*param) {
-	  for (j = 0; j < *n_cat-1; j++)
+	  for (j = 0; j < (*n_cat-1); j++)
 	    tauO[itempT++] = tau[j];
 	  for (j = 0; j < n_covC; j++)
 	    coefC[itempC++] = betaC[j];
