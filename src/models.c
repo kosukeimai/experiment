@@ -1021,7 +1021,7 @@ void boprobitMixedMCMC(int *Y,          /* binary outcome variable */
 	    log(pnorm(tau[Y[i]]-Xbeta[i]-Zgamma[i], 0, 1, 1, 0) -
 		pnorm(tau[Y[i]-1]-Xbeta[i]-Zgamma[i], 0, 1, 1, 0));
       }
-	Rprintf("%14g\n", exp(dtemp));
+      /* Rprintf("%14g\n", exp(dtemp)); */
       if (unif_rand() < exp(dtemp)) {
 	accept[0]++;
 	for (j = 1; j < n_cat; j++)
