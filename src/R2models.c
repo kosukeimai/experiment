@@ -680,6 +680,7 @@ void R2boprobitMixedMCMC(int *Y,           /* binary outcome variable */
   int i, j, k, main_loop, itemp;  
   int *vitemp = intArray(*n_grp);
   int ibeta = 0, igamma = 0, iPsi =0, itau = 0;
+  double dtemp;
 
   /* matrices */
   double **X = doubleMatrix(*n_samp+*n_fixed, *n_fixed+1);
@@ -737,6 +738,23 @@ void R2boprobitMixedMCMC(int *Y,           /* binary outcome variable */
     for (j = 0; j < *n_fixed; j++) {
       X[*n_samp+i][*n_fixed] += mtemp[i][j]*beta0[j];
       X[*n_samp+i][j] = mtemp[i][j];
+    }
+  }
+
+  if (*mh) {
+    for (j = 0; j < *n_grp; j++)
+      vitemp[j] = 0;
+    for (i = 0; i < *n_samp; i++){
+      dtemp = 0;
+      for (j = 0; j < *n_fixed; j++)
+        dtemp += X[i][j]*beta[j];
+      for (j = 0; j < *n_random; j++)
+        dtemp += Zgrp[grp[i]][vitemp[grp[i]]][j]*gamma[grp[i]][j];
+      vitemp[grp[i]]++;
+      if (Y[i] == 0)
+        X[i][*n_fixed] = TruncNorm(dtemp-1000,0,dtemp,1,0);
+      else
+        X[i][*n_fixed] = TruncNorm(tau[Y[i]-1],tau[Y[i]],dtemp,1,0);
     }
   }
 
