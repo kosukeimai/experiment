@@ -963,8 +963,6 @@ void boprobitMixedMCMC(int *Y,          /* binary outcome variable */
 					 ..., J-1 */
   double **mtemp = doubleMatrix(n_random, n_random);
   double **mtemp1 = doubleMatrix(n_random, n_random);
-  double *mean0 = doubleArray(n_samp);
-  double *mean1 = doubleArray(n_samp);
 
   /* storage parameters and loop counters */
   int i, j, k, l, main_loop;  
@@ -972,8 +970,9 @@ void boprobitMixedMCMC(int *Y,          /* binary outcome variable */
   double dtemp;
   double *vdtemp = doubleArray(1);
   double *dvtemp = doubleArray(n_cat);
+  dvtemp[0] = tau[0];
   vdtemp[0] = 1.0;
-  
+
   /* read the prior as additional data points */
   if (prior) {
     dcholdc(A0, n_fixed, V);
@@ -1014,24 +1013,25 @@ void boprobitMixedMCMC(int *Y,          /* binary outcome variable */
 	      pnorm(tau[j-1]-dvtemp[j], 0, sqrt(prop[j-1]), 1, 0));
       for (i = 0; i < n_samp; i++) {
 	if (Y[i] == (n_cat-1))  
-	  dtemp = dtemp + pnorm(dvtemp[n_cat-2]-mean0[i]-mean1[i], 0, 1, 0, 1) -
-	    pnorm(tau[n_cat-2]-mean0[i]-mean1[i], 0, 1, 0, 1);
+	  dtemp = dtemp + pnorm(dvtemp[n_cat-2]-Xbeta[i]-Zgamma[i], 0, 1, 0, 1) -
+	    pnorm(tau[n_cat-2]-Xbeta[i]-Zgamma[i], 0, 1, 0, 1);
 	else if (Y[i] > 0) 
-	  dtemp = dtemp + log(pnorm(dvtemp[Y[i]]-mean0[i]-mean1[i], 0, 1, 1, 0) -
-			      pnorm(dvtemp[Y[i]-1]-mean0[i]-mean1[i], 0, 1, 1, 0)) -
-	    log(pnorm(tau[Y[i]]-mean0[i]-mean1[i], 0, 1, 1, 0) -
-		pnorm(tau[Y[i]-1]-mean0[i]-mean1[i], 0, 1, 1, 0));
+	  dtemp = dtemp + log(pnorm(dvtemp[Y[i]]-Xbeta[i]-Zgamma[i], 0, 1, 1, 0) -
+			      pnorm(dvtemp[Y[i]-1]-Xbeta[i]-Zgamma[i], 0, 1, 1, 0)) -
+	    log(pnorm(tau[Y[i]]-Xbeta[i]-Zgamma[i], 0, 1, 1, 0) -
+		pnorm(tau[Y[i]-1]-Xbeta[i]-Zgamma[i], 0, 1, 1, 0));
       }
+	Rprintf("%14g\n", exp(dtemp));
       if (unif_rand() < exp(dtemp)) {
 	accept[0]++;
 	for (j = 1; j < n_cat; j++)
 	  tau[j] = dvtemp[j];
 	for (i = 0; i < n_samp; i++){
 	  if (Y[i] == 0) 
-	    W[i] = TruncNorm(mean0[i]+mean1[i]-1000,0,mean0[i]+mean1[i],1,0);
+	    W[i] = TruncNorm(Xbeta[i]+Zgamma[i]-1000,0,Xbeta[i]+Zgamma[i],1,0);
 	  else 
-	    W[i] = TruncNorm(tau[Y[i]-1],tau[Y[i]],mean0[i]+mean1[i],1,0);
-	X[i][n_fixed] = W[i]-mean1[i];
+	    W[i] = TruncNorm(tau[Y[i]-1],tau[Y[i]],Xbeta[i]+Zgamma[i],1,0);
+	X[i][n_fixed] = W[i]-Zgamma[i];
 	}
       }
     } else {
@@ -1043,9 +1043,9 @@ void boprobitMixedMCMC(int *Y,          /* binary outcome variable */
       }
       for (i = 0; i < n_samp; i++){
 	if (Y[i] == 0) 
-	  W[i] = TruncNorm(mean0[i]+mean1[i]-1000,0,mean0[i]+mean1[i],1,0);
+	  W[i] = TruncNorm(Xbeta[i]+Zgamma[i]-1000,0,Xbeta[i]+Zgamma[i],1,0);
 	else 
-	  W[i] = TruncNorm(tau[Y[i]-1],tau[Y[i]],mean0[i]+mean1[i],1,0);
+	  W[i] = TruncNorm(tau[Y[i]-1],tau[Y[i]],Xbeta[i]+Zgamma[i],1,0);
 	Wmax[Y[i]] = fmax2(Wmax[Y[i]], W[i]);
 	Wmin[Y[i]] = fmin2(Wmin[Y[i]], W[i]);
 	X[i][n_fixed] = W[i];
@@ -1085,8 +1085,6 @@ void boprobitMixedMCMC(int *Y,          /* binary outcome variable */
 
   /* freeing memory */
   free(gamma0);
-  free(mean0);
-  free(mean1);
   free(Xbeta);
   free(Zgamma);
   FreeMatrix(V, n_fixed);

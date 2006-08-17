@@ -776,7 +776,8 @@ void R2boprobitMixedMCMC(int *Y,           /* binary outcome variable */
 	gammaStore[igamma++] = gamma[j][k];
     for (j = 0; j < (*n_cat - 1); j++)
       tauStore[itau++] = tau[j];
-
+    
+    Rprintf("%14g\n", (double)accept[0]/(double) main_loop);
     R_FlushConsole(); 
     R_CheckUserInterrupt();
   } /* end of Gibbs sampler */

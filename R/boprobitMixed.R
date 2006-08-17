@@ -12,7 +12,7 @@ boprobitMixed <- function(Y, X, Z, grp, beta.start, tau.start, Phi.start, beta0,
             as.integer(max(Y)+1),
             as.double(beta0), as.double(A0),
             as.integer(df), as.double(T0), as.integer(mh),
-            as.double(prop), as.integer(accept), 
+            as.double(prop), accept = as.integer(accept), 
             as.integer(sims), betaStore = double(sims*ncol(X)),
             gammaStore = double(sims*ncol(Z)*ngrp),
             tauStore = double(sims*max(Y)),
@@ -22,5 +22,6 @@ boprobitMixed <- function(Y, X, Z, grp, beta.start, tau.start, Phi.start, beta0,
   return(list(beta = matrix(res$betaStore, byrow = TRUE, ncol = ncol(X)),
               gamma = array(res$gammaStore, dim = c(ncol(Z), ngrp, sims)),
               Psi = matrix(res$PsiStore, byrow = TRUE, nrow = sims),
-              tau = matrix(res$tauStore, byrow = TRUE, ncol = max(Y))))
+              tau = matrix(res$tauStore, byrow = TRUE, ncol = max(Y)),
+              accept = res$accept/sims))
 }
