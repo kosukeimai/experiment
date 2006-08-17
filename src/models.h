@@ -44,3 +44,12 @@ void logitMixedMetro(int *Y, double **X, double ***Z, int *grp,
 		     double **A0, int tau0, double **T0,
 		     double *tune_fixed, double *tune_random,
 		     int n_gen, int *acc_fixed, int *acc_random);
+
+/* ordinal probit mixed effects regression */
+void boprobitMixedMCMC(int *Y, double **X, double ***Zgrp, int *grp,
+		       double *beta, double **gamma, double *tau,
+		       double **Psi, int n_samp, int n_cat,
+		       int n_fixed, int n_random, int n_grp,
+		       int prior, double *beta0, double **A0, int tau0,
+		       double **T0, int mh, double *prop, double *accept,
+		       int n_gen);
