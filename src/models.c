@@ -948,7 +948,7 @@ void boprobitMixedMCMC(int *Y,          /* binary outcome variable */
 					   for cutpoints? */
 		       double *prop,    /* proposal variance for MH
 					   step */
-		       double *accept,  /* counter for acceptance */
+		       int *accept,     /* counter for acceptance */
 		       int n_gen        /* # of gibbs draws */
 		       ) {
   

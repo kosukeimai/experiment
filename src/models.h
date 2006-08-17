@@ -51,5 +51,5 @@ void boprobitMixedMCMC(int *Y, double **X, double ***Zgrp, int *grp,
 		       double **Psi, int n_samp, int n_cat,
 		       int n_fixed, int n_random, int n_grp,
 		       int prior, double *beta0, double **A0, int tau0,
-		       double **T0, int mh, double *prop, double *accept,
+		       double **T0, int mh, double *prop, int *accept,
 		       int n_gen);
