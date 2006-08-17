@@ -1,10 +1,11 @@
-boprobitMixed <- function(Y, X, Z, grp, beta.start, Phi.start, beta0,
-                          A0, df, T0, sims, prop, mh = TRUE) {
+boprobitMixed <- function(Y, X, Z, grp, beta.start, tau.start, Phi.start, beta0,
+                          A0, df, T0, prop, mh = TRUE, sims) {
   
   ## this code assumes the equal number of obs within each group
   accept <- 0
-  res <- .C("R2boprobitMixedGibbs", as.integer(Y), as.double(X),
+  res <- .C("R2boprobitMixedMCMC", as.integer(Y), as.double(X),
             as.double(Z), as.integer(grp), as.double(beta.start),
+            as.double(tau.start),
             as.double(Psi.start), as.integer(nrow(X)),
             as.integer(ncol(X)), as.integer(ncol(Z)),
             as.integer(length(table(grp))), as.integer(max(table(grp))),
