@@ -34,7 +34,7 @@ void bprobitMixedGibbs(int *Y, double **X, double ***Zgrp,
 		       double **Psi, int n_samp, int n_fixed, 
 		       int n_random, int n_grp, 
 		       int prior, double *beta0, double **A0, 
-		       int tau0, double **T0, int mda, int n_gen);
+		       int tau0, double **T0, int n_gen);
 
 /* (binomial/multinomial) logistic mixed effects regression */
 void logitMixedMetro(int *Y, double **X, double ***Z, int *grp,

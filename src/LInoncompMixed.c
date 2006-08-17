@@ -79,8 +79,6 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 		    int *logitC,    /* Use logistic regression for the
 				       compliance model? */
 		    int *param,     /* Want to keep paramters? */
-		    int *mda,       /* Want to use marginal data
-				       augmentation for probit regressions? */
 		    int *burnin,    /* number of burnin */
 		    int *iKeep,     /* keep ?th draws */
 		    int *verbose,   /* print out messages */
@@ -418,7 +416,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
     if (n_miss > 0) {
       bprobitMixedGibbs(R, Xr, Zr, grp, delta, xiR, PsiR, n_samp, 
 			n_fixedR, n_randomR, n_grp, 0, 
-			delta0, A0R, tau0s[3], T0R, *mda, 1);
+			delta0, A0R, tau0s[3], T0R, 1);
  
       /* Compute probabilities of R = Robs */ 
       for (j = 0; j < n_grp; j++) vitemp[j] = 0;
@@ -472,7 +470,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
       /* complier vs. noncomplier */
       bprobitMixedGibbs(C, Xc, Zc, grp, betaC, xiC[0], Psi[0], n_samp,
 			n_fixedC, n_randomC, n_grp, 0, 
-			beta0, A0C, tau0s[0], T0C, *mda, 1);
+			beta0, A0C, tau0s[0], T0C, 1);
       if (*AT) {
 	/* never-taker vs. always-taker */
 	/* subset the data */
@@ -498,8 +496,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	}
 	bprobitMixedGibbs(Atemp, Xtemp, Ztemp, grp_temp, betaA, xiC[1],
 			  Psi[1], itemp-n_fixedC, n_fixedC, n_randomC,
-			  n_grp, 0, beta0, A0C, tau0s[1], T0A, 
-			  *mda, 1); 
+			  n_grp, 0, beta0, A0C, tau0s[1], T0A, 1); 
       }      
     }    
 
@@ -624,7 +621,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
     /** Step 4: OUTCOME MODEL **/
     bprobitMixedGibbs(Yobs, Xobs, Zobs, grp_obs, gamma, xiO, PsiO,
 		      n_obs, n_fixedO, n_randomO, n_grp, 0,
-		      gamma0, A0O, tau0s[2], T0O, *mda, 1); 
+		      gamma0, A0O, tau0s[2], T0O, 1); 
     
     /** Compute probabilities of Y = 1 **/
     for (j = 0; j < n_grp; j++)
@@ -1275,7 +1272,7 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
     if (n_miss > 0) {
       bprobitMixedGibbs(R, Xr, Zr, grp, delta, xiR, PsiR, n_samp, 
 			n_fixedR, n_randomR, n_grp, 0, 
-			delta0, A0R, tau0s[3], T0R, *mda, 1);
+			delta0, A0R, tau0s[3], T0R, 1);
  
       /* Compute probabilities of R = Robs */ 
       for (j = 0; j < n_grp; j++) vitemp[j] = 0;
@@ -1329,7 +1326,7 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
       /* complier vs. noncomplier */
       bprobitMixedGibbs(C, Xc, Zc, grp, betaC, xiC[0], Psi[0], n_samp,
 			n_fixedC, n_randomC, n_grp, 0, 
-			beta0, A0C, tau0s[0], T0C, *mda, 1);
+			beta0, A0C, tau0s[0], T0C, 1);
       if (*AT) {
 	/* never-taker vs. always-taker */
 	/* subset the data */
@@ -1355,8 +1352,7 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
 	}
 	bprobitMixedGibbs(Atemp, Xtemp, Ztemp, grp_temp, betaA, xiC[1],
 			  Psi[1], itemp-n_fixedC, n_fixedC, n_randomC,
-			  n_grp, 0, beta0, A0C, tau0s[1], T0A, 
-			  *mda, 1); 
+			  n_grp, 0, beta0, A0C, tau0s[1], T0A, 1); 
       }      
     }    
 

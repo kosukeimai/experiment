@@ -403,8 +403,6 @@ void R2bprobitMixedGibbs(int *Y,           /* binary outcome variable */
 			 double *dA0,      /* prior precision */
 			 int *tau0,        /* prior df */
 			 double *dT0,      /* prior scale */
-			 int *mda,         /* Want to use marginal data
-					      augmentation for fixed effects ? */ 
 			 int *n_gen,       /* # of gibbs draws */
 			 /* storage of MCMC draws */
 			 double *betaStore, 
@@ -480,7 +478,7 @@ void R2bprobitMixedGibbs(int *Y,           /* binary outcome variable */
   for(main_loop = 1; main_loop <= *n_gen; main_loop++) {
     bprobitMixedGibbs(Y, X, Zgrp, grp, beta, gamma, Psi, *n_samp,
 		      *n_fixed, *n_random, *n_grp,
-		      0, beta0, A0, *tau0, T0, *mda, 1);
+		      0, beta0, A0, *tau0, T0, 1);
 
     /* Storing the output */
     for (j = 0; j < *n_fixed; j++)

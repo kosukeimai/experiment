@@ -1,6 +1,5 @@
 bprobitMixed <- function(Y, X, Z, grp, beta.start, 
-                         Phi.start, beta0, A0, df, T0, mda =
-                         FALSE, sims) {
+                         Phi.start, beta0, A0, df, T0, sims) {
   
   ## this code assumes the equal number of obs within each group
   res <- .C("R2bprobitMixedGibbs", as.integer(Y), as.double(X),
@@ -9,7 +8,7 @@ bprobitMixed <- function(Y, X, Z, grp, beta.start,
             as.integer(nrow(X)), as.integer(ncol(X)), as.integer(ncol(Z)),
             as.integer(length(table(grp))), 
             as.integer(max(table(grp))), as.double(beta0), as.double(A0),
-            as.integer(df), as.double(T0), as.integer(mda),
+            as.integer(df), as.double(T0), 
             as.integer(sims), betaStore = double(sims*ncol(X)),
             gammaStore = double(sims*ncol(Z)*ngrp),
             PsiStore = double(sims*ncol(Z)*(ncol(Z)+1)/2),
