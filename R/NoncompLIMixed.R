@@ -1,29 +1,26 @@
 Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
                                n.draws = 5000, param = TRUE,
                                in.sample = FALSE, model.c = "probit",
-                               model.o = "probit",
+                               model.o = "probit", tune.tau = 0.01,
                                tune.fixed = 0.01, tune.random = 0.01, 
                                p.mean.c = 0, p.prec.c = 0.01, p.mean.o = 0,
                                p.prec.o = 0.01, p.mean.r = 0, p.prec.r = 0.01,
                                p.df.var = 10, p.scale.var = 1,
                                coef.start.c = 0, coef.start.o = 0,
+                               tau.start.o = NULL,
                                coef.start.r = 0, var.start.o = 1,
                                Psi.start.c = 1,
                                Psi.start.o = 1, Psi.start.r = 1,
                                p.df.c = 5, p.df.o = 5, p.df.r = 5,
                                p.scale.c = 1, p.scale.o = 1,
-                               p.scale.r = 1,
+                               p.scale.r = 1, 
                                burnin = 0, thin = 0, verbose = TRUE) {  
   
   ## models
-  if (!(model.o %in% c("probit", "gaussian")))
+  if (!(model.o %in% c("probit", "oprobit", "gaussian")))
     stop("no such model is supported as the outcome model")
   if (!(model.c %in% c("probit", "logit")))
     stop("no such model is supported as the compliance model")
-  if (model.c == "logit") 
-    logit.c <- TRUE
-  else
-    logit.c <- FALSE
   
   ## getting the data
   call <- match.call()
@@ -32,8 +29,11 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
   Xo <- model.matrix(formulae[[1]], data=mf)
   if (sum(is.na(Xo)) > 0)
     stop("missing values not allowed in covariates")
-  if (model.o == "probit")
+  if (model.o == "gaussian")
+    Y <- model.response(mf)
+  else
     Y <- as.integer(model.response(mf))
+
   ## outcome model: random effects
   Wo <- model.matrix(formulae[[2]], data=data)
 
@@ -65,10 +65,28 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
   NR <- is.na(Y)
   Ymiss <- sum(NR)
   if (Ymiss > 0)
-    if (model.o == "probit")
-      Y[NR] <- (runif(Ymiss) > 0.5)*1
-    else
+    if (model.o == "gaussian")
       Y[NR] <- rnorm(Ymiss)
+    else
+      Y[NR] <- (runif(Ymiss) > 0.5)*1
+  if (model.o == "oprobit") {
+    ncat <- max(Y, na.rm = TRUE) + 1
+    if (is.null(tau.start.o))
+      tau.start.o <- seq(from = 0, length = ncat-1)/10
+    if (length(tau.start.o) != (ncat-1))
+      stop("incorrect length for tau.start.o")
+    if (!identical(sort(tau.start.o), tau.start.o))
+      stop("incorrect input for tau.start.o")
+    if (length(unique(tau.start.o)) != (ncat-1))
+      stop("incorrect input for tau.start.o")
+    tau.start.o <- c(tau.start.o, tau.start.o[ncat-1]+1000)
+
+    if (length(tune.tau) != ncat-2)
+      if (length(tune.tau) == 1)
+        tune.o <- rep(tune.tau, ncat-2)
+      else
+        stop(paste("the length of tune.tau should be", ncat-2))
+  }
   
   ## Compliance status: 0 = noncomplier, 1 = complier
   C <- rep(NA, N)
@@ -80,7 +98,7 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
     A <- rep(NA, N)
     A[D == 0] <- 0            # never-takers or compliers
     A[Z == 0 & D == 1] <- 1  
-    if (logit.c)
+    if (model.c == "logit")
       C[Z == 0 & D == 1] <- 2 # always-takers
     else
       C[Z == 0 & D == 1] <- 0 # always-takers
@@ -96,7 +114,7 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
   ## Random starting values for missing compliance status
   if (AT) {
     A[is.na(A)] <- (runif(sum(is.na(A))) > 0.5)*1
-    if (logit.c)
+    if (model.c == "logit")
       C[A == 1] <- 2
     else
       C[A == 1] <- 0
@@ -151,13 +169,19 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
   nrandomC <- ncol(Wc)
   nrandomO <- ncol(Wo)
   nrandomR <- ncol(Wr)
-  if (AT)
-    nqoi <- 8
+  if (model.o == "oprobit")
+    if (AT)
+      nqoi <- 2 + (ncat-1)*6
+    else
+      nqoi <- 2 + (ncat-1)*5
   else
-    nqoi <- 7
+    if (AT)
+      nqoi <- 8
+    else
+      nqoi <- 7
   
   ## checking starting values and prior for fixed effects
-  if (logit.c & AT) {
+  if (model.c == "logit" & AT) {
     if(length(p.mean.c) != nfixedC*2)
       if (length(p.mean.c) == 1)
         p.mean.c <- rep(p.mean.c, nfixedC*2)
@@ -208,7 +232,7 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
         stop(paste("the dimension of p.prec.c should be",
                    rep(nfixedC*2, 2)))    
   } else if (length(p.prec.c) == 1){
-    if (logit.c & AT)
+    if (model.c == "logit" & AT)
       p.prec.c <- diag(p.prec.c, nfixedC*2)
     else
       p.prec.c <- diag(p.prec.c, nfixedC)
@@ -348,7 +372,8 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
               as.integer(c(p.df.c,p.df.c,p.df.o,p.df.r)),
               as.double(p.scale.c), as.double(p.scale.c),
               as.double(p.scale.o), as.double(p.scale.r),
-              as.double(tune.fixed), as.double(tune.random), as.integer(logit.c),
+              as.double(tune.fixed), as.double(tune.random),
+              as.integer(model.c == "logit"),
               as.integer(param), as.integer(burnin),
               as.integer(keep), as.integer(verbose),
               coefC = double(nfixedC*(ceiling((n.draws-burnin)/keep))),
@@ -361,8 +386,44 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
               sPsiR = double(nrandomR*(nrandomR+1)*(ceiling((n.draws-burnin)/keep))/2),
               QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
               PACKAGE = "experiment")
-  else
-    out <- .C("LINormalMixed",
+  else if (model.o == "oprobit")
+    out <- .C("LIboprobitMixed",
+              as.integer(Y), as.integer(R), as.integer(Z),
+              as.integer(D), as.integer(C), as.integer(A),
+              as.integer(grp), as.integer(Ymiss), as.integer(AT),
+              as.integer(in.sample), as.double(Xc), as.double(Wc),
+              as.double(Xo), as.double(Wo), as.double(Xr),
+              as.double(Wr), as.double(coef.start.c),
+              as.double(coef.start.c), as.double(coef.start.o),
+              as.double(tau.start.o), as.double(coef.start.r),
+              as.integer(N), as.integer(ncat), as.integer(n.draws),
+              as.integer(ngrp), as.integer(max(table(grp))),
+              as.integer(c(nfixedC,nfixedO,nfixedR)),
+              as.integer(c(nrandomC, nrandomO, nrandomR)),
+              as.double(Psi.start.c), as.double(Psi.start.c),
+              as.double(Psi.start.o), as.double(Psi.start.r),
+              as.double(p.mean.c), as.double(p.mean.o), as.double(p.mean.r),
+              as.double(p.prec.c), as.double(p.prec.o), as.double(p.prec.r),
+              as.integer(c(p.df.c,p.df.c,p.df.o,p.df.r)),
+              as.double(p.scale.c), as.double(p.scale.c),
+              as.double(p.scale.o), as.double(p.scale.r),
+              as.double(tune.fixed), as.double(tune.random),
+              as.double(tune.tau), as.integer(TRUE), as.integer(model.c == "logit"),
+              as.integer(param), as.integer(burnin),
+              as.integer(keep), as.integer(verbose),
+              coefC = double(nfixedC*(ceiling((n.draws-burnin)/keep))),
+              coefA = double(nfixedC*(ceiling((n.draws-burnin)/keep))),
+              coefO = double(nfixedO*(ceiling((n.draws-burnin)/keep))),
+              coefR = double(nfixedR*(ceiling((n.draws-burnin)/keep))),
+              tauO = double((ncat-1)*(ceiling((n.draws-burnin)/keep))),
+              sPsiC = double(nrandomC*(nrandomC+1)*(ceiling((n.draws-burnin)/keep))/2),
+              sPsiA = double(nrandomC*(nrandomC+1)*(ceiling((n.draws-burnin)/keep))/2),
+              sPsiO = double(nrandomO*(nrandomO+1)*(ceiling((n.draws-burnin)/keep))/2),
+              sPsiR = double(nrandomR*(nrandomR+1)*(ceiling((n.draws-burnin)/keep))/2),
+              QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
+              PACKAGE = "experiment")
+      else
+        out <- .C("LINormalMixed",
               as.double(Y), as.integer(R), as.integer(Z),
               as.integer(D), as.integer(C), as.integer(A),
               as.integer(grp), as.integer(Ymiss), as.integer(AT),
@@ -411,6 +472,8 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
     res$coefO <- matrix(out$coefO, byrow = TRUE, ncol = nfixedO)
     res$PsiO <- matrix(out$sPsiO, byrow = TRUE, ncol = nrandomO*(nrandomO+1)/2)
     colnames(res$coefO) <- colnames(Xo)
+    if (model.o == "oprobit")
+      res$tau <- matrix(out$tauO, byrow = TRUE, ncol = ncat - 1)
     if (Ymiss > 0) {
       res$coefR <- matrix(out$coefR, byrow = TRUE, ncol = nfixedR)
       res$PsiR <- matrix(out$sPsiR, byrow = TRUE, ncol = nrandomR*(nrandomR+1)/2)
@@ -420,17 +483,29 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
       res$sig2 <- out$ssig2
   }
   QoI <- matrix(out$QoI, byrow = TRUE, ncol = nqoi)
-  res$ITT <- QoI[,1]
-  res$CACE <- QoI[,2]
-  res$pC <- QoI[,3]
-  res$pN <- QoI[,4]
-  if (AT)
-    res$pA <- 1-QoI[,3]-QoI[,4]
-  res$Y1barC <- QoI[,5]
-  res$Y0barC <- QoI[,6]
-  res$YbarN <- QoI[,7]
+  if (model.o == "oprobit") {
+    res$ITT <- QoI[,1:(ncat-1)]
+    res$CACE <- QoI[,ncat:(2*(ncat-1))]
+    res$Y1barC <- QoI[,(2*(ncat-1)+1):(3*(ncat-1))]
+    res$Y0barC <- QoI[,(3*(ncat-1)+1):(4*(ncat-1))]
+    res$YbarN <- QoI[,(4*(ncat-1)+1):(5*(ncat-1))]
+    res$pC <- QoI[,(5*(ncat-1)+1)]
+    res$pN <- QoI[,(5*(ncat-1)+2)]
+    if (AT) 
+      res$YbarA <- QoI[,(5*(ncat-1)+3):(6*(ncat-1)+2)]
+  } else {
+    res$ITT <- QoI[,1]
+    res$CACE <- QoI[,2]
+    res$pC <- QoI[,3]
+    res$pN <- QoI[,4]
+    res$Y1barC <- QoI[,5]
+    res$Y0barC <- QoI[,6]
+    res$YbarN <- QoI[,7]
+    if (AT) 
+      res$YbarA <- QoI[,8]
+  }
   if (AT) 
-    res$YbarA <- QoI[,8]
-
+    res$pA <- 1-res$pC-res$pN
+  
   return(res)
 }
