@@ -925,7 +925,8 @@ void logitMixedMetro(int *Y,        /* outcome variable: 0, 1, ..., J-1 */
 
 void boprobitMixedMCMC(int *Y,          /* binary outcome variable */
 		       double **X,      /* model matrix for fixed
-					   effects */
+					   effects: the last column
+					   contains the starting values for W-Zgamma */
 		       double ***Zgrp,  /* model matrix for random
 					   effects organized by grous */
 		       int *grp,        /* group indicator: 0, 1, 2,... */
@@ -1048,7 +1049,7 @@ void boprobitMixedMCMC(int *Y,          /* binary outcome variable */
 	  W[i] = TruncNorm(tau[Y[i]-1],tau[Y[i]],Xbeta[i]+Zgamma[i],1,0);
 	Wmax[Y[i]] = fmax2(Wmax[Y[i]], W[i]);
 	Wmin[Y[i]] = fmin2(Wmin[Y[i]], W[i]);
-	X[i][n_fixed] = W[i];
+	X[i][n_fixed] = W[i]-Zgamma[i];
       }
     }
 

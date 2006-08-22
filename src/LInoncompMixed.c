@@ -456,8 +456,8 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
     }
 
     /** Step 2: COMPLIANCE MODEL **/
-    if (*logitC == 1) 
-      if (*AT == 1) 
+    if (*logitC) 
+      if (*AT) 
 	logitMixedMetro(C, Xc, Zc, grp, betaC, xiC, Psi, n_samp, 2,
 			n_fixedC, n_randomC, n_grp, beta0, A0C, tau0s[0],
 			T0C, tune_fixed, tune_random, 1, acc_fixed, acc_random);
@@ -515,7 +515,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	meana[i] = 0;
 	for (j = 0; j < n_randomC; j++)
 	  meana[i] += Zc[grp[i]][vitemp[grp[i]]][j]*xiC[1][grp[i]][j];
-	if (*logitC == 1) { /* if logistic regression is used */
+	if (*logitC) { /* if logistic regression is used */
 	  for (j = 0; j < n_fixedC; j++) 
 	    meana[i] += Xc[i][j]*betaC[j+n_fixedC];
 	  qC[i] = exp(meanc[i])/(1 + exp(meanc[i]) + exp(meana[i]));
@@ -1934,7 +1934,6 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 	Xobs[itemp][j] = Xo[i][j];
       itemp++;
     }
-
   /** pack random effects **/
   itemp = 0;
   for (k = 0; k < n_randomC; k++)
@@ -2083,8 +2082,8 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
     }
   }
   
-  itemp = 0;
   if (*mh) {
+    itemp = 0;
     for (j = 0; j < n_grp; j++)
       vitemp[j] = 0;
     for (i = 0; i < n_samp; i++){
@@ -2279,8 +2278,7 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 	      Xobs[itemp][0] = 1; Zobs[grp[i]][vitemp1[grp[i]]][0] = 1;
 	      Xobs[itemp][2] = 0; Zobs[grp[i]][vitemp1[grp[i]]][1] = 0;
 	    }
-	  }
-	  else {
+	  } else {
 	    if (*logitC)
 	      C[i] = 2;
 	    else
@@ -2315,8 +2313,7 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 	    if (R[i] == 1) {
 	      Xobs[itemp][1] = 1; Zobs[grp[i]][vitemp1[grp[i]]][0] = 1;
 	    } 
-	  }
-	  else {
+	  } else {
 	    C[i] = 0; Xo[i][1] = 0; Xr[i][1] = 0;
 	    Zo[grp[i]][vitemp[grp[i]]][0] = 0;
 	    Zr[grp[i]][vitemp[grp[i]]][0] = 0;
