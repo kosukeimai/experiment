@@ -1,20 +1,19 @@
 Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
-                               n.draws = 5000, param = TRUE,
-                               in.sample = FALSE, model.c = "probit",
-                               model.o = "probit", tune.tau = 0.01,
+                               n.draws = 5000, param = TRUE, in.sample = FALSE,
+                               model.c = "probit", model.o = "probit",
+                               random = TRUE, tune.tau = 0.01,
                                tune.fixed = 0.01, tune.random = 0.01, 
-                               p.mean.c = 0, p.prec.c = 0.1, p.mean.o = 0,
-                               p.prec.o = 0.1, p.mean.r = 0, p.prec.r = 0.1,
+                               p.mean.c = 0, p.prec.c = 0.01, p.mean.o = 0,
+                               p.prec.o = 0.01, p.mean.r = 0, p.prec.r = 0.01,
                                p.df.var = 10, p.scale.var = 1,
                                coef.start.c = 0, coef.start.o = 0,
-                               tau.start.o = NULL,
-                               coef.start.r = 0, var.start.o = 1,
-                               Psi.start.c = 1,
+                               tau.start.o = NULL, coef.start.r = 0,
+                               var.start.o = 1, Psi.start.c = 1,
                                Psi.start.o = 1, Psi.start.r = 1,
                                p.df.c = 5, p.df.o = 5, p.df.r = 5,
                                p.scale.c = 1, p.scale.o = 1,
-                               p.scale.r = 1, 
-                               burnin = 0, thin = 0, verbose = TRUE) {  
+                               p.scale.r = 1, burnin = 0, thin = 0,
+                               verbose = TRUE) {   
   
   ## models
   if (!(model.o %in% c("probit", "oprobit", "gaussian")))
@@ -133,32 +132,39 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
     ##                        c0 for compliers without encouragement
     ##                        a for always-takers with/without encouragement  
     ## Wo = [c a W] - no Z for parsimony
+    ##    = W if random == FALSE
     Xo <- cbind(0, 0, 0, X)
-    Wo <- cbind(0, 0, W)
     Xr <- cbind(0, 0, 0, X1)
-    Wr <- cbind(0, 0, W1)
-    Xo[A == 1, 3] <- Wo[A == 1, 2] <- 1
-    Xr[A == 1, 3] <- Wr[A == 1, 2] <- 1
+    Xo[A == 1, 3] <- Xr[A == 1, 3] <- 1
     colnames(Xo) <- c("Complier1", "Complier0", "AlwaysTaker",
                       colnames(X))
-    colnames(Wo) <- c("Complier", "AlwaysTaker", colnames(W))
     colnames(Xr) <- c("Complier1", "Complier0", "AlwaysTaker",
                       colnames(X1))
-    colnames(Wr) <- c("Complier", "AlwaysTaker", colnames(W1))
+    if (random) {
+      Wo <- cbind(0, 0, W)
+      Wr <- cbind(0, 0, W1)
+      Wr[A == 1, 2] <- Wo[A == 1, 2] <- 1
+      colnames(Wo) <- c("Complier", "AlwaysTaker", colnames(W))
+      colnames(Wr) <- c("Complier", "AlwaysTaker", colnames(W1))
+    }
   } else { # when always-takers do not exist
     ## Xo = [c1 c0 X] where c1 for compliers with encouragement
     ##                      c0 for compliers without encouragement
     ## Wo = [c W] for parsimony
+    ##    = W if random == FALSE
     Xo <- cbind(0, 0, X)
-    Wo <- cbind(0, W)
     Xr <- cbind(0, 0, X1)
-    Wr <- cbind(0, W1)
     colnames(Xo) <- c("Complier1", "Complier0", colnames(X))
-    colnames(Wo) <- c("Complier", colnames(W))
     colnames(Xr) <- c("Complier1", "Complier0", colnames(X1))
-    colnames(Wr) <- c("Complier", colnames(W1))
+    if (random) {
+      Wo <- cbind(0, W)
+      Wr <- cbind(0, W1)
+      colnames(Wo) <- c("Complier", colnames(W))
+      colnames(Wr) <- c("Complier", colnames(W1))
+    }
   }
-  Wo[C == 1, 1] <- Wr[C == 1, 1] <- 1
+  if (random)
+    Wo[C == 1, 1] <- Wr[C == 1, 1] <- 1
   Xo[C == 1 & Z == 1, 1] <- Xr[C == 1 & Z == 1, 1] <- 1
   Xo[C == 1 & Z == 0, 2] <- Xr[C == 1 & Z == 0, 2] <- 1
   
@@ -357,13 +363,13 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
               as.integer(Y), as.integer(R), as.integer(Z),
               as.integer(D), as.integer(C), as.integer(A),
               as.integer(grp), as.integer(Ymiss), as.integer(AT),
-              as.integer(in.sample), as.double(Xc), as.double(Wc),
-              as.double(Xo), as.double(Wo), as.double(Xr),
-              as.double(Wr), as.double(coef.start.c),
-              as.double(coef.start.c), as.double(coef.start.o), as.double(coef.start.r),
+              as.integer(in.sample), as.integer(random),
+              as.double(Xc), as.double(Wc), as.double(Xo),
+              as.double(Wo), as.double(Xr), as.double(Wr),
+              as.double(coef.start.c), as.double(coef.start.c),
+              as.double(coef.start.o), as.double(coef.start.r),
               as.integer(N), as.integer(n.draws), as.integer(ngrp),
-              as.integer(max(table(grp))),
-              as.integer(c(nfixedC,nfixedO,nfixedR)),
+              as.integer(max(table(grp))), as.integer(c(nfixedC,nfixedO,nfixedR)),
               as.integer(c(nrandomC, nrandomO, nrandomR)),
               as.double(Psi.start.c), as.double(Psi.start.c),
               as.double(Psi.start.o), as.double(Psi.start.r),
@@ -391,7 +397,7 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
               as.integer(Y), as.integer(R), as.integer(Z),
               as.integer(D), as.integer(C), as.integer(A),
               as.integer(grp), as.integer(Ymiss), as.integer(AT),
-              as.integer(in.sample), as.double(Xc), as.double(Wc),
+              as.integer(in.sample), as.integer(random), as.double(Xc), as.double(Wc),
               as.double(Xo), as.double(Wo), as.double(Xr),
               as.double(Wr), as.double(coef.start.c),
               as.double(coef.start.c), as.double(coef.start.o),
@@ -424,42 +430,44 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
               PACKAGE = "experiment")
       else
         out <- .C("LINormalMixed",
-              as.double(Y), as.integer(R), as.integer(Z),
-              as.integer(D), as.integer(C), as.integer(A),
-              as.integer(grp), as.integer(Ymiss), as.integer(AT),
-              as.integer(in.sample), as.double(Xc), as.double(Wc),
-              as.double(Xo), as.double(Wo), as.double(Xr),
-              as.double(Wr), as.double(coef.start.c),
-              as.double(coef.start.c), as.double(coef.start.o),
-              as.double(coef.start.r), as.double(var.start.o),
-              as.integer(N), as.integer(n.draws), as.integer(ngrp),
-              as.integer(max(table(grp))),
-              as.integer(c(nfixedC,nfixedO,nfixedR)),
-              as.integer(c(nrandomC, nrandomO, nrandomR)),
-              as.double(Psi.start.c), as.double(Psi.start.c),
-              as.double(Psi.start.o), as.double(Psi.start.r),
-              as.double(p.mean.c), as.double(p.mean.o), as.double(p.mean.r),
-              as.double(p.prec.c), as.double(p.prec.o),
-              as.double(p.prec.r),
-              as.integer(p.df.var), as.double(p.scale.var),
-              as.integer(c(p.df.c,p.df.c,p.df.o,p.df.r)),
-              as.double(p.scale.c), as.double(p.scale.c),
-              as.double(p.scale.o), as.double(p.scale.r),
-              as.double(tune.fixed), as.double(tune.random), as.integer(logit.c),
-              as.integer(param), as.integer(burnin),
-              as.integer(keep), as.integer(verbose),
-              coefC = double(nfixedC*(ceiling((n.draws-burnin)/keep))),
-              coefA = double(nfixedC*(ceiling((n.draws-burnin)/keep))),
-              coefO = double(nfixedO*(ceiling((n.draws-burnin)/keep))),
-              coefR = double(nfixedR*(ceiling((n.draws-burnin)/keep))),
-              ssig2 = double(ceiling((n.draws-burnin)/keep)),
-              sPsiC = double(nrandomC*(nrandomC+1)*(ceiling((n.draws-burnin)/keep))/2),
-              sPsiA = double(nrandomC*(nrandomC+1)*(ceiling((n.draws-burnin)/keep))/2),
-              sPsiO = double(nrandomO*(nrandomO+1)*(ceiling((n.draws-burnin)/keep))/2),
-              sPsiR = double(nrandomR*(nrandomR+1)*(ceiling((n.draws-burnin)/keep))/2),
-              QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
-              PACKAGE = "experiment")
-    
+                  as.double(Y), as.integer(R), as.integer(Z),
+                  as.integer(D), as.integer(C), as.integer(A),
+                  as.integer(grp), as.integer(Ymiss), as.integer(AT),
+                  as.integer(in.sample), 
+                  as.double(Xc),
+                  as.double(Wc),
+                  as.double(Xo), as.double(Wo), as.double(Xr),
+                  as.double(Wr), as.double(coef.start.c),
+                  as.double(coef.start.c), as.double(coef.start.o),
+                  as.double(coef.start.r), as.double(var.start.o),
+                  as.integer(N), as.integer(n.draws), as.integer(ngrp),
+                  as.integer(max(table(grp))),
+                  as.integer(c(nfixedC,nfixedO,nfixedR)),
+                  as.integer(c(nrandomC, nrandomO, nrandomR)),
+                  as.double(Psi.start.c), as.double(Psi.start.c),
+                  as.double(Psi.start.o), as.double(Psi.start.r),
+                  as.double(p.mean.c), as.double(p.mean.o), as.double(p.mean.r),
+                  as.double(p.prec.c), as.double(p.prec.o),
+                  as.double(p.prec.r),
+                  as.integer(p.df.var), as.double(p.scale.var),
+                  as.integer(c(p.df.c,p.df.c,p.df.o,p.df.r)),
+                  as.double(p.scale.c), as.double(p.scale.c),
+                  as.double(p.scale.o), as.double(p.scale.r),
+                  as.double(tune.fixed), as.double(tune.random), as.integer(logit.c),
+                  as.integer(param), as.integer(burnin),
+                  as.integer(keep), as.integer(verbose),
+                  coefC = double(nfixedC*(ceiling((n.draws-burnin)/keep))),
+                  coefA = double(nfixedC*(ceiling((n.draws-burnin)/keep))),
+                  coefO = double(nfixedO*(ceiling((n.draws-burnin)/keep))),
+                  coefR = double(nfixedR*(ceiling((n.draws-burnin)/keep))),
+                  ssig2 = double(ceiling((n.draws-burnin)/keep)),
+                  sPsiC = double(nrandomC*(nrandomC+1)*(ceiling((n.draws-burnin)/keep))/2),
+                  sPsiA = double(nrandomC*(nrandomC+1)*(ceiling((n.draws-burnin)/keep))/2),
+                  sPsiO = double(nrandomO*(nrandomO+1)*(ceiling((n.draws-burnin)/keep))/2),
+                  sPsiR = double(nrandomR*(nrandomR+1)*(ceiling((n.draws-burnin)/keep))/2),
+                  QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
+                  PACKAGE = "experiment")
+  
   if (param) {
     res$coefC <- matrix(out$coefC, byrow = TRUE, ncol = nfixedC)
     colnames(res$coefC) <- colnames(Xc)

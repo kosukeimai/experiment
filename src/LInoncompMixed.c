@@ -41,6 +41,8 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 		    int *Ymiss,     /* number of missing obs in Y */
 		    int *AT,        /* Are there always-takers? */
 		    int *Insample,  /* Insample (=1) or population QoI? */
+		    int *random,    /* Want to include compliance
+				       random effects? */
 		    double *dXc,    /* fixed effects for compliance model */
 		    double *dZc,    /* random effects for compliance model */
 		    double *dXo,    /* fixed effects for outcome model */
@@ -425,28 +427,51 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	if (*AT) { /* always-takers */
 	  for (j = 3; j < n_fixedR; j++)
 	    dtemp += Xr[i][j]*delta[j];
-	  for (j = 2; j < n_randomR; j++)
-	    dtemp += Zr[grp[i]][vitemp[grp[i]]][j]*xiR[grp[i]][j];
+	  if (*random) 
+	    for (j = 2; j < n_randomR; j++)
+	      dtemp += Zr[grp[i]][vitemp[grp[i]]][j]*xiR[grp[i]][j];
+	  else
+	    for (j = 0; j < n_randomR; j++)
+	      dtemp += Zr[grp[i]][vitemp[grp[i]]][j]*xiR[grp[i]][j];
 	  if ((Z[i] == 0) && (D[i] == 0)) {
-	    prC[i] = R[i]*pnorm(dtemp+delta[1]+xiR[grp[i]][0], 0, 1, 1, 0) +
-	      (1-R[i])*pnorm(dtemp+delta[1]+xiR[grp[i]][0], 0, 1, 0, 0);
+	    if (*random) 
+	      prC[i] = R[i]*pnorm(dtemp+delta[1]+xiR[grp[i]][0], 0, 1, 1, 0) +
+		(1-R[i])*pnorm(dtemp+delta[1]+xiR[grp[i]][0], 0, 1, 0, 0);
+	     else 
+	       prC[i] = R[i]*pnorm(dtemp+delta[1], 0, 1, 1, 0) +
+		 (1-R[i])*pnorm(dtemp+delta[1], 0, 1, 0, 0);
 	    prN[i] = R[i]*pnorm(dtemp, 0, 1, 1, 0) +
 	      (1-R[i])*pnorm(dtemp, 0, 1, 0, 0);
 	  } 
 	  if ((Z[i] == 1) && (D[i] == 1)) {
-	    prC[i] = R[i]*pnorm(dtemp+delta[0]+xiR[grp[i]][0], 0, 1, 1, 0) +
-	      (1-R[i])*pnorm(dtemp+delta[0]+xiR[grp[i]][0], 0, 1, 0, 0);
-	    prA[i] = R[i]*pnorm(dtemp+delta[2]+xiR[grp[i]][1], 0, 1, 1, 0) +
-	      (1-R[i])*pnorm(dtemp+delta[2]+xiR[grp[i]][1], 0, 1, 0, 0);
+	    if (*random) {
+	      prC[i] = R[i]*pnorm(dtemp+delta[0]+xiR[grp[i]][0], 0, 1, 1, 0) +
+		(1-R[i])*pnorm(dtemp+delta[0]+xiR[grp[i]][0], 0, 1, 0, 0);
+	      prA[i] = R[i]*pnorm(dtemp+delta[2]+xiR[grp[i]][1], 0, 1, 1, 0) +
+		(1-R[i])*pnorm(dtemp+delta[2]+xiR[grp[i]][1], 0, 1, 0, 0);
+	    } else {
+	      prC[i] = R[i]*pnorm(dtemp+delta[0], 0, 1, 1, 0) +
+		(1-R[i])*pnorm(dtemp+delta[0], 0, 1, 0, 0);
+	      prA[i] = R[i]*pnorm(dtemp+delta[2], 0, 1, 1, 0) +
+		(1-R[i])*pnorm(dtemp+delta[2], 0, 1, 0, 0);
+	    }
 	  }
 	} else { /* no always-takers */
 	  for (j = 2; j < n_fixedR; j++)
 	    dtemp += Xr[i][j]*delta[j];
-	  for (j = 1; j < n_randomR; j++)
-	    dtemp += Zr[grp[i]][vitemp[grp[i]]][j]*xiR[grp[i]][j];
+	  if (*random) 
+	    for (j = 1; j < n_randomR; j++)
+	      dtemp += Zr[grp[i]][vitemp[grp[i]]][j]*xiR[grp[i]][j];
+	  else
+	    for (j = 0; j < n_randomR; j++)
+	      dtemp += Zr[grp[i]][vitemp[grp[i]]][j]*xiR[grp[i]][j];
 	  if (Z[i] == 0) {
-	    prC[i] = R[i]*pnorm(dtemp+delta[1]+xiR[grp[i]][0], 0, 1, 1, 0) + 
-	      (1-R[i])*pnorm(dtemp+delta[1]+xiR[grp[i]][0], 0, 1, 0, 0);
+	    if (*random)
+	      prC[i] = R[i]*pnorm(dtemp+delta[1]+xiR[grp[i]][0], 0, 1, 1, 0) + 
+		(1-R[i])*pnorm(dtemp+delta[1]+xiR[grp[i]][0], 0, 1, 0, 0);
+	    else
+	      prC[i] = R[i]*pnorm(dtemp+delta[1], 0, 1, 1, 0) + 
+		(1-R[i])*pnorm(dtemp+delta[1], 0, 1, 0, 0);
 	    prN[i] = R[i]*pnorm(dtemp, 0, 1, 1, 0) +
 	      (1-R[i])*pnorm(dtemp, 0, 1, 0, 0);
 	  }
@@ -533,18 +558,26 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	  else 
 	    dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+qN[i]*prN[i]);
 	  if (unif_rand() < dtemp) {
-	    C[i] = 1; Xo[i][1] = 1; Xr[i][1] = 1; 
-	    Zo[grp[i]][vitemp[grp[i]]][0] = 1;
-	    Zr[grp[i]][vitemp[grp[i]]][0] = 1;
+	    C[i] = 1; Xo[i][1] = 1; Xr[i][1] = 1;
+	    if (*random) {
+	      Zo[grp[i]][vitemp[grp[i]]][0] = 1;
+	      Zr[grp[i]][vitemp[grp[i]]][0] = 1;
+	    }
 	    if (R[i] == 1) {
-	      Xobs[itemp][1] = 1; Zobs[grp[i]][vitemp1[grp[i]]][0] = 1;
+	      Xobs[itemp][1] = 1;
+	      if (*random)
+		Zobs[grp[i]][vitemp1[grp[i]]][0] = 1;
 	    }
 	  } else {
-	    C[i] = 0; Xo[i][1] = 0; Xr[i][1] = 0; 
-	    Zo[grp[i]][vitemp[grp[i]]][0] = 0;
-	    Zr[grp[i]][vitemp[grp[i]]][0] = 0;
+	    C[i] = 0; Xo[i][1] = 0; Xr[i][1] = 0;
+	    if (*random) {
+	      Zo[grp[i]][vitemp[grp[i]]][0] = 0;
+	      Zr[grp[i]][vitemp[grp[i]]][0] = 0;
+	    }
 	    if (R[i] == 1) {
-	      Xobs[itemp][1] = 0; Zobs[grp[i]][vitemp1[grp[i]]][0] = 0; 
+	      Xobs[itemp][1] = 0; 
+	      if (*random)
+		Zobs[grp[i]][vitemp1[grp[i]]][0] = 0; 
 	    }
 	  }  
 	}
@@ -556,31 +589,43 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	    dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+(1-qC[i]-qN[i])*prA[i]);
 	  if (unif_rand() < dtemp) {
 	    C[i] = 1; Xo[i][0] = 1; Xr[i][0] = 1; 
-	    Zo[grp[i]][vitemp[grp[i]]][0] = 1;
-	    Zr[grp[i]][vitemp[grp[i]]][0] = 1;
-	    A[i] = 0; Xo[i][2] = 0; Xr[i][2] = 0; 
-	    Zo[grp[i]][vitemp[grp[i]]][1] = 0;
-	    Zr[grp[i]][vitemp[grp[i]]][1] = 0;
-	    if (R[i] == 1) {
-	      Xobs[itemp][0] = 1; Zobs[grp[i]][vitemp1[grp[i]]][0] = 1;
-	      Xobs[itemp][2] = 0; Zobs[grp[i]][vitemp1[grp[i]]][1] = 0;
+	    if (*random) {
+	      Zo[grp[i]][vitemp[grp[i]]][0] = 1;
+	      Zr[grp[i]][vitemp[grp[i]]][0] = 1;
 	    }
-	  }
-	  else {
+	    A[i] = 0; Xo[i][2] = 0; Xr[i][2] = 0; 
+	    if (*random) {
+	      Zo[grp[i]][vitemp[grp[i]]][1] = 0;
+	      Zr[grp[i]][vitemp[grp[i]]][1] = 0;
+	    }
+	    if (R[i] == 1) {
+	      Xobs[itemp][0] = 1; Xobs[itemp][2] = 0; 
+	      if (*random) {
+		Zobs[grp[i]][vitemp1[grp[i]]][0] = 1; 
+		Zobs[grp[i]][vitemp1[grp[i]]][1] = 0;
+	      }
+	    }
+	  } else {
 	    if (*logitC)
 	      C[i] = 2;
 	    else
 	      C[i] = 0; 
 	    A[i] = 1; Xo[i][0] = 0; Xr[i][0] = 0; 
-	    Xo[i][2] = 1; Xr[i][2] = 1; 
-	    Zo[grp[i]][vitemp[grp[i]]][0] = 0; 
-	    Zr[grp[i]][vitemp[grp[i]]][0] = 0; 
-	    Zo[grp[i]][vitemp[grp[i]]][1] = 1;
-	    Zr[grp[i]][vitemp[grp[i]]][1] = 1;
+	    Xo[i][2] = 1; Xr[i][2] = 1;
+	    if (*random) {
+	      Zo[grp[i]][vitemp[grp[i]]][0] = 0; 
+	      Zr[grp[i]][vitemp[grp[i]]][0] = 0; 
+	      Zo[grp[i]][vitemp[grp[i]]][1] = 1;
+	      Zr[grp[i]][vitemp[grp[i]]][1] = 1;
+	    }
 	    if (R[i] == 1) {
-	      Xobs[itemp][0] = 0; Zobs[grp[i]][vitemp1[grp[i]]][0] = 0;
-	      Xobs[itemp][2] = 1; Zobs[grp[i]][vitemp1[grp[i]]][1] = 1;
-	    } 
+	      Xobs[itemp][0] = 0; 
+	      Xobs[itemp][2] = 1; 
+	      if (*random) {
+		Zobs[grp[i]][vitemp1[grp[i]]][0] = 0;
+		Zobs[grp[i]][vitemp1[grp[i]]][1] = 1;
+	      } 
+	    }
 	  }  
 	}
       } else { /* no always-takers */
@@ -596,18 +641,26 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	    dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+(1-qC[i])*prN[i]);
 	  if (unif_rand() < dtemp) {
 	    C[i] = 1; Xo[i][1] = 1; Xr[i][1] = 1;
-	    Zo[grp[i]][vitemp[grp[i]]][0] = 1;
-	    Zr[grp[i]][vitemp[grp[i]]][0] = 1;
+	    if (*random) {
+	      Zo[grp[i]][vitemp[grp[i]]][0] = 1;
+	      Zr[grp[i]][vitemp[grp[i]]][0] = 1;
+	    }
 	    if (R[i] == 1) {
-	      Xobs[itemp][1] = 1; Zobs[grp[i]][vitemp1[grp[i]]][0] = 1;
+	      Xobs[itemp][1] = 1; 
+	      if (*random)
+		Zobs[grp[i]][vitemp1[grp[i]]][0] = 1;
 	    } 
 	  }
 	  else {
 	    C[i] = 0; Xo[i][1] = 0; Xr[i][1] = 0;
-	    Zo[grp[i]][vitemp[grp[i]]][0] = 0;
-	    Zr[grp[i]][vitemp[grp[i]]][0] = 0;
+	    if (*random) {
+	      Zo[grp[i]][vitemp[grp[i]]][0] = 0;
+	      Zr[grp[i]][vitemp[grp[i]]][0] = 0;
+	    }
 	    if (R[i] == 1) {
-	      Xobs[itemp][1] = 0; Zobs[grp[i]][vitemp1[grp[i]]][0] = 0;
+	      Xobs[itemp][1] = 0;
+	      if (*random)
+		Zobs[grp[i]][vitemp1[grp[i]]][0] = 0;
 	    } 
 	  }
 	}
@@ -635,27 +688,46 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	  meano[i] += Zo[grp[i]][vitemp[grp[i]]][j]*xiO[grp[i]][j];
 	if (R[i] == 1) {
 	  if ((Z[i] == 0) && (D[i] == 0)) {
-	    pC[i] = Y[i]*pnorm(meano[i]+gamma[1]+xiO[grp[i]][0], 0, 1, 1, 0) +
-	      (1-Y[i])*pnorm(meano[i]+gamma[1]+xiO[grp[i]][0], 0, 1, 0, 0);
+	    if (*random)
+	      pC[i] = Y[i]*pnorm(meano[i]+gamma[1]+xiO[grp[i]][0], 0, 1, 1, 0) +
+		(1-Y[i])*pnorm(meano[i]+gamma[1]+xiO[grp[i]][0], 0, 1, 0, 0);
+	    else
+	      pC[i] = Y[i]*pnorm(meano[i]+gamma[1], 0, 1, 1, 0) +
+		(1-Y[i])*pnorm(meano[i]+gamma[1], 0, 1, 0, 0);
 	    pN[i] = Y[i]*pnorm(meano[i], 0, 1, 1, 0) +
 	      (1-Y[i])*pnorm(meano[i], 0, 1, 0, 0);
 	  } 
 	  if ((Z[i] == 1) && (D[i] == 1)) {
-	    pC[i] = Y[i]*pnorm(meano[i]+gamma[0]+xiO[grp[i]][0], 0, 1, 1, 0) +
-	      (1-Y[i])*pnorm(meano[i]+gamma[0]+xiO[grp[i]][0], 0, 1, 0, 0);
-	    pA[i] = Y[i]*pnorm(meano[i]+gamma[2]+xiO[grp[i]][1], 0, 1, 1, 0) +
-	      (1-Y[i])*pnorm(meano[i]+gamma[2]+xiO[grp[i]][1], 0, 1, 0, 0);
+	    if (*random) {
+	      pC[i] = Y[i]*pnorm(meano[i]+gamma[0]+xiO[grp[i]][0], 0, 1, 1, 0) +
+		(1-Y[i])*pnorm(meano[i]+gamma[0]+xiO[grp[i]][0], 0, 1, 0, 0);
+	      pA[i] = Y[i]*pnorm(meano[i]+gamma[2]+xiO[grp[i]][1], 0, 1, 1, 0) +
+		(1-Y[i])*pnorm(meano[i]+gamma[2]+xiO[grp[i]][1], 0, 1, 0, 0);
+	    } else {
+	      pC[i] = Y[i]*pnorm(meano[i]+gamma[0], 0, 1, 1, 0) +
+		(1-Y[i])*pnorm(meano[i]+gamma[0], 0, 1, 0, 0);
+	      pA[i] = Y[i]*pnorm(meano[i]+gamma[2], 0, 1, 1, 0) +
+		(1-Y[i])*pnorm(meano[i]+gamma[2], 0, 1, 0, 0);
+	    }
 	  }
 	}
       } else { /* no always-takers */
 	for (j = 2; j < n_fixedO; j++)
 	  meano[i] += Xo[i][j]*gamma[j];
-	for (j = 1; j < n_randomO; j++)
-	  meano[i] += Zo[grp[i]][vitemp[grp[i]]][j]*xiO[grp[i]][j];
+	if (*random)
+	  for (j = 1; j < n_randomO; j++)
+	    meano[i] += Zo[grp[i]][vitemp[grp[i]]][j]*xiO[grp[i]][j];
+	else 
+	  for (j = 0; j < n_randomO; j++)
+	    meano[i] += Zo[grp[i]][vitemp[grp[i]]][j]*xiO[grp[i]][j];
 	if (R[i] == 1)
 	  if (Z[i] == 0) {
-	    pC[i] = Y[i]*pnorm(meano[i]+gamma[1]+xiO[grp[i]][0], 0, 1, 1, 0) + 
-	      (1-Y[i])*pnorm(meano[i]+gamma[1]+xiO[grp[i]][0], 0, 1, 0, 0);
+	    if (*random)
+	      pC[i] = Y[i]*pnorm(meano[i]+gamma[1]+xiO[grp[i]][0], 0, 1, 1, 0) + 
+		(1-Y[i])*pnorm(meano[i]+gamma[1]+xiO[grp[i]][0], 0, 1, 0, 0);
+	    else 
+	      pC[i] = Y[i]*pnorm(meano[i]+gamma[1], 0, 1, 1, 0) + 
+		(1-Y[i])*pnorm(meano[i]+gamma[1], 0, 1, 0, 0);
 	    pN[i] = Y[i]*pnorm(meano[i], 0, 1, 1, 0) +
 	      (1-Y[i])*pnorm(meano[i], 0, 1, 0, 0);
 	  }
@@ -683,17 +755,26 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	      if (Z[i] == 1) {
 		if (R[i] == 1)
 		  Y1barC += (double)Y[i];
-		else 
+		else if (*random)
 		  Y1barC += (double)((meano[i]+gamma[0]+xiO[grp[i]][0]+norm_rand()) > 0);
+		else
+		  Y1barC += (double)((meano[i]+gamma[0]+norm_rand()) > 0);
 	      } else {
 		if (R[i] == 1)
 		  Y0barC += (double)Y[i];
-		else 
+		else if (*random)
 		  Y0barC += (double)((meano[i]+gamma[1]+xiO[grp[i]][0]+norm_rand()) > 0);
+		else
+		  Y0barC += (double)((meano[i]+gamma[1]+norm_rand()) > 0);
 	      }
 	    } else { /* population QoI */
-	      Y1barC += pnorm(meano[i]+gamma[0]+xiO[grp[i]][0], 0, 1, 1, 0);
-	      Y0barC += pnorm(meano[i]+gamma[1]+xiO[grp[i]][0], 0, 1, 1, 0); 
+	      if (*random) {
+		Y1barC += pnorm(meano[i]+gamma[0]+xiO[grp[i]][0], 0, 1, 1, 0);
+		Y0barC += pnorm(meano[i]+gamma[1]+xiO[grp[i]][0], 0, 1, 1, 0); 
+	      } else {
+		Y1barC += pnorm(meano[i]+gamma[0], 0, 1, 1, 0);
+		Y0barC += pnorm(meano[i]+gamma[1], 0, 1, 1, 0); 
+	      }
 	    }
 	  } else { /* Estimates for always-takers and never-takers */
 	    if (A[i] == 1) {
@@ -704,10 +785,14 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	      if (*Insample)
 		if (R[i] == 1)
 		  YbarA += (double)Y[i];
-		else 
+		else if (*random)
 		  YbarA += (double)((meano[i]+gamma[2]+xiO[grp[i]][1]+norm_rand()) > 0);
-	      else 
+		else
+		  YbarA += (double)((meano[i]+gamma[2]+norm_rand()) > 0);
+	      else if (*random)
 		YbarA += pnorm(meano[i]+gamma[2]+xiO[grp[i]][1], 0, 1, 1, 0);
+	      else
+		YbarA += pnorm(meano[i]+gamma[2], 0, 1, 1, 0);
 	    } else {
 	      if (Z[i] == 1)
 		n_never[1]++;
@@ -753,11 +838,11 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	if (*AT)
 	  QoI[itempQ++] = YbarA;
 
-	if (*param == 1) {
+	if (*param) {
 	  for (j = 0; j < n_fixedC; j++)
 	    coefC[itempC++] = betaC[j];
-	  if (*AT == 1)
-	    if (*logitC == 1)
+	  if (*AT)
+	    if (*logitC)
 	      for (j = 0; j < n_fixedC; j++)
 		coefA[itempA++] = betaC[j+n_fixedC];
 	    else
@@ -1723,6 +1808,7 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 		     int *Ymiss,     /* number of missing obs in Y */
 		     int *AT,        /* Are there always-takers? */
 		     int *Insample,  /* Insample (=1) or population QoI? */
+		     int *random,    /* random compliance status */
 		     double *dXc,    /* fixed effects for compliance model */
 		     double *dZc,    /* random effects for compliance model */
 		     double *dXo,    /* fixed effects for outcome model */
@@ -1901,7 +1987,7 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
   int itempP = ftrunc((double) *n_gen/10);
   int itemp, itempA, itempC, itempO, itempQ, itempR, itempT;
   int itempAv, itempCv, itempOv, itempRv;
-  double dtemp;
+  double dtemp, dtemp1;
   double **mtempC = doubleMatrix(n_fixedC, n_fixedC); 
   double **mtempO = doubleMatrix(n_fixedO, n_fixedO); 
   double **mtempR = doubleMatrix(n_fixedR, n_fixedR); 
@@ -2034,7 +2120,7 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 
   /* prior for fixed effects as additional data points */ 
   itemp = 0; 
-  if ((*logitC == 1) && (*AT == 1))
+  if (*logitC && *AT)
     for (k = 0; k < n_fixedC*2; k++)
       for (j = 0; j < n_fixedC*2; j++)
 	A0C[j][k] = dA0C[itemp++];
@@ -2082,26 +2168,6 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
     }
   }
   
-  if (*mh) {
-    itemp = 0;
-    for (j = 0; j < n_grp; j++)
-      vitemp[j] = 0;
-    for (i = 0; i < n_samp; i++){
-      if (R[i] == 1) {
-	dtemp = 0;
-	for (j = 0; j < n_fixedO; j++)
-	  dtemp += Xo[i][j]*gamma[j];
-	for (j = 0; j < n_randomO; j++)
-	  dtemp += Zo[grp[i]][vitemp[grp[i]]][j]*xiO[grp[i]][j];
-	if (Y[i] == 0)
-	  Xobs[itemp++][n_fixedO] = TruncNorm(dtemp-1000,0,dtemp,1,0);
-	else
-	  Xobs[itemp++][n_fixedO] = TruncNorm(tau[Y[i]-1],tau[Y[i]],dtemp,1,0);
-      }
-      vitemp[grp[i]]++;
-    }
-  }
-
   /*** starting values for probabilities ***/
   for (i = 0; i < n_samp; i++) {
     pC[i] = unif_rand(); 
@@ -2125,12 +2191,13 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
     acc_fixed[j] = 0;
   acc_random[0] = 0; acc_random[1] = 0; acc_tau[0] = 0;
   for (main_loop = 1; main_loop <= *n_gen; main_loop++){
+
     /* Step 1: RESPONSE MODEL */
     if (n_miss > 0) {
       bprobitMixedGibbs(R, Xr, Zr, grp, delta, xiR, PsiR, n_samp, 
 			n_fixedR, n_randomR, n_grp, 0, 
 			delta0, A0R, tau0s[3], T0R, 1);
- 
+      
       /* Compute probabilities of R = Robs */ 
       for (j = 0; j < n_grp; j++) vitemp[j] = 0;
       for (i = 0; i < n_samp; i++) {
@@ -2138,28 +2205,51 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 	if (*AT) { /* always-takers */
 	  for (j = 3; j < n_fixedR; j++)
 	    dtemp += Xr[i][j]*delta[j];
-	  for (j = 2; j < n_randomR; j++)
-	    dtemp += Zr[grp[i]][vitemp[grp[i]]][j]*xiR[grp[i]][j];
+	  if (*random)
+	    for (j = 2; j < n_randomR; j++)
+	      dtemp += Zr[grp[i]][vitemp[grp[i]]][j]*xiR[grp[i]][j];
+	  else 
+	    for (j = 0; j < n_randomR; j++)
+	      dtemp += Zr[grp[i]][vitemp[grp[i]]][j]*xiR[grp[i]][j];
 	  if ((Z[i] == 0) && (D[i] == 0)) {
-	    prC[i] = R[i]*pnorm(dtemp+delta[1]+xiR[grp[i]][0], 0, 1, 1, 0) +
-	      (1-R[i])*pnorm(dtemp+delta[1]+xiR[grp[i]][0], 0, 1, 0, 0);
+	    if (*random)
+	      prC[i] = R[i]*pnorm(dtemp+delta[1]+xiR[grp[i]][0], 0, 1, 1, 0) +
+		(1-R[i])*pnorm(dtemp+delta[1]+xiR[grp[i]][0], 0, 1, 0, 0);
+	    else
+	      prC[i] = R[i]*pnorm(dtemp+delta[1], 0, 1, 1, 0) +
+		(1-R[i])*pnorm(dtemp+delta[1], 0, 1, 0, 0);
 	    prN[i] = R[i]*pnorm(dtemp, 0, 1, 1, 0) +
 	      (1-R[i])*pnorm(dtemp, 0, 1, 0, 0);
 	  } 
 	  if ((Z[i] == 1) && (D[i] == 1)) {
-	    prC[i] = R[i]*pnorm(dtemp+delta[0]+xiR[grp[i]][0], 0, 1, 1, 0) +
-	      (1-R[i])*pnorm(dtemp+delta[0]+xiR[grp[i]][0], 0, 1, 0, 0);
-	    prA[i] = R[i]*pnorm(dtemp+delta[2]+xiR[grp[i]][1], 0, 1, 1, 0) +
-	      (1-R[i])*pnorm(dtemp+delta[2]+xiR[grp[i]][1], 0, 1, 0, 0);
+	    if (*random) {
+	      prC[i] = R[i]*pnorm(dtemp+delta[0]+xiR[grp[i]][0], 0, 1, 1, 0) +
+		(1-R[i])*pnorm(dtemp+delta[0]+xiR[grp[i]][0], 0, 1, 0, 0);
+	      prA[i] = R[i]*pnorm(dtemp+delta[2]+xiR[grp[i]][1], 0, 1, 1, 0) +
+		(1-R[i])*pnorm(dtemp+delta[2]+xiR[grp[i]][1], 0, 1, 0, 0);
+	    } else {
+	      prC[i] = R[i]*pnorm(dtemp+delta[0], 0, 1, 1, 0) +
+		(1-R[i])*pnorm(dtemp+delta[0], 0, 1, 0, 0);
+	      prA[i] = R[i]*pnorm(dtemp+delta[2], 0, 1, 1, 0) +
+		(1-R[i])*pnorm(dtemp+delta[2], 0, 1, 0, 0);
+	    }
 	  }
 	} else { /* no always-takers */
 	  for (j = 2; j < n_fixedR; j++)
 	    dtemp += Xr[i][j]*delta[j];
-	  for (j = 1; j < n_randomR; j++)
-	    dtemp += Zr[grp[i]][vitemp[grp[i]]][j]*xiR[grp[i]][j];
+	  if (*random)
+	    for (j = 1; j < n_randomR; j++)
+	      dtemp += Zr[grp[i]][vitemp[grp[i]]][j]*xiR[grp[i]][j];
+	  else
+	    for (j = 0; j < n_randomR; j++)
+	      dtemp += Zr[grp[i]][vitemp[grp[i]]][j]*xiR[grp[i]][j];
 	  if (Z[i] == 0) {
-	    prC[i] = R[i]*pnorm(dtemp+delta[1]+xiR[grp[i]][0], 0, 1, 1, 0) + 
-	      (1-R[i])*pnorm(dtemp+delta[1]+xiR[grp[i]][0], 0, 1, 0, 0);
+	    if (*random) 
+	      prC[i] = R[i]*pnorm(dtemp+delta[1]+xiR[grp[i]][0], 0, 1, 1, 0) + 
+		(1-R[i])*pnorm(dtemp+delta[1]+xiR[grp[i]][0], 0, 1, 0, 0);
+	    else 
+	      prC[i] = R[i]*pnorm(dtemp+delta[1], 0, 1, 1, 0) + 
+		(1-R[i])*pnorm(dtemp+delta[1], 0, 1, 0, 0);
 	    prN[i] = R[i]*pnorm(dtemp, 0, 1, 1, 0) +
 	      (1-R[i])*pnorm(dtemp, 0, 1, 0, 0);
 	  }
@@ -2167,7 +2257,7 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 	vitemp[grp[i]]++;
       }
     }
-
+    
     /** Step 2: COMPLIANCE MODEL **/
     if (*logitC) 
       if (*AT) 
@@ -2246,18 +2336,26 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 	  else 
 	    dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+qN[i]*prN[i]);
 	  if (unif_rand() < dtemp) {
-	    C[i] = 1; Xo[i][1] = 1; Xr[i][1] = 1; 
-	    Zo[grp[i]][vitemp[grp[i]]][0] = 1;
-	    Zr[grp[i]][vitemp[grp[i]]][0] = 1;
+	    C[i] = 1; Xo[i][1] = 1; Xr[i][1] = 1;
+	    if (*random) {
+	      Zo[grp[i]][vitemp[grp[i]]][0] = 1;
+	      Zr[grp[i]][vitemp[grp[i]]][0] = 1;
+	    }
 	    if (R[i] == 1) {
-	      Xobs[itemp][1] = 1; Zobs[grp[i]][vitemp1[grp[i]]][0] = 1;
+	      Xobs[itemp][1] = 1;
+	      if (*random)
+		Zobs[grp[i]][vitemp1[grp[i]]][0] = 1;
 	    }
 	  } else {
 	    C[i] = 0; Xo[i][1] = 0; Xr[i][1] = 0; 
-	    Zo[grp[i]][vitemp[grp[i]]][0] = 0;
-	    Zr[grp[i]][vitemp[grp[i]]][0] = 0;
+	    if (*random) {
+	      Zo[grp[i]][vitemp[grp[i]]][0] = 0;
+	      Zr[grp[i]][vitemp[grp[i]]][0] = 0;
+	    }
 	    if (R[i] == 1) {
-	      Xobs[itemp][1] = 0; Zobs[grp[i]][vitemp1[grp[i]]][0] = 0; 
+	      Xobs[itemp][1] = 0; 
+	      if (*random)
+		Zobs[grp[i]][vitemp1[grp[i]]][0] = 0; 
 	    }
 	  }  
 	}
@@ -2268,15 +2366,23 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 	  else
 	    dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+(1-qC[i]-qN[i])*prA[i]);
 	  if (unif_rand() < dtemp) {
-	    C[i] = 1; Xo[i][0] = 1; Xr[i][0] = 1; 
-	    Zo[grp[i]][vitemp[grp[i]]][0] = 1;
-	    Zr[grp[i]][vitemp[grp[i]]][0] = 1;
-	    A[i] = 0; Xo[i][2] = 0; Xr[i][2] = 0; 
-	    Zo[grp[i]][vitemp[grp[i]]][1] = 0;
-	    Zr[grp[i]][vitemp[grp[i]]][1] = 0;
+	    C[i] = 1; Xo[i][0] = 1; Xr[i][0] = 1;
+	    if (*random) {
+	      Zo[grp[i]][vitemp[grp[i]]][0] = 1;
+	      Zr[grp[i]][vitemp[grp[i]]][0] = 1;
+	    }
+	    A[i] = 0; Xo[i][2] = 0; Xr[i][2] = 0;
+	    if (*random) {
+	      Zo[grp[i]][vitemp[grp[i]]][1] = 0;
+	      Zr[grp[i]][vitemp[grp[i]]][1] = 0;
+	    }
 	    if (R[i] == 1) {
-	      Xobs[itemp][0] = 1; Zobs[grp[i]][vitemp1[grp[i]]][0] = 1;
-	      Xobs[itemp][2] = 0; Zobs[grp[i]][vitemp1[grp[i]]][1] = 0;
+	      Xobs[itemp][0] = 1; 
+	      Xobs[itemp][2] = 0; 
+	      if (*random) {
+		Zobs[grp[i]][vitemp1[grp[i]]][0] = 1;
+		Zobs[grp[i]][vitemp1[grp[i]]][1] = 0;
+	      }
 	    }
 	  } else {
 	    if (*logitC)
@@ -2285,14 +2391,20 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 	      C[i] = 0; 
 	    A[i] = 1; Xo[i][0] = 0; Xr[i][0] = 0; 
 	    Xo[i][2] = 1; Xr[i][2] = 1; 
-	    Zo[grp[i]][vitemp[grp[i]]][0] = 0; 
-	    Zr[grp[i]][vitemp[grp[i]]][0] = 0; 
-	    Zo[grp[i]][vitemp[grp[i]]][1] = 1;
-	    Zr[grp[i]][vitemp[grp[i]]][1] = 1;
+	    if (*random) {
+	      Zo[grp[i]][vitemp[grp[i]]][0] = 0; 
+	      Zr[grp[i]][vitemp[grp[i]]][0] = 0; 
+	      Zo[grp[i]][vitemp[grp[i]]][1] = 1;
+	      Zr[grp[i]][vitemp[grp[i]]][1] = 1;
+	    }
 	    if (R[i] == 1) {
-	      Xobs[itemp][0] = 0; Zobs[grp[i]][vitemp1[grp[i]]][0] = 0;
-	      Xobs[itemp][2] = 1; Zobs[grp[i]][vitemp1[grp[i]]][1] = 1;
-	    } 
+	      Xobs[itemp][0] = 0; 
+	      Xobs[itemp][2] = 1; 
+	      if (*random) {
+		Zobs[grp[i]][vitemp1[grp[i]]][0] = 0;
+		Zobs[grp[i]][vitemp1[grp[i]]][1] = 1;
+	      } 
+	    }
 	  }  
 	}
       } else { /* no always-takers */
@@ -2308,17 +2420,25 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 	    dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+(1-qC[i])*prN[i]);
 	  if (unif_rand() < dtemp) {
 	    C[i] = 1; Xo[i][1] = 1; Xr[i][1] = 1;
-	    Zo[grp[i]][vitemp[grp[i]]][0] = 1;
-	    Zr[grp[i]][vitemp[grp[i]]][0] = 1;
+	    if (*random) {
+	      Zo[grp[i]][vitemp[grp[i]]][0] = 1;
+	      Zr[grp[i]][vitemp[grp[i]]][0] = 1;
+	    }
 	    if (R[i] == 1) {
-	      Xobs[itemp][1] = 1; Zobs[grp[i]][vitemp1[grp[i]]][0] = 1;
+	      Xobs[itemp][1] = 1;
+	      if (*random) 
+		Zobs[grp[i]][vitemp1[grp[i]]][0] = 1;
 	    } 
 	  } else {
 	    C[i] = 0; Xo[i][1] = 0; Xr[i][1] = 0;
-	    Zo[grp[i]][vitemp[grp[i]]][0] = 0;
-	    Zr[grp[i]][vitemp[grp[i]]][0] = 0;
+	    if (*random) {
+	      Zo[grp[i]][vitemp[grp[i]]][0] = 0;
+	      Zr[grp[i]][vitemp[grp[i]]][0] = 0;
+	    }
 	    if (R[i] == 1) {
-	      Xobs[itemp][1] = 0; Zobs[grp[i]][vitemp1[grp[i]]][0] = 0;
+	      Xobs[itemp][1] = 0; 
+	      if (*random)
+		Zobs[grp[i]][vitemp1[grp[i]]][0] = 0;
 	    } 
 	  }
 	}
@@ -2330,6 +2450,29 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
     }
 
     /** Step 4: OUTCOME MODEL **/
+    if (*mh && (main_loop == 1)) {
+      itemp = 0;
+      for (j = 0; j < n_grp; j++)
+	vitemp[j] = 0;
+      for (i = 0; i < n_samp; i++){
+	if (R[i] == 1) {
+	  dtemp = 0; dtemp1 = 0;
+	  for (j = 0; j < n_fixedO; j++)
+	    dtemp += Xo[i][j]*gamma[j];
+	  for (j = 0; j < n_randomO; j++)
+	    dtemp1 += Zo[grp[i]][vitemp[grp[i]]][j]*xiO[grp[i]][j];
+	  dtemp += dtemp1;
+	  if (Y[i] == 0)
+	    Xobs[itemp++][n_fixedO] = 
+	      TruncNorm(dtemp-1000,0,dtemp,1,0) - dtemp1;
+	  else
+	    Xobs[itemp++][n_fixedO] =
+	      TruncNorm(tau[Y[i]-1],tau[Y[i]],dtemp,1,0) - dtemp1;
+	}
+	vitemp[grp[i]]++;
+      }
+    }
+    
     boprobitMixedMCMC(Yobs, Xobs, Zobs, grp_obs, gamma, xiO, tau, 
 		      PsiO, n_obs, n_cat, n_fixedO, n_randomO, n_grp,
 		      0, gamma0, A0O, tau0s[2], T0O, *mh, tune_tau,
@@ -2343,45 +2486,79 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
       if (*AT) { /* always-takers */
 	for (j = 3; j < n_fixedO; j++)
 	  meano[i] += Xo[i][j]*gamma[j];
-	for (j = 2; j < n_randomO; j++)
-	  meano[i] += Zo[grp[i]][vitemp[grp[i]]][j]*xiO[grp[i]][j];
+	if (*random)
+	  for (j = 2; j < n_randomO; j++)
+	    meano[i] += Zo[grp[i]][vitemp[grp[i]]][j]*xiO[grp[i]][j];
+	else
+	  for (j = 0; j < n_randomO; j++)
+	    meano[i] += Zo[grp[i]][vitemp[grp[i]]][j]*xiO[grp[i]][j];
 	if (R[i] == 1) {
 	  if ((Z[i] == 0) && (D[i] == 0)) {
 	    if (Y[i] == (n_cat-1)) {
-	      pC[i] = pnorm(tau[n_cat-2], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 0, 0);
+	      if (*random)
+		pC[i] = pnorm(tau[n_cat-2], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 0, 0);
+	      else
+		pC[i] = pnorm(tau[n_cat-2], meano[i]+gamma[1], 1, 0, 0);
 	      pN[i] = pnorm(tau[n_cat-2], meano[i], 1, 0, 0);
 	    } else {
-	      pC[i] = pnorm(tau[Y[i]], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0)
-		- pnorm(tau[Y[i]-1], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0);
+	      if (*random)
+		pC[i] = pnorm(tau[Y[i]], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0)
+		  - pnorm(tau[Y[i]-1], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0);
+	      else
+		pC[i] = pnorm(tau[Y[i]], meano[i]+gamma[1], 1, 1, 0)
+		  - pnorm(tau[Y[i]-1], meano[i]+gamma[1], 1, 1, 0);
 	      pN[i] = pnorm(tau[Y[i]], meano[i], 1, 1, 0) -
 		pnorm(tau[Y[i]-1], meano[i], 1, 1, 0);
 	    }
 	  } 
 	  if ((Z[i] == 1) && (D[i] == 1)) {
 	    if (Y[i] == (n_cat-1)) {
-	      pC[i] = pnorm(tau[n_cat-2], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 0, 0);
-	      pA[i] = pnorm(tau[n_cat-2], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 0, 0);
+	      if (*random) {
+		pC[i] = pnorm(tau[n_cat-2], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 0, 0);
+		pA[i] = pnorm(tau[n_cat-2], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 0, 0);
+	      } else {
+		pC[i] = pnorm(tau[n_cat-2], meano[i]+gamma[0], 1, 0, 0);
+		pA[i] = pnorm(tau[n_cat-2], meano[i]+gamma[2], 1, 0, 0);
+	      }
 	    } else {
-	      pC[i] = pnorm(tau[Y[i]], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 1, 0) 
-		- pnorm(tau[Y[i]-1], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 1, 0); 
-	      pA[i] = pnorm(tau[Y[i]], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 1, 0)
-		- pnorm(tau[Y[i]-1], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 1, 0);
+	      if (*random) {
+		pC[i] = pnorm(tau[Y[i]], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 1, 0) 
+		  - pnorm(tau[Y[i]-1], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 1, 0); 
+		pA[i] = pnorm(tau[Y[i]], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 1, 0)
+		  - pnorm(tau[Y[i]-1], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 1, 0);
+	      } else {
+		pC[i] = pnorm(tau[Y[i]], meano[i]+gamma[0], 1, 1, 0) 
+		  - pnorm(tau[Y[i]-1], meano[i]+gamma[0], 1, 1, 0); 
+		pA[i] = pnorm(tau[Y[i]], meano[i]+gamma[2], 1, 1, 0)
+		  - pnorm(tau[Y[i]-1], meano[i]+gamma[2], 1, 1, 0);
+	      }
 	    }
 	  }
 	}
       } else { /* no always-takers */
 	for (j = 2; j < n_fixedO; j++)
 	  meano[i] += Xo[i][j]*gamma[j];
-	for (j = 1; j < n_randomO; j++)
-	  meano[i] += Zo[grp[i]][vitemp[grp[i]]][j]*xiO[grp[i]][j];
+	if (*random)
+	  for (j = 1; j < n_randomO; j++)
+	    meano[i] += Zo[grp[i]][vitemp[grp[i]]][j]*xiO[grp[i]][j];
+	else
+	  for (j = 0; j < n_randomO; j++)
+	    meano[i] += Zo[grp[i]][vitemp[grp[i]]][j]*xiO[grp[i]][j];
 	if (R[i] == 1)
 	  if (Z[i] == 0) {
 	    if (Y[i] == (n_cat-1)) {
-	      pC[i] = pnorm(tau[n_cat-2], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 0, 0);
+	      if (*random)
+		pC[i] = pnorm(tau[n_cat-2], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 0, 0);
+	      else
+		pC[i] = pnorm(tau[n_cat-2], meano[i]+gamma[1], 1, 0, 0);
 	      pN[i] = pnorm(tau[n_cat-2], meano[i], 1, 0, 0);
 	    } else {
-	      pC[i] = pnorm(tau[Y[i]], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0)
-		- pnorm(tau[Y[i]-1], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0);
+	      if (*random)
+		pC[i] = pnorm(tau[Y[i]], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0)
+		  - pnorm(tau[Y[i]-1], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0);
+	      else
+		pC[i] = pnorm(tau[Y[i]], meano[i]+gamma[1], 1, 1, 0)
+		  - pnorm(tau[Y[i]-1], meano[i]+gamma[1], 1, 1, 0);
 	      pN[i] = pnorm(tau[Y[i]], meano[i], 1, 1, 0)
 		- pnorm(tau[Y[i]-1], meano[i], 1, 1, 0); 
 	    }
@@ -2425,37 +2602,69 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 		    Y1barC[j-1] += (double)(Y[i] == j);
 		  else 
 		    if (j == (n_cat-1))
-		      Y1barC[j-1] += (double)(unif_rand() <
-					      pnorm(tau[n_cat-2], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 0, 0));
+		      if (*random)
+			Y1barC[j-1] += (double)(unif_rand() <
+						pnorm(tau[n_cat-2], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 0, 0));
+		      else
+			Y1barC[j-1] += (double)(unif_rand() <
+						pnorm(tau[n_cat-2], meano[i]+gamma[0], 1, 0, 0));
 		    else
-		      Y1barC[j-1] += (double)(unif_rand() < 
-					      (pnorm(tau[j], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 1, 0) 
-					       -pnorm(tau[j-1], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 1, 0)));
+		      if (*random)
+			Y1barC[j-1] += (double)(unif_rand() < 
+						(pnorm(tau[j], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 1, 0) 
+						 -pnorm(tau[j-1], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 1, 0)));
+		      else
+			Y1barC[j-1] += (double)(unif_rand() < 
+						(pnorm(tau[j], meano[i]+gamma[0], 1, 1, 0) 
+						 -pnorm(tau[j-1], meano[i]+gamma[0], 1, 1, 0)));
 		} else {
 		  if (R[i] == 1)
 		    Y0barC[j-1] += (double)(Y[i] == j);
 		  else
 		    if (j == (n_cat-1))
-		      Y0barC[j-1] += (double)(unif_rand() <
-					      pnorm(tau[n_cat-2], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 0, 0));
+		      if (*random)
+			Y0barC[j-1] += (double)(unif_rand() <
+						pnorm(tau[n_cat-2], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 0, 0));
+		      else
+			Y0barC[j-1] += (double)(unif_rand() <
+						pnorm(tau[n_cat-2], meano[i]+gamma[1], 1, 0, 0));
 		    else
-		      Y0barC[j-1] += (double)(unif_rand() < 
-					      (pnorm(tau[j], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0) 
-					       -pnorm(tau[j-1], meano[i]+gamma[1], 1, 1, 0)));		
+		      if (*random)
+			Y0barC[j-1] += (double)(unif_rand() < 
+						(pnorm(tau[j], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0) 
+						 -pnorm(tau[j-1], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0)));
+		      else
+			Y0barC[j-1] += (double)(unif_rand() < 
+						(pnorm(tau[j], meano[i]+gamma[1], 1, 1, 0) 
+						 -pnorm(tau[j-1], meano[i]+gamma[1], 1, 1, 0)));		
 		}
 	      } else { /* population QoI */
 		if (Z[i] == 1)
 		  if (j == (n_cat-1))
-		    Y1barC[j-1] += pnorm(tau[n_cat-2], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 0, 0);
+		    if (*random)
+		      Y1barC[j-1] += pnorm(tau[n_cat-2], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 0, 0);
+		    else
+		      Y1barC[j-1] += pnorm(tau[n_cat-2], meano[i]+gamma[0], 1, 0, 0);
 		  else
-		    Y1barC[j-1] += (pnorm(tau[j], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 1, 0) 
-				    -pnorm(tau[j-1], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 1, 0));
+		    if (*random)
+		      Y1barC[j-1] += (pnorm(tau[j], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 1, 0) 
+				      -pnorm(tau[j-1], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 1, 0));
+		    else
+		      Y1barC[j-1] += (pnorm(tau[j], meano[i]+gamma[0], 1, 1, 0) 
+				      -pnorm(tau[j-1], meano[i]+gamma[0], 1, 1, 0));
 		else
 		  if (j == (n_cat-1))
-		    Y0barC[j-1] += pnorm(tau[n_cat-2], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 0, 0);
+		    if (*random)
+		      Y0barC[j-1] += pnorm(tau[n_cat-2], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 0, 0);
+		    else
+		      Y0barC[j-1] += pnorm(tau[n_cat-2], meano[i]+gamma[1], 1, 0, 0);
 		  else
-		    Y0barC[j-1] += (pnorm(tau[j], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0) 
-				    -pnorm(tau[j-1], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0));
+		    if (*random)
+		      Y0barC[j-1] += (pnorm(tau[j], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0) 
+				      -pnorm(tau[j-1], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0));
+		    else
+		      Y0barC[j-1] += (pnorm(tau[j], meano[i]+gamma[1], 1, 1, 0) 
+				      -pnorm(tau[j-1], meano[i]+gamma[1], 1, 1, 0));
 	      }
 	    } else { /* Estimates for always-takers and never-takers */
 	      if (A[i] == 1) {
@@ -2464,18 +2673,34 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 		    YbarA[j-1] += (double)(Y[i] == j);
 		  else
 		    if (j == (n_cat-1))
-		      YbarA[j-1] += (double)(unif_rand() <
-					     pnorm(tau[n_cat-2], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 0, 0));
+		      if (*random)
+			YbarA[j-1] += (double)(unif_rand() <
+					       pnorm(tau[n_cat-2], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 0, 0));
+		      else
+			YbarA[j-1] += (double)(unif_rand() <
+					       pnorm(tau[n_cat-2], meano[i]+gamma[2], 1, 0, 0));
 		    else
-		      YbarA[j-1] += (double)(unif_rand() < 
-					     (pnorm(tau[j], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 1, 0) 
-					      -pnorm(tau[j-1], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 1, 0)));	
+		      if (*random)
+			YbarA[j-1] += (double)(unif_rand() < 
+					       (pnorm(tau[j], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 1, 0) 
+						-pnorm(tau[j-1], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 1, 0)));	
+		      else
+			YbarA[j-1] += (double)(unif_rand() < 
+					       (pnorm(tau[j], meano[i]+gamma[2], 1, 1, 0) 
+						-pnorm(tau[j-1], meano[i]+gamma[2], 1, 1, 0)));	
 		else 
 		  if (j == (n_cat-1))
-		    YbarA[j-1] += pnorm(tau[n_cat-2], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 0, 0);
+		    if (*random)
+		      YbarA[j-1] += pnorm(tau[n_cat-2], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 0, 0);
+		    else
+		      YbarA[j-1] += pnorm(tau[n_cat-2], meano[i]+gamma[2], 1, 0, 0);
 		  else
-		    YbarA[j-1] += (pnorm(tau[j], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 1, 0) 
-				   -pnorm(tau[j-1], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 1, 0));
+		    if (*random)
+		      YbarA[j-1] += (pnorm(tau[j], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 1, 0) 
+				     -pnorm(tau[j-1], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 1, 0));
+		    else
+		      YbarA[j-1] += (pnorm(tau[j], meano[i]+gamma[2], 1, 1, 0) 
+				     -pnorm(tau[j-1], meano[i]+gamma[2], 1, 1, 0));
 	      } else {
 		if (*Insample)
 		  if (R[i] == 1)
@@ -2498,7 +2723,7 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 	    }
 	  }
 	}
-
+	
 	if (*Insample) { 
 	  for (j = 0; j < (n_cat-1); j++) {
 	    ITT[j] = Y1barC[j]/(double)(n_comp[1]+n_never[1]+n_always[1]) -
@@ -2515,7 +2740,7 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 	    Y0barC[j] /= (double)(n_comp[0]+n_comp[1]);
 	  } 
 	  p_comp /= (double)n_samp;  /* ITT effect on D; Prob. of being
-					   a complier */ 
+					a complier */ 
 	  p_never /= (double)n_samp; /* Prob. of being a never-taker */
 	}
 	for (j = 0; j < (n_cat-1); j++) {
@@ -2540,7 +2765,7 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 	if (*AT)
 	  for (j = 0; j < (n_cat-1); j++) 
 	    QoI[itempQ++] = YbarA[j];
-
+	
 	if (*param) {
 	  for (j = 0; j < (n_cat-1); j++)
 	    tauO[itempT++] = tau[j];
