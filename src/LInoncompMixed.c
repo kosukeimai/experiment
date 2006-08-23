@@ -650,8 +650,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	      if (*random)
 		Zobs[grp[i]][vitemp1[grp[i]]][0] = 1;
 	    } 
-	  }
-	  else {
+	  } else {
 	    C[i] = 0; Xo[i][1] = 0; Xr[i][1] = 0;
 	    if (*random) {
 	      Zo[grp[i]][vitemp[grp[i]]][0] = 0;
@@ -2276,8 +2275,8 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
     else {
       /* complier vs. noncomplier */
       bprobitMixedGibbs(C, Xc, Zc, grp, betaC, xiC[0], Psi[0], n_samp,
-			n_fixedC, n_randomC, n_grp, 0, 
-			beta0, A0C, tau0s[0], T0C, 1);
+			n_fixedC, n_randomC, n_grp, 0, beta0, A0C, 
+			tau0s[0], T0C, 1);
       if (*AT) {
 	/* never-taker vs. always-taker */
 	/* subset the data */
@@ -2498,25 +2497,44 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 	if (R[i] == 1) {
 	  if ((Z[i] == 0) && (D[i] == 0)) {
 	    if (*random)
-	      pC[i] = pnorm(tau[Y[i]], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0)
-		- pnorm(tau[Y[i]-1], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0);
+	      if (Y[i] == 0)
+		pC[i] = pnorm(tau[0], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0);
+	      else
+		pC[i] = pnorm(tau[Y[i]], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0)
+		  - pnorm(tau[Y[i]-1], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0);
 	    else
-	      pC[i] = pnorm(tau[Y[i]], meano[i]+gamma[1], 1, 1, 0)
-		- pnorm(tau[Y[i]-1], meano[i]+gamma[1], 1, 1, 0);
-	    pN[i] = pnorm(tau[Y[i]], meano[i], 1, 1, 0) -
-	      pnorm(tau[Y[i]-1], meano[i], 1, 1, 0);
+	      if (Y[i] == 0)
+		pC[i] = pnorm(tau[0], meano[i]+gamma[1], 1, 1, 0);
+	      else
+		pC[i] = pnorm(tau[Y[i]], meano[i]+gamma[1], 1, 1, 0)
+		  - pnorm(tau[Y[i]-1], meano[i]+gamma[1], 1, 1, 0);
+	    if (Y[i] == 0)
+	      pN[i] = pnorm(tau[0], meano[i], 1, 1, 0);
+	    else
+	      pN[i] = pnorm(tau[Y[i]], meano[i], 1, 1, 0) -
+		pnorm(tau[Y[i]-1], meano[i], 1, 1, 0);
 	  } 
 	  if ((Z[i] == 1) && (D[i] == 1)) {
 	    if (*random) {
-	      pC[i] = pnorm(tau[Y[i]], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 1, 0) 
-		- pnorm(tau[Y[i]-1], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 1, 0); 
-	      pA[i] = pnorm(tau[Y[i]], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 1, 0)
-		- pnorm(tau[Y[i]-1], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 1, 0);
+	      if (Y[i] == 0) {
+		pC[i] = pnorm(tau[0], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 1, 0); 
+		pA[i] = pnorm(tau[0], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 1, 0);
+	      } else {
+		pC[i] = pnorm(tau[Y[i]], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 1, 0) 
+		  - pnorm(tau[Y[i]-1], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 1, 0); 
+		pA[i] = pnorm(tau[Y[i]], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 1, 0)
+		  - pnorm(tau[Y[i]-1], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 1, 0);
+	      }
 	    } else {
-	      pC[i] = pnorm(tau[Y[i]], meano[i]+gamma[0], 1, 1, 0) 
-		- pnorm(tau[Y[i]-1], meano[i]+gamma[0], 1, 1, 0); 
-	      pA[i] = pnorm(tau[Y[i]], meano[i]+gamma[2], 1, 1, 0)
-		- pnorm(tau[Y[i]-1], meano[i]+gamma[2], 1, 1, 0);
+	      if (Y[i] == 0) {
+		pC[i] = pnorm(tau[0], meano[i]+gamma[0], 1, 1, 0); 
+		pA[i] = pnorm(tau[0], meano[i]+gamma[2], 1, 1, 0);
+	      } else {
+		pC[i] = pnorm(tau[Y[i]], meano[i]+gamma[0], 1, 1, 0) 
+		  - pnorm(tau[Y[i]-1], meano[i]+gamma[0], 1, 1, 0); 
+		pA[i] = pnorm(tau[Y[i]], meano[i]+gamma[2], 1, 1, 0)
+		  - pnorm(tau[Y[i]-1], meano[i]+gamma[2], 1, 1, 0);
+	      }
 	    }
 	  }
 	}
@@ -2532,13 +2550,22 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 	if (R[i] == 1)
 	  if (Z[i] == 0) {
 	    if (*random)
-	      pC[i] = pnorm(tau[Y[i]], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0)
-		- pnorm(tau[Y[i]-1], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0);
+	      if (Y[i] == 0)
+		pC[i] = pnorm(tau[0], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0);
+	      else
+		pC[i] = pnorm(tau[Y[i]], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0)
+		  - pnorm(tau[Y[i]-1], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0);
 	    else
-	      pC[i] = pnorm(tau[Y[i]], meano[i]+gamma[1], 1, 1, 0)
-		- pnorm(tau[Y[i]-1], meano[i]+gamma[1], 1, 1, 0);
-	    pN[i] = pnorm(tau[Y[i]], meano[i], 1, 1, 0)
-	      - pnorm(tau[Y[i]-1], meano[i], 1, 1, 0); 
+	      if (Y[i] == 0)
+		pC[i] = pnorm(tau[0], meano[i]+gamma[1], 1, 1, 0);
+	      else
+		pC[i] = pnorm(tau[Y[i]], meano[i]+gamma[1], 1, 1, 0)
+		  - pnorm(tau[Y[i]-1], meano[i]+gamma[1], 1, 1, 0);
+	    if (Y[i] == 0)
+	      pN[i] = pnorm(tau[0], meano[i], 1, 1, 0);
+	    else
+	      pN[i] = pnorm(tau[Y[i]], meano[i], 1, 1, 0)
+		- pnorm(tau[Y[i]-1], meano[i], 1, 1, 0); 
 	  }
       } 
     }
