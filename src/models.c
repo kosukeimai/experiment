@@ -281,10 +281,10 @@ void boprobitMCMC(int *Y,        /* ordinal outcome variable: 0, 1,
     }
     /* Sampling tau with MH step */
     if (mh) {
-      for (j = 1; j < n_cat-1; j++) 
+      for (j = 1; j < (n_cat-1); j++) 
 	dvtemp[j] = TruncNorm(dvtemp[j-1], tau[j+1], tau[j], prop[j-1], 1);
       dtemp = 0; dvtemp[n_cat-1] = dvtemp[n_cat-2] + 1000;
-      for (j = 1; j < n_cat-1; j++) 
+      for (j = 1; j < (n_cat-1); j++) 
 	dtemp = dtemp + log(pnorm(tau[j+1]-tau[j], 0, sqrt(prop[j-1]), 1, 0) -
 			    pnorm(dvtemp[j-1]-tau[j], 0, sqrt(prop[j-1]), 1, 0)) -
 	  log(pnorm(dvtemp[j+1]-dvtemp[j], 0, sqrt(prop[j-1]), 1, 0) -
@@ -303,36 +303,32 @@ void boprobitMCMC(int *Y,        /* ordinal outcome variable: 0, 1,
 	accept[0]++;
 	for (j = 1; j < n_cat; j++)
 	  tau[j] = dvtemp[j];
-	if (mda) /* marginal data augmentation */ 
-	  sig2 = s0/rchisq((double)nu0);
-	for (i = 0; i < n_samp; i++){
-	  if (Y[i] == 0) 
-	    W[i] = TruncNorm(mean[i]-1000,0,mean[i],1,0);
-	  else 
-	    W[i] = TruncNorm(tau[Y[i]-1],tau[Y[i]],mean[i],1,0);
-	}
-	X[i][n_cov] = W[i]*sqrt(sig2);
       }
-    } else {
-      /* Sampling the Latent Variable */
+    } 
+
+    /* Sampling the Latent Variable */
+    if (!mh) {
       Wmin[0] = tau[0]; Wmax[0] = tau[0]-10;
       for (j = 1; j < n_cat; j++) {
 	Wmin[j] = tau[j];
 	Wmax[j] = tau[j-1];
       }
-      if (mda) /* marginal data augmentation */ 
-	sig2 = s0/rchisq((double)nu0);
-      for (i = 0; i < n_samp; i++){
-	if (Y[i] == 0) 
-	  W[i] = TruncNorm(mean[i]-1000,0,mean[i],1,0);
-	else 
-	  W[i] = TruncNorm(tau[Y[i]-1],tau[Y[i]],mean[i],1,0);
-	Wmax[Y[i]] = fmax2(Wmax[Y[i]], W[i]);
-	Wmin[Y[i]] = fmin2(Wmin[Y[i]], W[i]);
-	X[i][n_cov] = W[i]*sqrt(sig2);
-      }
     }
 
+    if (mda) /* marginal data augmentation */ 
+      sig2 = s0/rchisq((double)nu0);
+    for (i = 0; i < n_samp; i++){
+      if (Y[i] == 0) 
+	W[i] = TruncNorm(mean[i]-1000,0,mean[i],1,0);
+      else 
+	  W[i] = TruncNorm(tau[Y[i]-1],tau[Y[i]],mean[i],1,0);
+      if (!mh) {
+	Wmax[Y[i]] = fmax2(Wmax[Y[i]], W[i]);
+	Wmin[Y[i]] = fmin2(Wmin[Y[i]], W[i]);
+      }
+      X[i][n_cov] = W[i]*sqrt(sig2);
+    }
+    
     /* SS matrix */
     for(j = 0; j <= n_cov; j++)
       for(k = 0; k <= n_cov; k++)
@@ -1004,10 +1000,10 @@ void boprobitMixedMCMC(int *Y,          /* binary outcome variable */
     }
     /* Sampling tau with MH step */
     if (mh) {
-      for (j = 1; j < n_cat-1; j++) 
+      for (j = 1; j < (n_cat-1); j++) 
 	dvtemp[j] = TruncNorm(dvtemp[j-1], tau[j+1], tau[j], prop[j-1], 1);
       dtemp = 0; dvtemp[n_cat-1] = dvtemp[n_cat-2] + 1000;
-      for (j = 1; j < n_cat-1; j++) 
+      for (j = 1; j < (n_cat-1); j++) 
 	dtemp = dtemp + log(pnorm(tau[j+1]-tau[j], 0, sqrt(prop[j-1]), 1, 0) -
 			    pnorm(dvtemp[j-1]-tau[j], 0, sqrt(prop[j-1]), 1, 0)) -
 	  log(pnorm(dvtemp[j+1]-dvtemp[j], 0, sqrt(prop[j-1]), 1, 0) -
@@ -1027,30 +1023,36 @@ void boprobitMixedMCMC(int *Y,          /* binary outcome variable */
 	accept[0]++;
 	for (j = 1; j < n_cat; j++)
 	  tau[j] = dvtemp[j];
-	for (i = 0; i < n_samp; i++){
-	  if (Y[i] == 0) 
-	    W[i] = TruncNorm(Xbeta[i]+Zgamma[i]-1000,0,Xbeta[i]+Zgamma[i],1,0);
-	  else 
-	    W[i] = TruncNorm(tau[Y[i]-1],tau[Y[i]],Xbeta[i]+Zgamma[i],1,0);
-	X[i][n_fixed] = W[i]-Zgamma[i];
-	}
       }
-    } else {
-      /* Sampling the Latent Variable */
+    } 
+
+    /* Sampling the Latent Variable */
+    if (!mh) {
       Wmin[0] = tau[0]; Wmax[0] = tau[0]-10;
       for (j = 1; j < n_cat; j++) {
 	Wmin[j] = tau[j];
 	Wmax[j] = tau[j-1];
       }
-      for (i = 0; i < n_samp; i++){
-	if (Y[i] == 0) 
-	  W[i] = TruncNorm(Xbeta[i]+Zgamma[i]-1000,0,Xbeta[i]+Zgamma[i],1,0);
-	else 
-	  W[i] = TruncNorm(tau[Y[i]-1],tau[Y[i]],Xbeta[i]+Zgamma[i],1,0);
+    }
+
+    for (i = 0; i < n_samp; i++){
+      if (Y[i] == 0) 
+	W[i] = TruncNorm(Xbeta[i]+Zgamma[i]-1000,0,Xbeta[i]+Zgamma[i],1,0);
+      else 
+	W[i] = TruncNorm(tau[Y[i]-1],tau[Y[i]],Xbeta[i]+Zgamma[i],1,0);
+      if (!mh) {
 	Wmax[Y[i]] = fmax2(Wmax[Y[i]], W[i]);
 	Wmin[Y[i]] = fmin2(Wmin[Y[i]], W[i]);
-	X[i][n_fixed] = W[i]-Zgamma[i];
       }
+      X[i][n_fixed] = W[i]-Zgamma[i];
+    }
+    
+    if(!mh) {
+      /* sampling taus without MH-step */
+      for (j = 1; j < (n_cat-1); j++) 
+	tau[j] = runif(fmax2(tau[j-1], Wmax[j]), 
+		       fmin2(tau[j+1], Wmin[j+1]));
+      tau[n_cat-1] = tau[n_cat-2] + 1000;
     }
 
     /** STEP 2: Sample Fixed Effects Given Random Effects **/
@@ -1080,6 +1082,7 @@ void boprobitMixedMCMC(int *Y,          /* binary outcome variable */
 	  mtemp[k][l] += gamma[j][k]*gamma[j][l];
     dinv(mtemp, n_random, mtemp1);
     rWish(Psi, mtemp1, tau0+n_grp, n_random);
+
 
     R_CheckUserInterrupt();
   } /* end of Gibbs sampler */

@@ -1,7 +1,6 @@
 boprobit <- function(Y, X, beta.start, tau.start, sims, beta0, A0,
                      prop, mda = TRUE, mh = TRUE) {
 
-  accept <- 0
   tmp <- .C("R2boprobit", as.integer(Y), as.double(X),
             as.double(beta.start), as.double(tau.start),
             as.integer(nrow(X)), as.integer(ncol(X)),

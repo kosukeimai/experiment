@@ -180,6 +180,8 @@ void R2boprobit(int *Y,          /* ordinal outcome variable: 0, 1,
       betaStore[ibeta++] = beta[j];
     for (j = 0; j < *n_cat-1; j++)
       tauStore[itau++] = tau[j];
+
+    Rprintf("Acceptance ratio: %14g\n", (double)accept[0]/(double) main_loop);
     R_FlushConsole(); 
     R_CheckUserInterrupt();
   } /* end of Gibbs sampler */
