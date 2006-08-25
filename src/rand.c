@@ -194,3 +194,16 @@ void rWish(
   FreeMatrix(mtemp, size);
 }
 
+/* 
+   negative binomial distribution with an alternative parameterization 
+     mean = mu
+     var = mu + mu^2/theta
+*/
+
+void dnegbin(int Y,        /* sample */
+	     double mu,    /* mean */
+	     double theta, /* dispersion parameter */
+	     int give_log
+	     ) {
+  return(dnbinom((double)Y, theta, theta/(mu+theta), give_log));
+}
