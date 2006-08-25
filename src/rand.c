@@ -200,7 +200,7 @@ void rWish(
      var = mu + mu^2/theta
 */
 
-void dnegbin(int Y,        /* sample */
+double dnegbin(int Y,        /* sample */
 	     double mu,    /* mean */
 	     double theta, /* dispersion parameter */
 	     int give_log
