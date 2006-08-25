@@ -459,7 +459,8 @@ void logitMetro(int *Y,        /* outcome variable: 0, 1, ..., J-1 */
   free(sumall1);
   FreeMatrix(Xbeta, n_samp);
   FreeMatrix(Xbeta1, n_samp);
-}
+} /* end of logitMetro */
+
 
 
 /*** 
@@ -1103,3 +1104,92 @@ void boprobitMixedMCMC(int *Y,          /* binary outcome variable */
 } /* end of mixed effects ordinal probit */
 
 
+
+
+/*** 
+   A Random Walk Metroplis Sampler for Negative binomial Regression
+   with Independent Normal and InvGamma Prior 
+
+   Y_i \sim Negbin(mu_i, sig2) 
+      where mu_i = X_i beta is the mean and 
+            mu_i + mu_i^2/sig2 is the variance
+   prior: 
+      beta \sim N(beta_0, A_0^{-1})
+      sig2 \sim Gamma(a_0, b_0)
+***/
+
+void negbinMetro(int *Y,        /* outcome count variable */
+		 double **X,    /* (N x K) covariate matrix */
+		 double *beta,  /* K coefficient vector */
+		 double *sig2,  /* dispersion parameter */
+		 int n_samp,    /* # of obs */
+		 int n_cov,     /* # of covariates, K */
+		 double *beta0, /* prior mean vector */
+		 double **A0,   /* prior precision */
+		 double a0,     /* prior shape parameter */
+		 double b0,     /* prior scale parameter */
+		 double *varb,  /* proposal variances for beta */
+		 double vars,  /* proposal variance for sig2 */
+		 int n_gen,     /* # of MCMC draws */
+		 int *counter   /* # of acceptance for each parameter */
+		) {
+  
+  int i, j, k, main_loop;
+  double numer, denom;
+  double *prop = doubleArray(n_cov);
+  double *Xbeta = doubleArray(n_samp);
+  double *Xbeta1 = doubleArray(n_samp);
+
+  for (i = 0; i < n_samp; i++) {
+    Xbeta[i] = 0; 
+    for (j = 0; j < n_cov; j++) 
+      Xbeta[i] += X[i][j]*beta[j];
+  }
+  
+  for (main_loop = 0; main_loop < n_gen; main_loop++) {
+    /** Sampling beta **/
+    for (j = 0; j < n_cov; j++)
+      prop[j] = beta[j] + norm_rand()*sqrt(varb[j]);
+    /* prior */
+    numer = dMVN(prop, beta0, A0, n_cov, 1);
+    denom = dMVN(beta, beta0, A0, n_cov, 1);   
+    /* likelihood */
+    for (i = 0; i < n_samp; i++) {
+      Xbeta1[i] = 0;
+      for (j = 0; j < n_cov; j++) 
+	Xbeta1[i] += X[i][j]*prop[j];
+      numer += dnegbin(Y[i], exp(Xbeta1[i]), *sig2, 1);
+      denom += dnegbin(Y[i], exp(Xbeta[i]), *sig2, 1);
+    }
+    /* rejection */
+    if (unif_rand() < fmin2(1.0, exp(numer-denom))) {
+      counter[0]++;
+      for (j = 0; j < n_cov; j++)
+	beta[j] = prop[j];
+      for (i = 0; i < n_samp; i++)
+	Xbeta[i] = Xbeta1[i];
+    }
+
+    /** Sampling sig2 **/
+    prop[0] = exp(rlnorm(log(sig2[0]), sqrt(vars)));
+    /* prior */
+    numer = dgamma(prop[0], a0, b0, 1);
+    denom = dgamma(sig2[0], a0, b0, 1);
+    /* likelihood */
+    for (i = 0; i < n_samp; i++) {
+      numer += dnegbin(Y[i], exp(Xbeta[i]), prop[0], 1);
+      denom += dnegbin(Y[i], exp(Xbeta[i]), sig2[0], 1);
+    }
+    /* proposal distribution */
+    denom += dlnorm(log(prop[0]), log(sig2[0]), sqrt(vars), 1);
+    numer += dlnorm(log(sig2[0]), log(prop[0]), sqrt(vars), 1);
+    if (unif_rand() < fmin2(1.0, exp(numer-denom))) {
+      counter[1]++;
+      sig2[0] = prop[0];
+    }
+  }
+  
+  free(prop);
+  free(Xbeta);
+  free(Xbeta1);
+} /* end of negbinMetro */
