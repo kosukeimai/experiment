@@ -54,7 +54,7 @@ void boprobitMixedMCMC(int *Y, double **X, double ***Zgrp, int *grp,
 		       double **T0, int mh, double *prop, int *accept,
 		       int n_gen);
 
-/* negative binomial regression *
+/* negative binomial regression */
 void negbinMetro(int *Y, double **X, double *beta, double *sig2,
 		 int n_samp, int n_cov, double *beta0, double **A0, 
 		 double a0, double b0, double *varb, double vars,
