@@ -1105,7 +1105,6 @@ void boprobitMixedMCMC(int *Y,          /* binary outcome variable */
 
 
 
-
 /*** 
    A Random Walk Metroplis Sampler for Negative binomial Regression
    with Independent Normal and InvGamma Prior 

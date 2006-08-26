@@ -797,3 +797,70 @@ void R2boprobitMixedMCMC(int *Y,           /* binary outcome variable */
   FreeMatrix(mtemp, *n_fixed);
   Free3DMatrix(Zgrp, *n_grp, *max_samp_grp + *n_random);
 }
+
+
+void R2bNegBin(int *Y,          /* count outcome variable */
+	       double *dX,      /* model matrix */
+	       double *beta,    /* fixed effects coefficients */
+	       double *sig2,    /* dispersion parameter */
+	       int *n_samp,     /* # of obs */ 
+	       int *n_cov,      /* # of covariates */
+	       int *n_gen,      /* # of gibbs draws */
+	       double *beta0,   /* prior mean for normal */
+	       double *dA0,     /* prior precision for normal; can be
+				   set to zero to induce improper prior
+				   for beta alone
+				*/
+	       double *a0,      /* prior shape for sig2 */
+	       double *b0,      /* prior scale for sig2 */
+	       double *varb,    /* proposal variance for beta */
+	       double *vars,    /* proposal variance for sig2 */
+	       double *betaStore, 
+	       double *sig2Store,
+	       int *counter
+	       ) {
+
+  /* storage parameters and loop counters */
+  int i, j, k, main_loop, itemp;  
+  int ibeta = 0, isig2 = 0;
+
+  /* matrices */
+  double **X = doubleMatrix(*n_samp, *n_cov);
+  double **A0 = doubleMatrix(*n_cov, *n_cov);
+
+  /* get random seed */
+  GetRNGstate();
+
+  /* packing the data */
+  itemp = 0;
+  for (j = 0; j < *n_cov; j++)
+    for (i = 0; i < *n_samp; i++) 
+      X[i][j] = dX[itemp++];
+
+  /* packing the prior */
+  itemp = 0; 
+  for (k = 0; k < *n_cov; k++)
+    for (j = 0; j < *n_cov; j++)
+      A0[j][k] = dA0[itemp++];
+
+  /* Gibbs Sampler! */
+  counter[0] = 0; counter[1] = 0;
+  for(main_loop = 1; main_loop <= *n_gen; main_loop++) {
+    negbinMetro(Y, X, beta, sig2, *n_samp, *n_cov, beta0, A0,
+		*a0, *b0, varb, *vars, 1, counter);
+
+    /* Storing the output */
+    for (j = 0; j < *n_cov; j++)
+      betaStore[ibeta++] = beta[j];
+    sig2Store[isig2++] = *sig2;
+
+    R_FlushConsole(); 
+    R_CheckUserInterrupt();
+  } /* end of Gibbs sampler */
+
+  PutRNGstate();
+
+  /* freeing memory */
+  FreeMatrix(X, *n_samp);
+  FreeMatrix(A0, *n_cov);
+} /* end of negative binomial regression */
