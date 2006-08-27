@@ -846,6 +846,7 @@ void R2bNegBin(int *Y,          /* count outcome variable */
   /* Gibbs Sampler! */
   counter[0] = 0; counter[1] = 0;
   for(main_loop = 1; main_loop <= *n_gen; main_loop++) {
+    Rprintf("%5d done\n", main_loop);
     negbinMetro(Y, X, beta, sig2, *n_samp, *n_cov, beta0, A0,
 		*a0, *b0, varb, *vars, 1, counter);
 

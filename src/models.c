@@ -1170,7 +1170,7 @@ void negbinMetro(int *Y,        /* outcome count variable */
     }
 
     /** Sampling sig2 **/
-    prop[0] = exp(rlnorm(log(sig2[0]), sqrt(vars)));
+    prop[0] = rlnorm(log(sig2[0]), sqrt(vars));
     /* prior */
     numer = dgamma(prop[0], a0, b0, 1);
     denom = dgamma(sig2[0], a0, b0, 1);
@@ -1179,6 +1179,7 @@ void negbinMetro(int *Y,        /* outcome count variable */
       numer += dnegbin(Y[i], exp(Xbeta[i]), prop[0], 1);
       denom += dnegbin(Y[i], exp(Xbeta[i]), sig2[0], 1);
     }
+    Rprintf("%14g%14g%14g\n", prop[0], sig2[0], numer-denom);
     /* proposal distribution */
     denom += dlnorm(log(prop[0]), log(sig2[0]), sqrt(vars), 1);
     numer += dlnorm(log(sig2[0]), log(prop[0]), sqrt(vars), 1);
