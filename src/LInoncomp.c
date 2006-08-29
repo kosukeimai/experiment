@@ -141,7 +141,7 @@ void LIbinary(int *Y,         /* binary outcome variable */
   int *acceptC = intArray(n_covC*2);      /* number of acceptance */
   int *acceptO = intArray(n_covO);      /* number of acceptance */
   int *acceptR = intArray(n_covR);      /* number of acceptance */
-  int i, j, k, l, main_loop;
+  int i, j, k, main_loop;
   int itempP = ftrunc((double) *n_gen/10);
   int itemp, itempA, itempC, itempO, itempQ, itempR;
   double dtemp;
@@ -612,12 +612,13 @@ void LIbinary(int *Y,         /* binary outcome variable */
 	  for (j = 0; j < n_covC; j++)
 	    coefC[itempC++] = betaC[j];
 	  if (*AT == 1)
-	    if (*logitC == 1)
+	    if (*logitC == 1) {
 	      for (j = 0; j < n_covC; j++)
 		coefA[itempA++] = betaC[j+n_covC];
-	    else
+	    } else {
 	      for (j = 0; j < n_covC; j++)
 		coefA[itempA++] = betaA[j];
+	    }
 	  for (j = 0; j < n_covO; j++)
 	    coefO[itempO++] = gamma[j];
 	  if (n_miss > 0) 
@@ -826,7 +827,7 @@ void LIgaussian(double *Y,      /* gaussian outcome variable */
   int keep = 1;
   int *acceptC = intArray(n_covC*2);      /* number of acceptance */
   int *acceptR = intArray(n_covR);      /* number of acceptance */
-  int i, j, k, l, main_loop;
+  int i, j, k, main_loop;
   int itempP = ftrunc((double) *n_gen/10);
   int itemp, itempA, itempC, itempO, itempQ, itempR, itempS;
   double dtemp;
@@ -1243,12 +1244,13 @@ void LIgaussian(double *Y,      /* gaussian outcome variable */
 	    coefC[itempC++] = betaC[j];
 	  var[itempS++] = sig2[0];
 	  if (*AT == 1)
-	    if (*logitC == 1)
+	    if (*logitC == 1) {
 	      for (j = 0; j < n_covC; j++)
 		coefA[itempA++] = betaC[j+n_covC];
-	    else
+	    } else {
 	      for (j = 0; j < n_covC; j++)
 		coefA[itempA++] = betaA[j];
+	    }
 	  for (j = 0; j < n_covO; j++)
 	    coefO[itempO++] = gamma[j];
 	  if (n_miss > 0) 
@@ -1451,12 +1453,12 @@ void LIordinal(int *Y,         /* binary outcome variable */
   double p_comp, p_never; /* prob. of being a particular type */
 
   /*** storage parameters and loop counters **/
-  int progress = 1;
-  int keep = 1;
+  int progress; progress = 1;
+  int keep; keep = 1;
   int *acceptC = intArray(n_covC*2);    /* number of acceptance */
   int *acceptR = intArray(n_covR);      /* number of acceptance */
   int *acceptO = intArray(1); acceptO[0] = 0;
-  int i, j, k, l, main_loop;
+  int i, j, k, main_loop;
   int itempP = ftrunc((double) *n_gen/10);
   int itemp, itempA, itempC, itempO, itempQ, itempR, itempT;
   double dtemp;
@@ -1981,12 +1983,13 @@ void LIordinal(int *Y,         /* binary outcome variable */
 	  for (j = 0; j < n_covC; j++)
 	    coefC[itempC++] = betaC[j];
 	  if (*AT)
-	    if (*logitC)
+	    if (*logitC) {
 	      for (j = 0; j < n_covC; j++)
 		coefA[itempA++] = betaC[j+n_covC];
-	    else
+	    } else {
 	      for (j = 0; j < n_covC; j++)
 		coefA[itempA++] = betaA[j];
+	    }
 	  for (j = 0; j < n_covO; j++)
 	    coefO[itempO++] = gamma[j];
 	  if (n_miss > 0) 

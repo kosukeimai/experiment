@@ -205,7 +205,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
   int keep = 1;
   int *acc_fixed = intArray(n_fixedC*2);      /* number of acceptance */
   int *acc_random = intArray(2*n_grp);      /* number of acceptance */
-  int i, j, k, l, main_loop;
+  int i, j, k, main_loop;
   int itempP = ftrunc((double) *n_gen/10);
   int itemp, itempA, itempC, itempO, itempQ, itempR;
   int itempAv, itempCv, itempOv, itempRv;
@@ -845,12 +845,13 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	  for (j = 0; j < n_fixedC; j++)
 	    coefC[itempC++] = betaC[j];
 	  if (*AT)
-	    if (*logitC)
+	    if (*logitC) {
 	      for (j = 0; j < n_fixedC; j++)
 		coefA[itempA++] = betaC[j+n_fixedC];
-	    else
+	    } else {
 	      for (j = 0; j < n_fixedC; j++)
 		coefA[itempA++] = betaA[j];
+	    }
 	  for (j = 0; j < n_fixedO; j++)
 	    coefO[itempO++] = gamma[j];
 	  if (n_miss > 0) 
@@ -1134,11 +1135,11 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
   /*** storage parameters and loop counters **/
   int *vitemp = intArray(n_grp);
   int *vitemp1 = intArray(n_grp);
-  int progress = 1;
-  int keep = 1;
+  int progress; progress = 1;
+  int keep; keep = 1;
   int *acc_fixed = intArray(n_fixedC*2);      /* number of acceptance */
   int *acc_random = intArray(2*n_grp);      /* number of acceptance */
-  int i, j, k, l, main_loop;
+  int i, j, k, main_loop;
   int itempP = ftrunc((double) *n_gen/10);
   int itemp, itempA, itempC, itempO, itempQ, itempR;
   int itempAv, itempCv, itempOv, itempRv, itempS;
@@ -1685,12 +1686,13 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
 	    coefC[itempC++] = betaC[j];
 	  ssig2[itempS++] = sig2[0];
 	  if (*AT)
-	    if (*logitC)
+	    if (*logitC) {
 	      for (j = 0; j < n_fixedC; j++)
 		coefA[itempA++] = betaC[j+n_fixedC];
-	    else
+	    } else {
 	      for (j = 0; j < n_fixedC; j++)
 		coefA[itempA++] = betaA[j];
+	    }
 	  for (j = 0; j < n_fixedO; j++)
 	    coefO[itempO++] = gamma[j];
 	  if (n_miss > 0) 
@@ -1981,12 +1983,12 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
   /*** storage parameters and loop counters **/
   int *vitemp = intArray(n_grp);
   int *vitemp1 = intArray(n_grp);
-  int progress = 1;
-  int keep = 1;
+  int progress; progress = 1;
+  int keep; keep = 1;
   int *acc_fixed = intArray(n_fixedC*2);    /* number of acceptance */
   int *acc_tau = intArray(0);
   int *acc_random = intArray(2*n_grp);      /* number of acceptance */
-  int i, j, k, l, main_loop;
+  int i, j, k, main_loop;
   int itempP = ftrunc((double) *n_gen/10);
   int itemp, itempA, itempC, itempO, itempQ, itempR, itempT;
   int itempAv, itempCv, itempOv, itempRv;
@@ -2727,12 +2729,13 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 	  for (j = 0; j < n_fixedC; j++)
 	    coefC[itempC++] = betaC[j];
 	  if (*AT)
-	    if (*logitC)
+	    if (*logitC) {
 	      for (j = 0; j < n_fixedC; j++)
 		coefA[itempA++] = betaC[j+n_fixedC];
-	    else
+	    } else {
 	      for (j = 0; j < n_fixedC; j++)
 		coefA[itempA++] = betaA[j];
+	    }
 	  for (j = 0; j < n_fixedO; j++)
 	    coefO[itempO++] = gamma[j];
 	  if (n_miss > 0) 

@@ -75,12 +75,12 @@ void bNormalReg(double **D,    /* data [X Y] */
   for(j = 0; j < n_cov; j++)
     mean[j] = SS[j][n_cov];
   if (!sig2fixed)
-    if (psig2)   /* proper prior for sig2 */
-      if (pbeta) /* proper prior for beta */
+    if (psig2) {  /* proper prior for sig2 */
+      if (pbeta)  /* proper prior for beta */
 	sig2[0]=(SS[n_cov][n_cov]+nu0*s0)/rchisq((double)n_samp+nu0);
-      else       /* improper prior for beta */
+       else        /* improper prior for beta */
 	sig2[0]=(n_samp*SS[n_cov][n_cov]/(n_samp-n_cov)+nu0*s0)/rchisq((double)n_samp+nu0);
-    else         /* improper prior for sig2 */
+    } else         /* improper prior for sig2 */
       sig2[0]=SS[n_cov][n_cov]/rchisq((double)n_samp-n_cov);
   
   /* draw beta from its conditional given sig2 */
@@ -252,15 +252,14 @@ void boprobitMCMC(int *Y,        /* ordinal outcome variable: 0, 1,
   
   /* storage parameters and loop counters */
   int i, j, k, main_loop;  
-  double dtemp, dtemp1;
-  double *dvtemp = doubleArray(n_cat);
-  dvtemp[0] = tau[0];
+  double dtemp;
+  double *dvtemp = doubleArray(n_cat); dvtemp[0] = tau[0];
   double **mtemp = doubleMatrix(n_cov, n_cov);
   
   /* marginal data augmentation */
-  double sig2 = 1;
-  int nu0 = 1;
-  double s0 = 1;
+  double sig2; sig2 = 1;
+  int nu0; nu0 = 1;
+  double s0; s0 = 1;
 
   /* read the prior as additional data points */
   if (prior) {
@@ -519,7 +518,6 @@ void bNormalMixedGibbs(double *Y,       /* outcome variable */
   /* storage parameters and loop counters */
   int i, j, k, l, main_loop;  
   int *vitemp = intArray(n_grp);
-  double dtemp0, dtemp1;
   
   /* read the prior as additional data points */
   if (prior) {

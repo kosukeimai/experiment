@@ -1,9 +1,3 @@
-/******************************************************************
-  This file is a part of MNP: R Package for Estimating the 
-  Multinomial Probit Models by Kosuke Imai and  David A. van Dyk.
-  Copyright: GPL version 2 or later.
-*******************************************************************/
-
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
