@@ -6,10 +6,9 @@
 
 int* intArray(int num) {
   int *iArray = (int *)malloc(num * sizeof(int));
-  if (iArray)
-    return iArray;
-  else 
+  if (!iArray)
     error("Out of memory error in intArray\n");
+  return iArray;
 }
 
 void PintArray(int *ivector, int length) {
@@ -21,16 +20,14 @@ void PintArray(int *ivector, int length) {
 int** intMatrix(int row, int col) {
   int i;
   int **iMatrix = (int **)malloc(row * sizeof(int *));
-  if (iMatrix) {
-    for (i = 0; i < row; i++) {
-      iMatrix[i] = (int *)malloc(col *  sizeof(int));
-      if (!iMatrix[i]) 
-	error("Out of memory error in intMatrix\n");
-    }
-    return iMatrix;
-  }
-  else 
+  if (!iMatrix) 
     error("Out of memory error in intMatrix\n");
+  for (i = 0; i < row; i++) {
+    iMatrix[i] = (int *)malloc(col *  sizeof(int));
+    if (!iMatrix[i]) 
+      error("Out of memory error in intMatrix\n");
+  }
+  return iMatrix;
 }
 
 void PintMatrix(int **imatrix, int row, int col) {
@@ -45,10 +42,9 @@ void PintMatrix(int **imatrix, int row, int col) {
 
 double* doubleArray(int num) {
   double *dArray = (double *)malloc(num * sizeof(double));
-  if (dArray)
-    return dArray;
-  else
+  if (!dArray)
     error("Out of memory error in doubleArray\n");
+  return dArray;
 }
 
 void PdoubleArray(double *dvector, int length) {
@@ -60,16 +56,14 @@ void PdoubleArray(double *dvector, int length) {
 double** doubleMatrix(int row, int col) {
   int i;
   double **dMatrix = (double **)malloc((size_t)(row * sizeof(double *)));
-  if (dMatrix) {
-    for (i = 0; i < row; i++) {
-      dMatrix[i] = (double *)malloc((size_t)(col * sizeof(double)));
-      if (!dMatrix[i])
-	error("Out of memory error in doubleMatrix\n");
-    }
-    return dMatrix;
-  }
-  else
+  if (!dMatrix) 
     error("Out of memory error in doubleMatrix\n");
+  for (i = 0; i < row; i++) {
+    dMatrix[i] = (double *)malloc((size_t)(col * sizeof(double)));
+    if (!dMatrix[i])
+      error("Out of memory error in doubleMatrix\n");
+  }
+  return dMatrix;
 }
 
 void PdoubleMatrix(double **dmatrix, int row, int col) {
@@ -84,13 +78,11 @@ void PdoubleMatrix(double **dmatrix, int row, int col) {
 double*** doubleMatrix3D(int x, int y, int z) {
   int i;
   double ***dM3 = (double ***)malloc(x * sizeof(double **));
-  if (dM3) {
-    for (i = 0; i < x; i++) 
-      dM3[i] = doubleMatrix(y, z);
-    return dM3;
-  }
-  else 
+  if (!dM3) 
     error("Out of memory error in doubleMatrix3D\n");
+  for (i = 0; i < x; i++) 
+    dM3[i] = doubleMatrix(y, z);
+  return dM3;
 }
 
 void PdoubleMatrix3D(double ***dmatrix3D, int x, int y, int z) {
@@ -107,10 +99,9 @@ void PdoubleMatrix3D(double ***dmatrix3D, int x, int y, int z) {
 
 long* longArray(int num) {
   long *lArray = (long *)malloc(num * sizeof(long));
-  if (lArray)
-    return lArray;
-  else 
+  if (!lArray)
     error("Out of memory error in longArray\n");
+  return lArray;
 }
 
 void FreeMatrix(double **Matrix, int row) {

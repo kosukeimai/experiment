@@ -855,6 +855,10 @@ void R2bNegBin(int *Y,          /* count outcome variable */
       betaStore[ibeta++] = beta[j];
     sig2Store[isig2++] = *sig2;
 
+    Rprintf("acceptance ratios:%14g%14g\n",
+	    (double)counter[0]/(double)main_loop,
+	    (double)counter[1]/(double)main_loop);
+	    
     R_FlushConsole(); 
     R_CheckUserInterrupt();
   } /* end of Gibbs sampler */

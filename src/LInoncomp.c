@@ -611,7 +611,7 @@ void LIbinary(int *Y,         /* binary outcome variable */
 	if (*param == 1) {
 	  for (j = 0; j < n_covC; j++)
 	    coefC[itempC++] = betaC[j];
-	  if (*AT == 1)
+	  if (*AT == 1) {
 	    if (*logitC == 1) {
 	      for (j = 0; j < n_covC; j++)
 		coefA[itempA++] = betaC[j+n_covC];
@@ -619,6 +619,7 @@ void LIbinary(int *Y,         /* binary outcome variable */
 	      for (j = 0; j < n_covC; j++)
 		coefA[itempA++] = betaA[j];
 	    }
+	  }
 	  for (j = 0; j < n_covO; j++)
 	    coefO[itempO++] = gamma[j];
 	  if (n_miss > 0) 
@@ -626,8 +627,7 @@ void LIbinary(int *Y,         /* binary outcome variable */
 	      coefR[itempR++] = delta[j];
 	}
 	keep = 1;
-      }
-      else
+      } else
 	keep++;
     }
 
@@ -1243,7 +1243,7 @@ void LIgaussian(double *Y,      /* gaussian outcome variable */
 	  for (j = 0; j < n_covC; j++)
 	    coefC[itempC++] = betaC[j];
 	  var[itempS++] = sig2[0];
-	  if (*AT == 1)
+	  if (*AT == 1) {
 	    if (*logitC == 1) {
 	      for (j = 0; j < n_covC; j++)
 		coefA[itempA++] = betaC[j+n_covC];
@@ -1251,6 +1251,7 @@ void LIgaussian(double *Y,      /* gaussian outcome variable */
 	      for (j = 0; j < n_covC; j++)
 		coefA[itempA++] = betaA[j];
 	    }
+	  }
 	  for (j = 0; j < n_covO; j++)
 	    coefO[itempO++] = gamma[j];
 	  if (n_miss > 0) 
@@ -1258,8 +1259,7 @@ void LIgaussian(double *Y,      /* gaussian outcome variable */
 	      coefR[itempR++] = delta[j];
 	}
 	keep = 1;
-      }
-      else
+      } else
 	keep++;
     }
 
@@ -1982,7 +1982,7 @@ void LIordinal(int *Y,         /* binary outcome variable */
 	    tauO[itempT++] = tau[j];
 	  for (j = 0; j < n_covC; j++)
 	    coefC[itempC++] = betaC[j];
-	  if (*AT)
+	  if (*AT) {
 	    if (*logitC) {
 	      for (j = 0; j < n_covC; j++)
 		coefA[itempA++] = betaC[j+n_covC];
@@ -1990,6 +1990,7 @@ void LIordinal(int *Y,         /* binary outcome variable */
 	      for (j = 0; j < n_covC; j++)
 		coefA[itempA++] = betaA[j];
 	    }
+	  }
 	  for (j = 0; j < n_covO; j++)
 	    coefO[itempO++] = gamma[j];
 	  if (n_miss > 0) 
@@ -1997,8 +1998,7 @@ void LIordinal(int *Y,         /* binary outcome variable */
 	      coefR[itempR++] = delta[j];
 	}
 	keep = 1;
-      }
-      else
+      } else
 	keep++;
     }
 

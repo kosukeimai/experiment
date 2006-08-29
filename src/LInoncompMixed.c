@@ -844,7 +844,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	if (*param) {
 	  for (j = 0; j < n_fixedC; j++)
 	    coefC[itempC++] = betaC[j];
-	  if (*AT)
+	  if (*AT) {
 	    if (*logitC) {
 	      for (j = 0; j < n_fixedC; j++)
 		coefA[itempA++] = betaC[j+n_fixedC];
@@ -852,6 +852,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	      for (j = 0; j < n_fixedC; j++)
 		coefA[itempA++] = betaA[j];
 	    }
+	  }
 	  for (j = 0; j < n_fixedO; j++)
 	    coefO[itempO++] = gamma[j];
 	  if (n_miss > 0) 
@@ -859,8 +860,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	      coefR[itempR++] = delta[j];
 	}
 	keep = 1;
-      }
-      else
+      } else
 	keep++;
     }
 
@@ -1685,7 +1685,7 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
 	  for (j = 0; j < n_fixedC; j++)
 	    coefC[itempC++] = betaC[j];
 	  ssig2[itempS++] = sig2[0];
-	  if (*AT)
+	  if (*AT) {
 	    if (*logitC) {
 	      for (j = 0; j < n_fixedC; j++)
 		coefA[itempA++] = betaC[j+n_fixedC];
@@ -1693,6 +1693,7 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
 	      for (j = 0; j < n_fixedC; j++)
 		coefA[itempA++] = betaA[j];
 	    }
+	  }
 	  for (j = 0; j < n_fixedO; j++)
 	    coefO[itempO++] = gamma[j];
 	  if (n_miss > 0) 
@@ -1700,8 +1701,7 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
 	      coefR[itempR++] = delta[j];
 	}
 	keep = 1;
-      }
-      else
+      } else
 	keep++;
     }
 
@@ -2728,7 +2728,7 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 	    tauO[itempT++] = tau[j];
 	  for (j = 0; j < n_fixedC; j++)
 	    coefC[itempC++] = betaC[j];
-	  if (*AT)
+	  if (*AT) {
 	    if (*logitC) {
 	      for (j = 0; j < n_fixedC; j++)
 		coefA[itempA++] = betaC[j+n_fixedC];
@@ -2736,6 +2736,7 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 	      for (j = 0; j < n_fixedC; j++)
 		coefA[itempA++] = betaA[j];
 	    }
+	  }
 	  for (j = 0; j < n_fixedO; j++)
 	    coefO[itempO++] = gamma[j];
 	  if (n_miss > 0) 
@@ -2743,8 +2744,7 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 	      coefR[itempR++] = delta[j];
 	}
 	keep = 1;
-      }
-      else
+      } else
 	keep++;
     }
 

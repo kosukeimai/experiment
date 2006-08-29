@@ -74,15 +74,16 @@ void bNormalReg(double **D,    /* data [X Y] */
   /* draw sig2 from its marginal dist */
   for(j = 0; j < n_cov; j++)
     mean[j] = SS[j][n_cov];
-  if (!sig2fixed)
+  if (!sig2fixed) {
     if (psig2) {  /* proper prior for sig2 */
-      if (pbeta)  /* proper prior for beta */
+      if (pbeta)   /* proper prior for beta */
 	sig2[0]=(SS[n_cov][n_cov]+nu0*s0)/rchisq((double)n_samp+nu0);
        else        /* improper prior for beta */
 	sig2[0]=(n_samp*SS[n_cov][n_cov]/(n_samp-n_cov)+nu0*s0)/rchisq((double)n_samp+nu0);
     } else         /* improper prior for sig2 */
       sig2[0]=SS[n_cov][n_cov]/rchisq((double)n_samp-n_cov);
-  
+  }
+
   /* draw beta from its conditional given sig2 */
   for(j = 0; j < n_cov; j++)
     for(k = 0; k < n_cov; k++) V[j][k]=-SS[j][k]*sig2[0];
@@ -1131,7 +1132,7 @@ void negbinMetro(int *Y,        /* outcome count variable */
 		 int *counter   /* # of acceptance for each parameter */
 		) {
   
-  int i, j, k, main_loop;
+  int i, j, main_loop;
   double numer, denom;
   double *prop = doubleArray(n_cov);
   double *Xbeta = doubleArray(n_samp);
@@ -1177,10 +1178,9 @@ void negbinMetro(int *Y,        /* outcome count variable */
       numer += dnegbin(Y[i], exp(Xbeta[i]), prop[0], 1);
       denom += dnegbin(Y[i], exp(Xbeta[i]), sig2[0], 1);
     }
-    Rprintf("%14g%14g%14g\n", prop[0], sig2[0], numer-denom);
     /* proposal distribution */
-    denom += dlnorm(log(prop[0]), log(sig2[0]), sqrt(vars), 1);
-    numer += dlnorm(log(sig2[0]), log(prop[0]), sqrt(vars), 1);
+    denom += dlnorm(prop[0], log(sig2[0]), sqrt(vars), 1);
+    numer += dlnorm(sig2[0], log(prop[0]), sqrt(vars), 1);
     if (unif_rand() < fmin2(1.0, exp(numer-denom))) {
       counter[1]++;
       sig2[0] = prop[0];
