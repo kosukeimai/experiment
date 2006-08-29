@@ -825,6 +825,7 @@ void R2bNegBin(int *Y,          /* count outcome variable */
   int ibeta = 0, isig2 = 0;
 
   /* matrices */
+  double *cont = doubleArray(*n_samp);
   double **X = doubleMatrix(*n_samp, *n_cov);
   double **A0 = doubleMatrix(*n_cov, *n_cov);
 
@@ -836,6 +837,10 @@ void R2bNegBin(int *Y,          /* count outcome variable */
   for (j = 0; j < *n_cov; j++)
     for (i = 0; i < *n_samp; i++) 
       X[i][j] = dX[itemp++];
+  
+  /* contrast */
+  for (i = 0; i < *n_samp; i++)
+    cont[i] = 0;
 
   /* packing the prior */
   itemp = 0; 
@@ -848,7 +853,7 @@ void R2bNegBin(int *Y,          /* count outcome variable */
   for(main_loop = 1; main_loop <= *n_gen; main_loop++) {
     Rprintf("%5d done\n", main_loop);
     negbinMetro(Y, X, beta, sig2, *n_samp, *n_cov, beta0, A0,
-		*a0, *b0, varb, *vars, 1, counter);
+		*a0, *b0, varb, *vars, cont, 1, counter, 0);
 
     /* Storing the output */
     for (j = 0; j < *n_cov; j++)
@@ -866,6 +871,7 @@ void R2bNegBin(int *Y,          /* count outcome variable */
   PutRNGstate();
 
   /* freeing memory */
+  free(cont);
   FreeMatrix(X, *n_samp);
   FreeMatrix(A0, *n_cov);
 } /* end of negative binomial regression */

@@ -1127,10 +1127,13 @@ void negbinMetro(int *Y,        /* outcome count variable */
 		 double a0,     /* prior shape parameter */
 		 double b0,     /* prior scale parameter */
 		 double *varb,  /* proposal variances for beta */
-		 double vars,  /* proposal variance for sig2 */
+		 double vars,   /* proposal variance for sig2 */
+		 double *cont,  /* contrast */
 		 int n_gen,     /* # of MCMC draws */
-		 int *counter   /* # of acceptance for each parameter */
-		) {
+		 int *counter,  /* # of acceptance for each parameter
+				 */
+		 int sig2fixed  /* sig2 fixed? */
+		 ) {
   
   int i, j, main_loop;
   double numer, denom;
@@ -1139,7 +1142,7 @@ void negbinMetro(int *Y,        /* outcome count variable */
   double *Xbeta1 = doubleArray(n_samp);
 
   for (i = 0; i < n_samp; i++) {
-    Xbeta[i] = 0; 
+    Xbeta[i] = cont[i]; 
     for (j = 0; j < n_cov; j++) 
       Xbeta[i] += X[i][j]*beta[j];
   }
@@ -1153,7 +1156,7 @@ void negbinMetro(int *Y,        /* outcome count variable */
     denom = dMVN(beta, beta0, A0, n_cov, 1);   
     /* likelihood */
     for (i = 0; i < n_samp; i++) {
-      Xbeta1[i] = 0;
+      Xbeta1[i] = cont[i];
       for (j = 0; j < n_cov; j++) 
 	Xbeta1[i] += X[i][j]*prop[j];
       numer += dnegbin(Y[i], exp(Xbeta1[i]), *sig2, 1);
@@ -1169,21 +1172,23 @@ void negbinMetro(int *Y,        /* outcome count variable */
     }
 
     /** Sampling sig2 **/
-    prop[0] = rlnorm(log(sig2[0]), sqrt(vars));
-    /* prior */
-    numer = dgamma(prop[0], a0, b0, 1);
-    denom = dgamma(sig2[0], a0, b0, 1);
-    /* likelihood */
-    for (i = 0; i < n_samp; i++) {
-      numer += dnegbin(Y[i], exp(Xbeta[i]), prop[0], 1);
-      denom += dnegbin(Y[i], exp(Xbeta[i]), sig2[0], 1);
-    }
-    /* proposal distribution */
-    denom += dlnorm(prop[0], log(sig2[0]), sqrt(vars), 1);
-    numer += dlnorm(sig2[0], log(prop[0]), sqrt(vars), 1);
-    if (unif_rand() < fmin2(1.0, exp(numer-denom))) {
-      counter[1]++;
-      sig2[0] = prop[0];
+    if (!sig2fixed) {
+      prop[0] = rlnorm(log(sig2[0]), sqrt(vars));
+      /* prior */
+      numer = dgamma(prop[0], a0, b0, 1);
+      denom = dgamma(sig2[0], a0, b0, 1);
+      /* likelihood */
+      for (i = 0; i < n_samp; i++) {
+	numer += dnegbin(Y[i], exp(Xbeta[i]), prop[0], 1);
+	denom += dnegbin(Y[i], exp(Xbeta[i]), sig2[0], 1);
+      }
+      /* proposal distribution */
+      denom += dlnorm(prop[0], log(sig2[0]), sqrt(vars), 1);
+      numer += dlnorm(sig2[0], log(prop[0]), sqrt(vars), 1);
+      if (unif_rand() < fmin2(1.0, exp(numer-denom))) {
+	counter[1]++;
+	sig2[0] = prop[0];
+      }
     }
   }
   
@@ -1191,3 +1196,106 @@ void negbinMetro(int *Y,        /* outcome count variable */
   free(Xbeta);
   free(Xbeta1);
 } /* end of negbinMetro */
+
+
+void bnegbinMixedMCMC(int *Y,          /* outcome variable */
+		      int **Ygrp,      /* outcome variable by group */
+		      double **X,      /* model matrix for fixed
+					  effects */
+		      double ***Zgrp,  /* model matrix for random
+					  effects organized by
+					  grous */
+		      int *grp,        /* group indicator: 0, 1, 2,... */
+		      double *beta,    /* fixed effects coefficients */
+		      double **gamma,  /* random effects coefficients */
+		      double *sig2,    /* dispersion parameter */
+		      double **Psi,    /* precision matrix for random
+					  effects */
+		      int n_samp,      /* # of obs */ 
+		      int n_fixed,     /* # of fixed effects */
+		      int n_random,    /* # of random effects */
+		      int n_grp,       /* # of groups */
+		      int max_samp_grp, /* max # of obs per group */
+		      double *beta0,   /* prior mean */
+		      double **A0,     /* prior precision */
+		      double a0,       /* prior shape for sig2 */
+		      double b0,       /* prior scale for sig2 */
+		      int tau0,        /* prior df for Psi */
+		      double **T0,     /* prior scale for Psi */
+		      double *varb,    /* proposal variance for beta */
+		      double vars,     /* proposal variance for sig2 */
+		      double *varg,    /* proposal variance for gamma */
+		      int *counter,    /* acceptance counter beta and
+					  sig2 2 */
+		      int **counterg,  /* acceptance counter for gamma */
+		      int n_gen        /* # of gibbs draws */
+		      ) {
+  
+  double *gamma0 = doubleArray(n_random);           /* prior mean for gamma */
+  double **V = doubleMatrix(n_fixed, n_fixed);      /* variances for beta */
+  double **mtemp = doubleMatrix(n_random, n_random);
+  double **mtemp1 = doubleMatrix(n_random, n_random);
+
+  /* storage parameters and loop counters */
+  int i, j, k, l, main_loop;  
+  int *vitemp = intArray(n_grp);
+
+  /* contrasts */
+  double *cont = doubleArray(n_samp);
+  double **contM = doubleMatrix(n_grp, max_samp_grp);
+
+  for (j = 0; j < n_random; j++)
+    gamma0[j] = 0;
+
+  /* Gibbs Sampler! */
+  for(main_loop = 1; main_loop <= n_gen; main_loop++){
+    /** STEP 1: Sample Fixed Effects Given Random Effects 
+                Also Sample Variance Parameter **/
+    for (j = 0; j < n_grp; j++)
+      vitemp[j] = 0;
+    for (i = 0; i < n_samp; i++) {
+      cont[i] = 0;
+      for (j = 0; j < n_random; j++)
+	cont[i] -= Zgrp[grp[i]][vitemp[grp[i]]][j]*gamma[grp[i]][j];
+      vitemp[grp[i]]++;
+    }
+    negbinMetro(Y, X, beta, sig2, n_samp, n_fixed, beta0, A0, a0, b0,
+		varb, vars, cont, 1, counter, 0);
+
+    /** STEP 2: Update Random Effects Given Fixed Effects **/
+    for (j = 0; j < n_grp; j++)
+      vitemp[j] = 0;
+    for (i = 0; i < n_samp; i++) {
+      contM[grp[i]][vitemp[grp[i]]] = 0;
+      for (j = 0; j < n_fixed; j++) 
+	contM[grp[i]][vitemp[grp[i]]] -= X[i][j]*beta[j]; 
+      vitemp[grp[i]]++;
+    }
+    for (j = 0; j < n_grp; j++)
+      negbinMetro(Ygrp[j], Zgrp[j], gamma[j], sig2, vitemp[j], n_random,
+		  gamma0, Psi, a0, b0, varg, vars, contM[j], 1,
+		  counterg[j], 1);
+
+    /** STEP 3: Update Covariance Matrix Given Random Effects **/
+    for (j = 0; j < n_random; j++)
+      for (k = 0; k < n_random; k++)
+	mtemp[j][k] = T0[j][k];
+    for (j = 0; j < n_grp; j++)
+      for (k = 0; k < n_random; k++)
+	for (l = 0; l < n_random; l++)
+	  mtemp[k][l] += gamma[j][k]*gamma[j][l];
+    dinv(mtemp, n_random, mtemp1);
+    rWish(Psi, mtemp1, tau0+n_grp, n_random);
+
+    R_CheckUserInterrupt();
+  } /* end of Gibbs sampler */
+
+  /* freeing memory */
+  free(gamma0);
+  FreeMatrix(V, n_fixed);
+  FreeMatrix(mtemp, n_random);
+  FreeMatrix(mtemp1, n_random);
+  free(vitemp);
+  free(cont);
+  FreeMatrix(contM, n_grp);
+} /* end of negative binomial mixed effects model */

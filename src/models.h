@@ -58,4 +58,15 @@ void boprobitMixedMCMC(int *Y, double **X, double ***Zgrp, int *grp,
 void negbinMetro(int *Y, double **X, double *beta, double *sig2,
 		 int n_samp, int n_cov, double *beta0, double **A0, 
 		 double a0, double b0, double *varb, double vars,
-		 int n_gen, int *counter);
+		 double *cont, int n_gen, int *counter, int sig2fixed);
+
+/* mixed effects negative binomial regression */
+void bnegbinMixedMCMC(int *Y, int **Ygrp, double **X, double ***Zgrp,
+		      int *grp, double *beta, double **gamma,
+		      double *sig2, double **Psi, int n_samp,
+		      int n_fixed, int n_random, int n_grp,
+		      int max_samp_grp, double *beta0,
+		      double **A0, double a0, double b0,
+		      int tau0, double **T0, double *varb, double vars,
+		      double *varg, int *counter, int **counterg,
+		      int n_gen);
