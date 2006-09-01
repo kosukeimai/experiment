@@ -1004,10 +1004,10 @@ void R2bnegbinMixedMCMC(int *Y,           /* outcome variable */
   free(vitemp);
   FreeintMatrix(counterg, *n_grp);
   FreeintMatrix(Ygrp, *n_grp);
-  FreeMatrix(X, *n_samp+*n_fixed);
+  FreeMatrix(X, *n_samp);
   FreeMatrix(gamma, *n_grp);
   FreeMatrix(Psi, *n_random);
   FreeMatrix(A0, *n_fixed);
   FreeMatrix(T0, *n_random);
-  Free3DMatrix(Zgrp, *n_grp, *max_samp_grp + *n_random);
+  Free3DMatrix(Zgrp, *n_grp, *max_samp_grp);
 } /* end of negative binomial mixed effects model */
