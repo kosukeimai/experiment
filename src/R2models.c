@@ -996,6 +996,9 @@ void R2bnegbinMixedMCMC(int *Y,           /* outcome variable */
 	gammaStore[igamma++] = gamma[j][k];
     sig2Store[isig2++] = sig2[0];
 
+    Rprintf("%14g%14g\n", (double)counter[0]/(double)main_loop,
+	    (double)counter[1]/(double)main_loop);
+
     R_FlushConsole(); 
     R_CheckUserInterrupt();
   } /* end of Gibbs sampler */
