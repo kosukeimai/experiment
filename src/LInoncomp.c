@@ -1667,3 +1667,370 @@ void LIordinal(int *Y,         /* binary outcome variable */
 
 } /* end of LIordinal */
 
+
+
+/*
+  Count outcome (negative binomial)
+*/
+
+void LIcount(int *Y,         /*count outcome variable */ 
+	     int *R,         /* missingness indicator for Y */
+	     int *Z,         /* treatment assignment */
+	     int *D,         /* treatment status */ 
+	     int *C,         /* compliance status; 
+				for probit, complier = 1,
+				noncomplier = 0
+				for logit, never-taker = 0,
+				complier = 1, always-taker = 2
+			     */
+	     int *A,         /* always-takers; always-taker = 1, others
+				= 0 */
+	     int *Ymiss,     /* number of missing obs in Y */
+	     int *AT,        /* Are there always-takers? */
+	     int *Insample,  /* Insample (=1) or population QoI? */
+	     double *dXc,    /* model matrix for compliance model */
+	     double *dXo,    /* model matrix for outcome model */
+	     double *dXr,    /* model matrix for response model */
+	     double *betaC,  /* coefficients for compliance model */
+	     double *betaA,  /* coefficients for always-takers model */
+	     double *gamma,  /* coefficients for outcome model */
+	     double *sig2,   /* dispersion for outcome model */
+	     double *delta,  /* coefficients for response model */
+	     int *in_samp,   /* # of observations */
+	     int *n_gen,     /* # of Gibbs draws */
+	     int *in_covC,   /* # of covariates for compliance model */ 
+	     int *in_covO,   /* # of covariates for outcome model */
+	     int *in_covR,   /* # of covariates for response model */
+	     double *beta0,  /* prior mean for betaC and betaA */ 
+	     double *gamma0, /* prior mean for gamma */
+	     double *delta0, /* prior mean for delta */
+	     double *dA0C,   /* prior precision for betaC and betaA */ 
+	     double *dA0O,   /* prior precision for gamma */
+	     double *dA0R,   /* prior precision for delta */
+	     double *a0,     /* prior shape for sig2 */
+	     double *b0,     /* prior scale for sig2 */
+	     double *VarC,   /* proposal variance for compliance
+				 model */
+	     double *VarR,   /* proposal variance for response model */
+	     double *VarO,   /* proposal variance for outcome model */
+	     double *VarS,   /* proposal variance for dispersion */
+	     int *logitC,    /* Use logistic regression for the
+				compliance model? */
+	     int *logitR,    /* Use logistic regression for the
+				response model? */
+	     int *param,     /* Want to keep paramters? */
+	     int *mda,       /* Want to use marginal data
+				augmentation for probit regressions? */
+	     int *burnin,   /* number of burnin */
+	     int *iKeep,     /* keep ?th draws */
+	     int *verbose,   /* print out messages */
+	     double *coefC,  /* Storage for coefficients of the
+				compliance model */
+	     double *coefA,  /* Storage for coefficients of the
+				always-takers model */
+	     double *coefO,  /* Storage for coefficients of the
+				outcome model */
+	     double *coefR,  /* Storage for coefficients of the
+				response model */	      
+	     double *var,    /* Storage for sig2 */
+	     double *QoI     /* Storage of quantities of interest */
+	     ) {
+  /** counters **/
+  int n_samp = *in_samp;
+  int n_covC = *in_covC;
+  int n_covO = *in_covO;
+  int n_covR = *in_covR;
+  int n_miss = *Ymiss;
+  int n_obs = n_samp - n_miss;
+
+  /*** data ***/
+  /*** observed Y ***/
+  int *Yobs = intArray(n_obs);
+  /* covariates for the compliance model */
+  double **Xc = doubleMatrix(n_samp+n_covC, n_covC+1);
+  /* covariates for the outcome model */
+  double **Xo = doubleMatrix(n_samp+n_covO, n_covO+1);    
+  /* covariates for the outcome model: only units with observed Y */     
+  double **Xobs = doubleMatrix(n_obs+n_covO, n_covO+1);    
+  /* covariates for the response model: includes all obs */     
+  double **Xr = doubleMatrix(n_samp+n_covR, n_covR+1);    
+  /* mean vector for the outcome model */
+  double *meano = doubleArray(n_samp);
+
+  /*** model parameters ***/
+  double *cont = doubleArray(n_obs);
+  /* probability of Y = 1 for a complier */
+  double *pC = doubleArray(n_samp); 
+  double *pN = doubleArray(n_samp);
+  /* probability of R = 1 */
+  double *prC = doubleArray(n_samp);
+  double *prN = doubleArray(n_samp);
+  double *prA = doubleArray(n_samp);
+  /* probability of being a complier and never-taker */
+  double *qC = doubleArray(n_samp);
+  double *qN = doubleArray(n_samp);
+  /* probability of being a always-taker */
+  double *pA = doubleArray(n_samp);
+  /* prior precision matrices */
+  double **A0C = doubleMatrix(n_covC*2, n_covC*2);
+  double **A0O = doubleMatrix(n_covO, n_covO);
+  double **A0R = doubleMatrix(n_covR, n_covR);
+  
+  /* quantities of interest: ITT, CACE  */
+  double ITT, CACE;
+  double Y1barC, Y0barC, YbarN, YbarA;
+  int *n_comp = intArray(2);          /* number of compliers */
+  int *n_never = intArray(2);
+  int *n_always = intArray(2);
+  double p_comp, p_never; /* prob. of being a particular type */
+
+  /*** storage parameters and loop counters **/
+  int progress = 1;
+  int keep = 1;
+  int *acceptC = intArray(n_covC*2);      /* number of acceptance */
+  int *acceptO = intArray(2);
+  int *acceptR = intArray(n_covR);      /* number of acceptance */
+  int i, j, main_loop;
+  int itempP = ftrunc((double) *n_gen/10);
+  int itemp, itempA, itempC, itempO, itempQ, itempR, itempS;
+
+  /*** get random seed **/
+  GetRNGstate();
+
+  /*** Preparing ***/
+  Prep(dXc, Xc, dXo, Xo, dXr, Xr, Xobs, R, n_samp, n_obs, n_covC,
+       n_covO, n_covR, *logitC, *AT, dA0C, A0C, dA0O, A0O, 0, dA0R, 
+       A0R, beta0, delta0, gamma0, pC, pN, pA, prC, prN, prA, acceptC,
+       acceptR, n_miss); 
+
+  /*** observed Y ***/
+  itemp = 0;
+  for (i = 0; i < n_samp; i++) 
+    if (R[i] == 1) 
+      Yobs[itemp++] = Y[i];
+
+  for (i = 0; i < n_samp; i++)
+    cont[i] = 0;
+  acceptO[0] = 0; acceptO[1] = 0;
+
+  /*** Gibbs Sampler! ***/
+  itempA = 0; itempC = 0; itempO = 0; itempQ = 0; itempR = 0; itempS = 0;
+  for (main_loop = 1; main_loop <= *n_gen; main_loop++){
+
+    /* Step 1: RESPONSE MODEL */
+    Response(n_miss, *logitR, R, Xr, delta, n_samp, n_covR, delta0, A0R, VarR,
+	     acceptR, *mda, *AT, Z, D, prC, prN, prA);
+
+    /** Step 2: COMPLIANCE MODEL **/
+    Compliance(*logitC, *AT, C, Xc, betaC, n_samp, n_covC, beta0, A0C, 
+	       betaA, VarC, acceptC, *mda, A);
+
+    /* Step 3: SAMPLE COMPLIANCE COVARITE */
+    SampleComp(n_samp, n_covC, *AT, Xc, Xo, Xr, Xobs, betaC, betaA,
+	       *logitC, qC, qN, Z, D, R, C, A, pC, pN, pA, prA, prN, prC);
+
+    /** Step 4: OUTCOME MODEL **/
+    negbinMetro(Yobs, Xobs, gamma, sig2, n_obs, n_covO, gamma0, A0O,
+		*a0, *b0, VarO, *VarS, cont, 1, acceptO, 0);
+
+    /** Compute probabilities of Y = 1 **/
+    for (i = 0; i < n_samp; i++) {
+      meano[i] = 0;
+      if (*AT) { /* always-takers */
+	for (j = 3; j < n_covO; j++)
+	  meano[i] += Xo[i][j]*gamma[j];
+	if (R[i] == 1) {
+	  if ((Z[i] == 0) && (D[i] == 0)) {
+	    pC[i] = dnegbin(Y[i], exp(meano[i]+gamma[1]), *sig2, 0);
+	    pN[i] = dnegbin(Y[i], exp(meano[i]), *sig2, 0);
+	  } 
+	  if ((Z[i] == 1) && (D[i] == 1)) {
+	    pC[i] = dnegbin(Y[i], exp(meano[i]+gamma[0]), *sig2, 0);
+	    pA[i] = dnegbin(Y[i], exp(meano[i]+gamma[2]), *sig2, 0);
+	  }
+	}
+      } else { /* no always-takers */
+	for (j = 2; j < n_covO; j++)
+	  meano[i] += Xo[i][j]*gamma[j];
+	if (R[i] == 1)
+	  if (Z[i] == 0) {
+	    pC[i] = dnegbin(Y[i], exp(meano[i]+gamma[1]), *sig2, 0);
+	    pN[i] = dnegbin(Y[i], exp(meano[i]), *sig2, 0);
+	  }
+      } 
+    }
+    
+    /** storing the results **/
+    if (main_loop > *burnin) {
+      if (keep == *iKeep) {
+	/** Computing Quantities of Interest **/
+	n_comp[0] = 0; n_comp[1] = 0; 
+	n_never[0] = 0; n_never[1] = 0;
+	n_always[0] = 0; n_always[1] = 0;
+	p_comp = 0; p_never = 0; 
+	Y1barC = 0; Y0barC = 0; YbarN = 0; YbarA = 0;
+	for (i = 0; i < n_samp; i++){
+	  p_comp += qC[i];
+	  p_never += qN[i];
+	  if (C[i] == 1) { /* ITT effects */
+	    if (Z[i] == 1) 
+	      n_comp[1]++;
+	    else
+	      n_comp[0]++;
+	    if (*Insample) { /* insample QoI */
+	      if (Z[i] == 1) 
+		if (R[i] == 1)
+		  Y1barC += (double)Y[i];
+		else 
+		  Y1barC += rnegbin(exp(meano[i]+gamma[0]), *sig2);
+	      else 
+		if (R[i] == 1)
+		  Y0barC += (double) Y[i];
+		else
+		  Y0barC += rnegbin(exp(meano[i]+gamma[1]), *sig2);
+	    } else { /* population QoI */
+	      Y1barC += exp(meano[i]+gamma[0]);
+	      Y0barC += exp(meano[i]+gamma[1]); 
+	    }
+	  } else { /* Estimates for always-takers and never-takers */
+	    if (A[i] == 1) {
+	      if (Z[i] == 1)
+		n_always[1]++;
+	      else
+		n_always[0]++;
+	      if (*Insample)
+		if (R[i] == 1)
+		  YbarA += (double)Y[i];
+		else 
+		  YbarA += rnegbin(exp(meano[i]+gamma[2]), *sig2);
+	      else 
+		YbarA += exp(meano[i]+gamma[2]);
+	    } else {
+	      if (Z[i] == 1)
+		n_never[1]++;
+	      else
+		n_never[0]++;
+	      if (*Insample)
+		if (R[i] == 1)
+		  YbarN += (double)Y[i];
+		else 
+		  YbarN += rnegbin(exp(meano[i]), *sig2);
+	      else 
+		YbarN += exp(meano[i]);
+	    }
+	  }
+	}
+	if (*Insample) { 
+	  ITT = Y1barC/(double)(n_comp[1]+n_never[1]+n_always[1]) -
+	    Y0barC/(double)(n_comp[0]+n_never[0]+n_always[0]);
+	  Y1barC /= (double)n_comp[1];  
+	  Y0barC /= (double)n_comp[0]; 
+	  p_comp = (double)(n_comp[0]+n_comp[1])/(double)n_samp;
+	  p_never = (double)(n_never[0]+n_never[1])/(double)n_samp;
+	} else {
+	  ITT = (Y1barC-Y0barC)/(double)n_samp;     /* ITT effect */
+	  Y1barC /= (double)(n_comp[0]+n_comp[1]);  
+	  Y0barC /= (double)(n_comp[0]+n_comp[1]); 
+	  p_comp /= (double)n_samp;  /* ITT effect on D; Prob. of being
+					   a complier */ 
+	  p_never /= (double)n_samp; /* Prob. of being a never-taker */
+	}
+	CACE = Y1barC-Y0barC;    /* CACE */
+	YbarN /= (double)(n_never[0]+n_never[1]);
+	if (*AT)
+	  YbarA /= (double)(n_always[0]+n_always[1]);
+	
+	QoI[itempQ++] = ITT;   
+	QoI[itempQ++] = CACE;   
+	QoI[itempQ++] = p_comp; 	  
+	QoI[itempQ++] = p_never;
+	QoI[itempQ++] = Y1barC;
+	QoI[itempQ++] = Y0barC;
+	QoI[itempQ++] = YbarN;
+	if (*AT)
+	  QoI[itempQ++] = YbarA;
+
+	if (*param) {
+	  for (j = 0; j < n_covC; j++)
+	    coefC[itempC++] = betaC[j];
+	  var[itempS++] = sig2[0];
+	  if (*AT) {
+	    if (*logitC) {
+	      for (j = 0; j < n_covC; j++)
+		coefA[itempA++] = betaC[j+n_covC];
+	    } else {
+	      for (j = 0; j < n_covC; j++)
+		coefA[itempA++] = betaA[j];
+	    }
+	  }
+	  for (j = 0; j < n_covO; j++)
+	    coefO[itempO++] = gamma[j];
+	  if (n_miss > 0) 
+	    for (j = 0; j < n_covR; j++)
+	      coefR[itempR++] = delta[j];
+	}
+	keep = 1;
+      } else
+	keep++;
+    }
+
+    if (*verbose) {
+      if (main_loop == itempP) {
+	Rprintf("%3d percent done.\n", progress*10);
+	if (*logitC) {
+	  Rprintf("  Current Acceptance Ratio for the compliance model:");
+	  if (*AT)
+	    for (j = 0; j < n_covC*2; j++)
+	      Rprintf("%10g", (double)acceptC[j]/(double)main_loop);
+	  else
+	    for (j = 0; j < n_covC; j++)
+	      Rprintf("%10g", (double)acceptC[j]/(double)main_loop);
+	}
+	if (*logitR) {
+	  Rprintf("\n  Current Acceptance Ratio for the response model:");
+	  for (j = 0; j < n_covR; j++)
+	    Rprintf("%10g", (double)acceptR[j]/(double)main_loop);
+	  Rprintf("\n");
+	}
+	Rprintf("\n  Current Acceptance Ratio for the outcome model:");
+	Rprintf("%10g%10g\n", (double)acceptO[0]/(double)main_loop, 
+		(double)acceptO[1]/(double)main_loop);
+       
+	itempP += ftrunc((double) *n_gen/10); 
+	progress++;
+	R_FlushConsole(); 
+      }
+    }
+    R_FlushConsole();
+    R_CheckUserInterrupt();
+  } /* end of Gibbs sampler */
+
+  /** write out the random seed **/
+  PutRNGstate();
+
+  /** freeing memory **/
+  FreeMatrix(Xc, n_samp+n_covC);
+  FreeMatrix(Xo, n_samp+n_covO);
+  FreeMatrix(Xobs, n_obs+n_covO);
+  FreeMatrix(Xr, n_samp+n_covR);
+  free(cont);
+  free(meano);
+  free(pC);
+  free(pN);
+  free(prC);
+  free(prN);
+  free(prA);
+  free(qC);
+  free(qN);
+  free(pA);
+  FreeMatrix(A0C, n_covC*2);
+  FreeMatrix(A0O, n_covO);
+  FreeMatrix(A0R, n_covR);
+  free(acceptC);
+  free(acceptO);
+  free(acceptR);
+  free(n_comp);
+  free(n_never);
+  free(n_always);
+
+} /* end of LIcount */

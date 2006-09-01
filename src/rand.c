@@ -201,9 +201,15 @@ void rWish(
 */
 
 double dnegbin(int Y,        /* sample */
-	     double mu,    /* mean */
-	     double theta, /* dispersion parameter */
-	     int give_log
-	     ) {
+	       double mu,    /* mean */
+	       double theta, /* dispersion parameter */
+	       int give_log
+	       ) {
   return(dnbinom((double)Y, theta, theta/(mu+theta), give_log));
+}
+
+double rnegbin(double mu,    /* mean */
+	       double theta  /* dispersion parameter */
+	       ) {
+  return(rnbinom(theta, theta/(mu+theta)));
 }
