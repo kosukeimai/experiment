@@ -1292,8 +1292,6 @@ void LIordinal(int *Y,         /* binary outcome variable */
   double **Xr = doubleMatrix(n_samp+n_covR, n_covR+1);    
   /* mean vector for the outcome model */
   double *meano = doubleArray(n_samp);
-  /* mean vector for the compliance model */
-  double *meanc = doubleArray(n_samp);
 
   /*** model parameters ***/
   /* probability of Y = 1 for a complier */
@@ -1308,15 +1306,10 @@ void LIordinal(int *Y,         /* binary outcome variable */
   double *qN = doubleArray(n_samp);
   /* probability of being a always-taker */
   double *pA = doubleArray(n_samp);
-  double *meana = doubleArray(n_samp);
   /* prior precision matrices */
   double **A0C = doubleMatrix(n_covC*2, n_covC*2);
   double **A0O = doubleMatrix(n_covO, n_covO);
   double **A0R = doubleMatrix(n_covR, n_covR);
-  
-  /* subset of the data */
-  double **Xtemp = doubleMatrix(n_samp+n_covC, n_covC+1);
-  int *Atemp = intArray(n_samp);
   
   /* quantities of interest: ITT, CACE  */
   double *ITT = doubleArray(*n_cat-1);
@@ -1336,311 +1329,40 @@ void LIordinal(int *Y,         /* binary outcome variable */
   int *acceptC = intArray(n_covC*2);    /* number of acceptance */
   int *acceptR = intArray(n_covR);      /* number of acceptance */
   int *acceptO = intArray(1); acceptO[0] = 0;
-  int i, j, k, main_loop;
+  int i, j, main_loop;
   int itempP = ftrunc((double) *n_gen/10);
   int itemp, itempA, itempC, itempO, itempQ, itempR, itempT;
-  double dtemp;
-  double **mtempC = doubleMatrix(n_covC, n_covC); 
-  double **mtempO = doubleMatrix(n_covO, n_covO); 
-  double **mtempR = doubleMatrix(n_covR, n_covR); 
 
   /*** get random seed **/
   GetRNGstate();
 
-  /*** read the data ***/
-  itemp = 0;
-  for (j = 0; j < n_covC; j++)
-    for (i = 0; i < n_samp; i++)
-      Xc[i][j] = dXc[itemp++];
+  /*** Preparing ***/
+  Prep(dXc, Xc, dXo, Xo, dXr, Xr, Xobs, R, n_samp, n_obs, n_covC,
+       n_covO, n_covR, *logitC, *AT, dA0C, A0C, dA0O, A0O, 1, dA0R, 
+       A0R, beta0, delta0, gamma0, pC, pN, pA, prC, prN, prA, acceptC,
+       acceptR, n_miss); 
 
-  itemp = 0;
-  for (j = 0; j < n_covO; j++)
-    for (i = 0; i < n_samp; i++)
-      Xo[i][j] = dXo[itemp++];
-
-  itemp = 0;
-  for (j = 0; j < n_covR; j++)
-    for (i = 0; i < n_samp; i++)
-      Xr[i][j] = dXr[itemp++];
-
+  /*** observed Y ***/
   itemp = 0;
   for (i = 0; i < n_samp; i++) 
-    if (R[i] == 1) {
-      Yobs[itemp] = Y[i];
-      for (j = 0; j < n_covO; j++)
-	Xobs[itemp][j] = Xo[i][j];
-      itemp++;
-    }
+    if (R[i] == 1) 
+      Yobs[itemp++] = Y[i];
   
-  /*** read the prior as additional data points ***/ 
-  itemp = 0; 
-  if ((*logitC == 1) && (*AT == 1))
-    for (k = 0; k < n_covC*2; k++)
-      for (j = 0; j < n_covC*2; j++)
-	A0C[j][k] = dA0C[itemp++];
-  else
-    for (k = 0; k < n_covC; k++)
-      for (j = 0; j < n_covC; j++)
-	A0C[j][k] = dA0C[itemp++];
-
-  itemp = 0;
-  for (k = 0; k < n_covO; k++)
-    for (j = 0; j < n_covO; j++)
-      A0O[j][k] = dA0O[itemp++];
-
-  itemp = 0;
-  for (k = 0; k < n_covR; k++)
-    for (j = 0; j < n_covR; j++)
-      A0R[j][k] = dA0R[itemp++];
-
-  if (*logitC != 1) {
-    dcholdc(A0C, n_covC, mtempC);
-    for (i = 0; i < n_covC; i++) {
-      Xc[n_samp+i][n_covC]=0;
-      for (j = 0; j < n_covC; j++) {
-	Xc[n_samp+i][n_covC] += mtempC[i][j]*beta0[j];
-	Xc[n_samp+i][j] = mtempC[i][j];
-      }
-    }
-  }
-
-  itemp = 0;
-  for (i = 0; i < n_samp; i++) {
-    if (R[i] == 1) {
-      dtemp = 0;
-      for (j = 0; j < n_covO; j++)
-	dtemp += Xo[i][j]*gamma[j];
-      if (Y[i] == 0)
-	Xobs[itemp][n_covO] = TruncNorm(dtemp-1000,0,dtemp,1,0);
-      else
-	Xobs[itemp][n_covO] = TruncNorm(tau[Y[i]-1],tau[Y[i]],dtemp,1,0);
-      itemp++;
-    }
-  }
-
-  dcholdc(A0O, n_covO, mtempO);
-  for (i = 0; i < n_covO; i++) {
-    Xobs[n_obs+i][n_covO]=0;
-    for (j = 0; j < n_covO; j++) {
-      Xobs[n_obs+i][n_covO] += mtempO[i][j]*gamma0[j];
-      Xobs[n_obs+i][j] = mtempO[i][j];
-    }
-  }
-  
-  dcholdc(A0R, n_covR, mtempR);
-  for (i = 0; i < n_covR; i++) {
-    Xr[n_samp+i][n_covR]=0;
-    for (j = 0; j < n_covR; j++) {
-      Xr[n_samp+i][n_covR] += mtempR[i][j]*delta0[j];
-      Xr[n_samp+i][j] = mtempR[i][j];
-    }
-  }
-  
-
-  /*** starting values for probabilities ***/
-  for (i = 0; i < n_samp; i++) {
-    pC[i] = unif_rand(); 
-    pN[i] = unif_rand(); 
-    pA[i] = unif_rand();
-    if (n_miss > 0) {
-      prC[i] = unif_rand(); 
-      prN[i] = unif_rand(); 
-      prA[i] = unif_rand();
-    } else { /* no missing values in Y */
-      prC[i] = 1;
-      prN[i] = 1;
-      prA[i] = 1;
-    }
-  }
-
   /*** Gibbs Sampler! ***/
   itempA = 0; itempC = 0; itempO = 0; itempQ = 0; itempR = 0; itempT = 0;  
-  for (j = 0; j < n_covC*2; j++)
-    acceptC[j] = 0;
-  for (j = 0; j < n_covR; j++)
-    acceptR[j] = 0;
   for (main_loop = 1; main_loop <= *n_gen; main_loop++){
 
     /* Step 1: RESPONSE MODEL */
-    if (n_miss > 0) {
-      if (*logitR)
-	logitMetro(R, Xr, delta, n_samp, 1, n_covR, delta0, A0R, VarR,
-		   1, acceptR);
-      else
-	bprobitGibbs(R, Xr, delta, n_samp, n_covR, 0, delta0, A0R, *mda, 1);
-
-      /* Compute probabilities of R = Robs */ 
-      for (i = 0; i < n_samp; i++) {
-	dtemp = 0;
-	if (*AT == 1) { /* always-takers */
-	  for (j = 3; j < n_covR; j++)
-	    dtemp += Xr[i][j]*delta[j];
-	  if ((Z[i] == 0) && (D[i] == 0)) {
-	    if (*logitR) {
-	      prC[i] = R[i]/(1+exp(-dtemp-delta[1])) + 
-		(1-R[i])/(1+exp(dtemp+delta[1]));
-	      prN[i] = R[i]/(1+exp(-dtemp)) + 
-		(1-R[i])/(1+exp(dtemp));
-	    } else {
-	      prC[i] = R[i]*pnorm(dtemp+delta[1], 0, 1, 1, 0) +
-		(1-R[i])*pnorm(dtemp+delta[1], 0, 1, 0, 0);
-	      prN[i] = R[i]*pnorm(dtemp, 0, 1, 1, 0) +
-		(1-R[i])*pnorm(dtemp, 0, 1, 0, 0);
-	    } 
-	  }
-	  if ((Z[i] == 1) && (D[i] == 1)) {
-	    if (*logitR) {
-	      prC[i] = R[i]/(1+exp(-dtemp-delta[0])) + 
-		(1-R[i])/(1+exp(dtemp+delta[0]));
-	      prA[i] = R[i]/(1+exp(-dtemp-delta[2])) + 
-		(1-R[i])/(1+exp(dtemp+delta[2]));
-	    } else {
-	      prC[i] = R[i]*pnorm(dtemp+delta[0], 0, 1, 1, 0) +
-		(1-R[i])*pnorm(dtemp+delta[0], 0, 1, 0, 0);
-	      prA[i] = R[i]*pnorm(dtemp+delta[2], 0, 1, 1, 0) +
-		(1-R[i])*pnorm(dtemp+delta[2], 0, 1, 0, 0);
-	    }
-	  }
-	} else { /* no always-takers */
-	  for (j = 2; j < n_covR; j++)
-	    dtemp += Xr[i][j]*delta[j];
-	  if (Z[i] == 0) {
-	    if (*logitR) {
-	      prC[i] = R[i]/(1+exp(-dtemp-delta[1])) +
-		(1-R[i])/(1+exp(dtemp+delta[1]));
-	      prN[i] = R[i]/(1+exp(-dtemp)) +
-		(1-R[i])/(1+exp(dtemp));
-	    } else { 
-	      prC[i] = R[i]*pnorm(dtemp+delta[1], 0, 1, 1, 0) + 
-		(1-R[i])*pnorm(dtemp+delta[1], 0, 1, 0, 0);
-	      prN[i] = R[i]*pnorm(dtemp, 0, 1, 1, 0) +
-		(1-R[i])*pnorm(dtemp, 0, 1, 0, 0);
-	    }
-	  }
-	} 
-      }
-    }
+    Response(n_miss, *logitR, R, Xr, delta, n_samp, n_covR, delta0, A0R, VarR,
+	     acceptR, *mda, *AT, Z, D, prC, prN, prA);
 
     /** Step 2: COMPLIANCE MODEL **/    
-    if (*logitC) 
-      if (*AT) 
-	logitMetro(C, Xc, betaC, n_samp, 2, n_covC, beta0, A0C, VarC, 1,
-		   acceptC); 
-      else 
-	logitMetro(C, Xc, betaC, n_samp, 1, n_covC, beta0, A0C, VarC, 1,
-		   acceptC);  
-    else {
-      /* complier vs. noncomplier */
-      bprobitGibbs(C, Xc, betaC, n_samp, n_covC, 0, beta0, A0C,
-		   *mda, 1);
-      if (*AT) {
-	/* never-taker vs. always-taker */
-	/* subset the data */
-	itemp = 0;
-	for (i = 0; i < n_samp; i++)
-	  if (C[i] == 0) {
-	    Atemp[itemp] = A[i];
-	    for (j = 0; j < n_covC; j++)
-	      Xtemp[itemp][j] = Xc[i][j];
-	    itemp++;
-	  }
-	for (i = n_samp; i < n_samp + n_covC; i++) {
-	  for (j = 0; j <= n_covC; j++)
-	    Xtemp[itemp][j] = Xc[i][j];
-	  itemp++;
-	}
-	bprobitGibbs(Atemp, Xtemp, betaA, itemp-n_covC, n_covC, 0,
-		     beta0, A0C, *mda, 1); 
-      }      
-    }
+    Compliance(*logitC, *AT, C, Xc, betaC, n_samp, n_covC, beta0, A0C, 
+	       betaA, VarC, acceptC, *mda, A);
 
     /* Step 3: SAMPLE COMPLIANCE COVARITE */
-    itemp = 0;
-    for (i = 0; i < n_samp; i++) {
-      meanc[i] = 0;
-      for (j = 0; j < n_covC; j++) 
-	meanc[i] += Xc[i][j]*betaC[j];
-      if (*AT == 1) { /* some always-takers */
-	meana[i] = 0;
-	if (*logitC == 1) { /* if logistic regression is used */
-	  for (j = 0; j < n_covC; j++) 
-	    meana[i] += Xc[i][j]*betaC[j+n_covC];
-	  qC[i] = exp(meanc[i])/(1 + exp(meanc[i]) + exp(meana[i]));
-	  qN[i] = 1/(1 + exp(meanc[i]) + exp(meana[i]));
-	} else { /* double probit regressions */
-	  for (j = 0; j < n_covC; j++) 
-	    meana[i] += Xc[i][j]*betaA[j];
-	  qC[i] = pnorm(meanc[i], 0, 1, 1, 0);
-	  qN[i] = (1-qC[i])*pnorm(meana[i], 0, 1, 0, 0);
-	}
-	if ((Z[i] == 0) && (D[i] == 0)){
-	  if (R[i] == 1)
-	    dtemp = qC[i]*pC[i]*prC[i] / 
-	      (qC[i]*pC[i]*prC[i]+qN[i]*pN[i]*prN[i]);
-	  else 
-	    dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+qN[i]*prN[i]);
-	  if (unif_rand() < dtemp) {
-	    C[i] = 1; Xo[i][1] = 1; Xr[i][1] = 1;
-	    if (R[i] == 1)
-	      Xobs[itemp][1] = 1; 
-	  }
-	  else {
-	    C[i] = 0; Xo[i][1] = 0; Xr[i][1] = 0;
-	    if (R[i] == 1)
-	      Xobs[itemp][1] = 0; 
-	  }  
-	}
-	if ((Z[i] == 1) && (D[i] == 1)){
-	  if (R[i] == 1)
-	    dtemp = qC[i]*pC[i]*prC[i] / 
-	      (qC[i]*pC[i]*prC[i]+(1-qC[i]-qN[i])*pA[i]*prA[i]);
-	  else
-	    dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+(1-qC[i]-qN[i])*prA[i]);
-	  if (unif_rand() < dtemp) {
-	    C[i] = 1; Xo[i][0] = 1; Xr[i][0] = 1;
-	    A[i] = 0; Xo[i][2] = 0; Xr[i][2] = 0;
-	    if (R[i] == 1) {
-	      Xobs[itemp][0] = 1; 
-	      Xobs[itemp][2] = 0; 
-	    }
-	  }
-	  else {
-	    if (*logitC == 1)
-	      C[i] = 2;
-	    else
-	      C[i] = 0; 
-	    A[i] = 1; Xo[i][0] = 0; Xr[i][0] = 0; Xo[i][2] = 1; Xr[i][2] = 1;
-	    if (R[i] == 1) {
-	      Xobs[itemp][0] = 0; 
-	      Xobs[itemp][2] = 1;
-	    } 
-	  }  
-	}
-      } else { /* no always-takers */
-	if (Z[i] == 0){
-	  if (*logitC == 1)
-	    qC[i] = 1/(1+exp(-meanc[i]));
-	  else
-	    qC[i] = pnorm(meanc[i], 0, 1, 1, 0);
-	  if (R[i] == 1)
-	    dtemp = qC[i]*pC[i]*prC[i] / 
-	      (qC[i]*pC[i]*prC[i]+(1-qC[i])*pN[i]*prN[i]);
-	  else
-	    dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+(1-qC[i])*prN[i]);
-	  if (unif_rand() < dtemp) {
-	    C[i] = 1; Xo[i][1] = 1; Xr[i][1] = 1;
-	    if (R[i] == 1)
-	      Xobs[itemp][1] = 1; 
-	  }
-	  else {
-	    C[i] = 0; Xo[i][1] = 0; Xr[i][1] = 0;
-	    if (R[i] == 1)
-	      Xobs[itemp][1] = 0; 
-	  }
-	}
-      }
-      if (R[i] == 1) itemp++;
-    }
+    SampleComp(n_samp, n_covC, *AT, Xc, Xo, Xr, Xobs, betaC, betaA,
+	       *logitC, qC, qN, Z, D, R, C, A, pC, pN, pA, prA, prN, prC);
 
     /** Step 4: OUTCOME MODEL **/
     boprobitMCMC(Yobs, Xobs, gamma, tau, n_obs, n_covO, *n_cat,
@@ -1919,7 +1641,6 @@ void LIordinal(int *Y,         /* binary outcome variable */
   FreeMatrix(Xobs, n_obs+n_covO);
   FreeMatrix(Xr, n_samp+n_covR);
   free(meano);
-  free(meanc);
   free(pC);
   free(pN);
   free(prC);
@@ -1928,12 +1649,9 @@ void LIordinal(int *Y,         /* binary outcome variable */
   free(qC);
   free(qN);
   free(pA);
-  free(meana);
   FreeMatrix(A0C, n_covC*2);
   FreeMatrix(A0O, n_covO);
   FreeMatrix(A0R, n_covR);
-  FreeMatrix(Xtemp, n_samp+n_covC);
-  free(Atemp);
   free(ITT);
   free(CACE);
   free(Y1barC);
@@ -1944,11 +1662,8 @@ void LIordinal(int *Y,         /* binary outcome variable */
   free(n_never);
   free(n_always);
   free(acceptC);
-  free(acceptO);
   free(acceptR);
-  FreeMatrix(mtempC, n_covC);
-  FreeMatrix(mtempO, n_covO);
-  FreeMatrix(mtempR, n_covR);
+  free(acceptO);
 
 } /* end of LIordinal */
 
