@@ -2,10 +2,11 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
                           n.draws = 5000, param = TRUE,
                           in.sample = FALSE, model.c = "probit", 
                           model.o = "probit", model.r = "probit", 
-                          tune.c = 1, tune.o = 1, tune.r = 0.1,
-                          p.mean.c = 0, p.prec.c = 1000, p.mean.o = 0,
-                          p.prec.o = 0.001, p.mean.r = 0, p.prec.r = 0.001,
-                          p.df.o = 10, p.scale.o = 1,
+                          tune.c = 0.01, tune.o = 0.01, tune.r = 0.01,
+                          tune.v = 0.01, p.mean.c = 0, p.mean.o = 0,
+                          p.mean.r = 0, p.prec.c = 1000,
+                          p.prec.o = 0.001, p.prec.r = 0.001,
+                          p.df.o = 10, p.scale.o = 1, p.shape.o = 1,
                           mda.probit = TRUE, coef.start.c = 0,
                           coef.start.o = 0, tau.start.o = NULL,
                           coef.start.r = 0, var.start.o = 1,
@@ -18,7 +19,7 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
   if (!(model.c %in% c("logit", "probit"))) 
     stop("no such model is supported for the compliance model.")
   
-  if (!(model.o %in% c("logit", "probit", "oprobit", "gaussian"))) 
+  if (!(model.o %in% c("logit", "probit", "oprobit", "gaussian", "negbin"))) 
     stop("no such model is supported for the outcome model.")
   
   if (!(model.r %in% c("logit", "probit"))) 
@@ -148,7 +149,7 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
       nqoi <- 7
 
   ## checking starting values and prior
-  if (model.c == "logit" & AT) {
+  if ((model.c == "logit") & AT) {
     if(length(p.mean.c) != ncovC*2)
       if (length(p.mean.c) == 1)
         p.mean.c <- rep(p.mean.c, ncovC*2)
@@ -242,7 +243,7 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
         else
           stop(paste("the length of tune.c should be", ncovC))
     }
-  if (model.o == "logit")
+  if (model.o == "logit" || model.o == "negbin")
     if (length(tune.o) != ncovO)
       if (length(tune.o) == 1)
         tune.o <- rep(tune.o, ncovO)
@@ -271,7 +272,7 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
   keep <- thin + 1
 
   ## calling C function
-  if (model.o == "probit" | model.o == "logit")
+  if (model.o == "probit" || model.o == "logit")
     out <- .C("LIbinary",
               as.integer(Y), as.integer(R), as.integer(Z),
               as.integer(D), as.integer(C), as.integer(A),
@@ -352,6 +353,34 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
               var = double(ceiling((n.draws-burnin)/keep)),
               QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
               PACKAGE = "experiment")
+  else if (model.o == "negbin")
+    out <- .C("LIcount",
+              as.integer(Y), as.integer(R), as.integer(Z),
+              as.integer(D), as.integer(C), as.integer(A),
+              as.integer(Ymiss), as.integer(AT), as.integer(in.sample), 
+              as.double(Xc), as.double(Xo), as.double(Xr),
+              as.double(coef.start.c), as.double(coef.start.c),
+              as.double(coef.start.o), as.double(var.start.o),
+              as.double(coef.start.r),
+              as.integer(N), as.integer(n.draws),
+              as.integer(ncovC), as.integer(ncovO), as.integer(ncovR),
+              as.double(p.mean.c), as.double(p.mean.o),
+              as.double(p.mean.r), 
+              as.double(p.prec.c), as.double(p.prec.o),
+              as.double(p.prec.r), as.double(p.shape.o),
+              as.double(p.scale.o),
+              as.double(tune.c), as.double(tune.r), as.double(tune.v),
+              as.integer(model.c == "logit"),
+              as.integer(model.r == "logit"),
+              as.integer(param), as.integer(mda.probit), as.integer(burnin),
+              as.integer(keep), as.integer(verbose),
+              coefC = double(ncovC*(ceiling((n.draws-burnin)/keep))),
+              coefA = double(ncovC*(ceiling((n.draws-burnin)/keep))),
+              coefO = double(ncovO*(ceiling((n.draws-burnin)/keep))),
+              coefR = double(ncovR*(ceiling((n.draws-burnin)/keep))),
+              var = double(ceiling((n.draws-burnin)/keep)),
+              QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
+              PACKAGE = "experiment")
 
   if (param) {
     res$coefC <- matrix(out$coefC, byrow = TRUE, ncol = ncovC)
@@ -368,7 +397,7 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
       res$coefR <- matrix(out$coefR, byrow = TRUE, ncol = ncovR)
       colnames(res$coefR) <- colnames(Xr)
     }
-    if (model.o == "gaussian")
+    if (model.o == "gaussian" || model.o == "negbin")
       res$sig2 <- out$var
   }
 
