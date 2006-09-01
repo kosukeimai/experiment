@@ -1002,6 +1002,8 @@ void R2bnegbinMixedMCMC(int *Y,           /* outcome variable */
 
   /* freeing memory */
   free(vitemp);
+  FreeintMatrix(counterg, *n_grp);
+  FreeintMatrix(Ygrp, *n_grp);
   FreeMatrix(X, *n_samp+*n_fixed);
   FreeMatrix(gamma, *n_grp);
   FreeMatrix(Psi, *n_random);
