@@ -1256,7 +1256,7 @@ void bnegbinMixedMCMC(int *Y,          /* outcome variable */
     for (i = 0; i < n_samp; i++) {
       cont[i] = 0;
       for (j = 0; j < n_random; j++)
-	cont[i] -= Zgrp[grp[i]][vitemp[grp[i]]][j]*gamma[grp[i]][j];
+	cont[i] += Zgrp[grp[i]][vitemp[grp[i]]][j]*gamma[grp[i]][j];
       vitemp[grp[i]]++;
     }
     negbinMetro(Y, X, beta, sig2, n_samp, n_fixed, beta0, A0, a0, b0,
@@ -1268,7 +1268,7 @@ void bnegbinMixedMCMC(int *Y,          /* outcome variable */
     for (i = 0; i < n_samp; i++) {
       contM[grp[i]][vitemp[grp[i]]] = 0;
       for (j = 0; j < n_fixed; j++) 
-	contM[grp[i]][vitemp[grp[i]]] -= X[i][j]*beta[j]; 
+	contM[grp[i]][vitemp[grp[i]]] += X[i][j]*beta[j]; 
       vitemp[grp[i]]++;
     }
     for (j = 0; j < n_grp; j++)

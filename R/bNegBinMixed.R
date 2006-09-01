@@ -4,7 +4,7 @@ bNegBinMixed <- function(Y, X, Z, grp, beta.start, gamma.start,
   
   ## this code assumes the equal number of obs within each group
   counter <- rep(0, 2)
-  counterg <- rep(0, length(table(grp)))
+  counterg <- rep(0, length(table(grp))*2)
   res <- .C("R2bnegbinMixedMCMC", as.double(Y), as.double(X),
             as.double(Z), as.integer(grp), as.double(beta.start),
             as.double(gamma.start), as.double(sig2.start),

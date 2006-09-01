@@ -921,7 +921,7 @@ void R2bnegbinMixedMCMC(int *Y,           /* outcome variable */
   /* storage parameters and loop counters */
   int i, j, k, main_loop, itemp;  
   int *vitemp = intArray(*n_grp);
-  int **counterg = intMatrix(*n_grp, 1);
+  int **counterg = intMatrix(*n_grp, 2);
   int ibeta = 0, igamma = 0, iPsi =0, isig2 = 0;
 
   /* matrices */
@@ -973,8 +973,10 @@ void R2bnegbinMixedMCMC(int *Y,           /* outcome variable */
     for (j = 0; j < *n_random; j++)
       T0[j][k] = dT0[itemp++];
 
-  for (j = 0; j < *n_grp; j++)
-    counterg[j][0] = icounterg[j];
+  itemp = 0;
+  for (k = 0; k < 2; k++)
+    for (j = 0; j < *n_grp; j++)
+      counterg[j][k] = icounterg[itemp++];
 
   /* Gibbs Sampler! */
   for(main_loop = 1; main_loop <= *n_gen; main_loop++) {
@@ -997,6 +999,11 @@ void R2bnegbinMixedMCMC(int *Y,           /* outcome variable */
     R_FlushConsole(); 
     R_CheckUserInterrupt();
   } /* end of Gibbs sampler */
+
+  itemp = 0;
+  for (k = 0; k < 2; k++)
+    for (j = 0; j < *n_grp; j++)
+      icounterg[itemp++] = counterg[j][k];
 
   PutRNGstate();
 
