@@ -3,5 +3,7 @@ useDynLib(experiment)
 importFrom(MASS, mvrnorm)
 export(Noncomp.mom, Noncomp.bayes, Noncomp.bayesMixed, 
        NIbprobit, bNormalReg, bprobitMixed, boprobit, 
-       blogit, bNegBin, bNormalMixed, blogitMixed, boprobitMixed)
+       blogit, bNegBin, bNegBinMixed, bNormalMixed, blogitMixed,
+       boprobitMixed)
+
 
