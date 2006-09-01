@@ -383,7 +383,7 @@ void R2bNormalMixedGibbs(double *Y,        /* outcome variable */
   FreeMatrix(T0, *n_random);
   FreeMatrix(mtemp, *n_fixed);
   Free3DMatrix(Zgrp, *n_grp, *max_samp_grp + *n_random);
-}
+} /* end of normal mixed effects model */
 
 
 
@@ -875,3 +875,137 @@ void R2bNegBin(int *Y,          /* count outcome variable */
   FreeMatrix(X, *n_samp);
   FreeMatrix(A0, *n_cov);
 } /* end of negative binomial regression */
+
+
+
+
+void R2bnegbinMixedMCMC(int *Y,           /* outcome variable */
+			double *dX,       /* model matrix for fixed
+					     effects */
+			double *dZ,       /* model matrix for random
+					     effects */
+			int *grp,         /* group indicator: 0, 1, 2,... */
+			double *beta,     /* fixed effects coefficients */
+			double *dgamma,   /* random effects coefficients */
+			double *sig2,     /* dispersion parameter */
+			double *dPsi,     /* covariance for random
+					     effects */
+			int *n_samp,      /* # of obs */ 
+			int *n_fixed,     /* # of fixed effects */
+			int *n_random,    /* # of random effects */
+			int *n_grp,       /* # of groups */
+			int *max_samp_grp,/* max # of obs within group */
+			double *beta0,    /* prior mean */
+			double *dA0,      /* prior precision */
+			double *a0,        /* prior shape for sig2 */
+			double *b0,        /* prior scale for sig2 */
+			int *tau0,        /* prior df for Psi */
+			double *dT0,      /* prior scale for Psi */
+			double *varb,     /* proposal variance for
+					     beta */
+			double *vars,     /* proposal variance for
+					     sig2 */
+			double *varg,     /* proposal variance for
+					     gamma */
+			int *n_gen,       /* # of gibbs draws */
+			/* counters */
+			int *counter,     /* counter for beta, sig2 */
+			int *icounterg,    /* counter for gamma */
+			/* storage of MCMC draws */
+			double *betaStore, 
+			double *gammaStore,
+			double *sig2Store,
+			double *PsiStore
+			) {
+  
+  /* storage parameters and loop counters */
+  int i, j, k, main_loop, itemp;  
+  int *vitemp = intArray(*n_grp);
+  int **counterg = intMatrix(*n_grp, 1);
+  int ibeta = 0, igamma = 0, iPsi =0, isig2 = 0;
+
+  /* matrices */
+  int **Ygrp = intMatrix(*n_grp, *max_samp_grp);
+  double **X = doubleMatrix(*n_samp, *n_fixed);
+  double **gamma = doubleMatrix(*n_grp, *n_random);
+  double **Psi = doubleMatrix(*n_random, *n_random);
+  double **A0 = doubleMatrix(*n_fixed, *n_fixed);
+  double **T0 = doubleMatrix(*n_random, *n_random);
+  double ***Zgrp = doubleMatrix3D(*n_grp, *max_samp_grp, *n_random);
+
+  /* get random seed */
+  GetRNGstate();
+
+  /* packing the data */
+  itemp = 0;
+  for (j = 0; j < *n_fixed; j++)
+    for (i = 0; i < *n_samp; i++) 
+      X[i][j] = dX[itemp++];
+
+  itemp = 0;
+  for (j = 0; j < *n_grp; j++)
+    vitemp[j] = 0;
+  for (i = 0; i < *n_samp; i++) {
+    Ygrp[grp[i]][vitemp[grp[i]]] = Y[i];
+    for (j = 0; j < *n_random; j++)
+      Zgrp[grp[i]][vitemp[grp[i]]][j] = dZ[itemp++];
+    vitemp[grp[i]]++;
+  }
+  
+  /* packing the prior */
+  itemp = 0;
+  for (k = 0; k < *n_random; k++)
+    for (j = 0; j < *n_random; j++)
+      Psi[j][k] = dPsi[itemp++];
+  
+  itemp = 0;
+  for (k = 0; k < *n_random; k++)
+    for (j = 0; j < *n_grp; j++)
+      gamma[j][k] = dgamma[itemp++];
+
+  itemp = 0; 
+  for (k = 0; k < *n_fixed; k++)
+    for (j = 0; j < *n_fixed; j++)
+      A0[j][k] = dA0[itemp++];
+
+  itemp = 0; 
+  for (k = 0; k < *n_random; k++)
+    for (j = 0; j < *n_random; j++)
+      T0[j][k] = dT0[itemp++];
+
+  for (j = 0; j < *n_grp; j++)
+    counterg[j][0] = icounterg[j];
+
+  /* Gibbs Sampler! */
+  for(main_loop = 1; main_loop <= *n_gen; main_loop++) {
+    bnegbinMixedMCMC(Y, Ygrp, X, Zgrp, grp, beta, gamma, sig2, Psi, 
+		     *n_samp, *n_fixed, *n_random, *n_grp,
+		     *max_samp_grp, beta0, A0, *a0, *b0, *tau0, T0,
+		     varb, *vars, varg, counter, counterg, 1);
+
+    /* Storing the output */
+    for (j = 0; j < *n_fixed; j++)
+      betaStore[ibeta++] = beta[j];
+    for (j = 0; j < *n_random; j++)
+      for (k = j; k < *n_random; k++)
+	PsiStore[iPsi++] = Psi[j][k];
+    for (j = 0; j < *n_grp; j++)
+      for (k = 0; k < *n_random; k++)
+	gammaStore[igamma++] = gamma[j][k];
+    sig2Store[isig2++] = sig2[0];
+
+    R_FlushConsole(); 
+    R_CheckUserInterrupt();
+  } /* end of Gibbs sampler */
+
+  PutRNGstate();
+
+  /* freeing memory */
+  free(vitemp);
+  FreeMatrix(X, *n_samp+*n_fixed);
+  FreeMatrix(gamma, *n_grp);
+  FreeMatrix(Psi, *n_random);
+  FreeMatrix(A0, *n_fixed);
+  FreeMatrix(T0, *n_random);
+  Free3DMatrix(Zgrp, *n_grp, *max_samp_grp + *n_random);
+} /* end of negative binomial mixed effects model */
