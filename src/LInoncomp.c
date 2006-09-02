@@ -1749,9 +1749,9 @@ void LIcount(int *Y,         /*count outcome variable */
   /* covariates for the compliance model */
   double **Xc = doubleMatrix(n_samp+n_covC, n_covC+1);
   /* covariates for the outcome model */
-  double **Xo = doubleMatrix(n_samp+n_covO, n_covO+1);    
+  double **Xo = doubleMatrix(n_samp, n_covO);    
   /* covariates for the outcome model: only units with observed Y */     
-  double **Xobs = doubleMatrix(n_obs+n_covO, n_covO+1);    
+  double **Xobs = doubleMatrix(n_obs, n_covO);    
   /* covariates for the response model: includes all obs */     
   double **Xr = doubleMatrix(n_samp+n_covR, n_covR+1);    
   /* mean vector for the outcome model */
@@ -1809,7 +1809,7 @@ void LIcount(int *Y,         /*count outcome variable */
     if (R[i] == 1) 
       Yobs[itemp++] = Y[i];
 
-  for (i = 0; i < n_samp; i++)
+  for (i = 0; i < n_obs; i++)
     cont[i] = 0;
   acceptO[0] = 0; acceptO[1] = 0;
 
@@ -2010,8 +2010,8 @@ void LIcount(int *Y,         /*count outcome variable */
 
   /** freeing memory **/
   FreeMatrix(Xc, n_samp+n_covC);
-  FreeMatrix(Xo, n_samp+n_covO);
-  FreeMatrix(Xobs, n_obs+n_covO);
+  FreeMatrix(Xo, n_samp);
+  FreeMatrix(Xobs, n_obs);
   FreeMatrix(Xr, n_samp+n_covR);
   free(cont);
   free(meano);
