@@ -1232,7 +1232,6 @@ void bnegbinMixedMCMC(int *Y,          /* outcome variable */
 		      ) {
   
   double *gamma0 = doubleArray(n_random);           /* prior mean for gamma */
-  double **V = doubleMatrix(n_fixed, n_fixed);      /* variances for beta */
   double **mtemp = doubleMatrix(n_random, n_random);
   double **mtemp1 = doubleMatrix(n_random, n_random);
 
@@ -1292,7 +1291,6 @@ void bnegbinMixedMCMC(int *Y,          /* outcome variable */
 
   /* freeing memory */
   free(gamma0);
-  FreeMatrix(V, n_fixed);
   FreeMatrix(mtemp, n_random);
   FreeMatrix(mtemp1, n_random);
   free(vitemp);
