@@ -903,10 +903,10 @@ void R2bnegbinMixedMCMC(int *Y,           /* outcome variable */
 			double *dT0,      /* prior scale for Psi */
 			double *varb,     /* proposal variance for
 					     beta */
-			double *vars,     /* proposal variance for
-					     sig2 */
 			double *varg,     /* proposal variance for
 					     gamma */
+			double *vars,     /* proposal variance for
+					     sig2 */
 			int *n_gen,       /* # of gibbs draws */
 			/* counters */
 			int *counter,     /* counter for beta, sig2 */

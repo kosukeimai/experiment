@@ -2221,11 +2221,11 @@ void LINegBinMixed(int *Y,         /* count outcome variable */
 		   double *dT0R,   /* prior scale for PsiR */
 		   double *tune_fixed, /* proposal variance */
 		   double *tune_random, /* proposal variance */
+		   double *varb,   /* proposal variance for beta */
+		   double *varg,   /* proposal variance for gamma */
+		   double *vars,   /* proposal variance for sig2 */
 		   int *logitC,    /* Use logistic regression for the
 				      compliance model? */
-		   double *varb,   /* proposal variance for beta */
-		   double *vars,   /* proposal variance for sig2 */
-		   double *varg,   /* proposal variance for gamma */
 		   int *param,     /* Want to keep paramters? */
 		   int *burnin,    /* number of burnin */
 		   int *iKeep,     /* keep ?th draws */
@@ -2574,7 +2574,7 @@ void LINegBinMixed(int *Y,         /* count outcome variable */
       if (main_loop == itempP) {
 	Rprintf("%3d percent done.\n", progress*10);
        	if (*logitC) {
-	  Rprintf("  Current Acceptance Ratio for fixed effects:");
+	  Rprintf("  Acceptance ratio for fixed effects in the compliance model:");
 	  if (*AT)
 	    for (j = 0; j < n_fixedC*2; j++)
 	      Rprintf("%10g", (double)acc_fixed[j]/(double)main_loop);
@@ -2582,14 +2582,18 @@ void LINegBinMixed(int *Y,         /* count outcome variable */
 	    for (j = 0; j < n_fixedC; j++)
 	      Rprintf("%10g", (double)acc_fixed[j]/(double)main_loop);
 	  Rprintf("\n");
-	  Rprintf("  Current Acceptance Ratio for random effects:");
+	  Rprintf("  Acceptance ratio for random effectsin the compliance model:");
 	  if (*AT)
 	    for (j = 0; j < 2; j++)
 	      Rprintf("%10g", (double)acc_random[j]/(double)main_loop);
 	  else
 	    Rprintf("%10g", (double)acc_random[0]/(double)main_loop);
 	  Rprintf("\n");
-	} 
+	}
+	Rprintf("  Acceptance ratio for the outcome model:");
+	Rprintf("%10g%10g%10g\n", (double)counter[0]/(double)main_loop, 
+		(double)counter[1]/(double)main_loop, 
+		(double)counterg[0][0]/(double)main_loop);
 	itempP += ftrunc((double) *n_gen/10); 
 	progress++;
 	R_FlushConsole(); 
@@ -2605,12 +2609,13 @@ void LINegBinMixed(int *Y,         /* count outcome variable */
   /** freeing memory **/
   free(grp_obs);
   free(Yobs);
+  FreeintMatrix(Ygrp, n_grp);
   FreeMatrix(Xc, n_samp+n_fixedC);
   Free3DMatrix(Zc, n_grp, *max_samp_grp + n_randomC);
-  FreeMatrix(Xo, n_samp+n_fixedO);
-  Free3DMatrix(Zo, n_grp, *max_samp_grp + n_randomO);
-  FreeMatrix(Xobs, n_obs+n_fixedO);
-  Free3DMatrix(Zobs, n_grp, *max_samp_grp + n_randomO);
+  FreeMatrix(Xo, n_samp);
+  Free3DMatrix(Zo, n_grp, *max_samp_grp);
+  FreeMatrix(Xobs, n_obs);
+  Free3DMatrix(Zobs, n_grp, *max_samp_grp);
   FreeMatrix(Xr, n_samp+n_fixedR);
   Free3DMatrix(Zr, n_grp, *max_samp_grp + n_randomR);
   Free3DMatrix(xiC, 2, n_grp);
@@ -2628,9 +2633,6 @@ void LINegBinMixed(int *Y,         /* count outcome variable */
   free(qC);
   free(qN);
   free(pA);
-  free(n_comp);
-  free(n_never);
-  free(n_always);
   FreeMatrix(A0C, n_fixedC*2);
   FreeMatrix(A0O, n_fixedO);
   FreeMatrix(A0R, n_fixedR);
@@ -2638,8 +2640,13 @@ void LINegBinMixed(int *Y,         /* count outcome variable */
   FreeMatrix(T0A, n_randomC);
   FreeMatrix(T0O, n_randomO);
   FreeMatrix(T0R, n_randomR);
+  free(n_comp);
+  free(n_never);
+  free(n_always);
   free(vitemp);
   free(acc_fixed);
   free(acc_random);
+  free(counter);
+  FreeintMatrix(counterg, n_grp);
 
 } /* end of LINegBinMixed */
