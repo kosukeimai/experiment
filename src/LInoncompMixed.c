@@ -194,33 +194,33 @@ void PrepMixed(double *dXc, double *dZc, double *dXo, double *dZo,
       A0R[j][k] = dA0R[itemp++];
 
   /* prior for fixed effects as additional data points */ 
-  if (prior) {
-    if (logitC != 1) {
-      dcholdc(A0C, n_fixedC, mtempC);
-      for (i = 0; i < n_fixedC; i++) {
-	Xc[n_samp+i][n_fixedC] = 0;
-	for (j = 0; j < n_fixedC; j++) {
-	  Xc[n_samp+i][n_fixedC] += mtempC[i][j]*beta0[j];
-	  Xc[n_samp+i][j] = mtempC[i][j];
-	}
+  if (logitC != 1) {
+    dcholdc(A0C, n_fixedC, mtempC);
+    for (i = 0; i < n_fixedC; i++) {
+      Xc[n_samp+i][n_fixedC] = 0;
+      for (j = 0; j < n_fixedC; j++) {
+	Xc[n_samp+i][n_fixedC] += mtempC[i][j]*beta0[j];
+	Xc[n_samp+i][j] = mtempC[i][j];
       }
     }
-    
+  }
+
+  dcholdc(A0R, n_fixedR, mtempR);
+  for (i = 0; i < n_fixedR; i++) {
+    Xr[n_samp+i][n_fixedR] = 0;
+    for (j = 0; j < n_fixedR; j++) {
+      Xr[n_samp+i][n_fixedR] += mtempR[i][j]*delta0[j];
+      Xr[n_samp+i][j] = mtempR[i][j];
+    }
+  }
+  
+  if (prior) {
     dcholdc(A0O, n_fixedO, mtempO);
     for (i = 0; i < n_fixedO; i++) {
       Xobs[n_obs+i][n_fixedO] = 0;
       for (j = 0; j < n_fixedO; j++) {
 	Xobs[n_obs+i][n_fixedO] += mtempO[i][j]*gamma0[j];
 	Xobs[n_obs+i][j] = mtempO[i][j];
-      }
-    }
-  
-    dcholdc(A0R, n_fixedR, mtempR);
-    for (i = 0; i < n_fixedR; i++) {
-      Xr[n_samp+i][n_fixedR] = 0;
-      for (j = 0; j < n_fixedR; j++) {
-	Xr[n_samp+i][n_fixedR] += mtempR[i][j]*delta0[j];
-	Xr[n_samp+i][j] = mtempR[i][j];
       }
     }
   }
@@ -800,7 +800,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	      tune_fixed, tune_random, acc_fixed, acc_random, A, 
 	      *max_samp_grp, betaA, T0A);
 
-    /** Step 3: SAMPLE COMPLIANCE COVARITE **/
+    /** Step 3: SAMPLE COMPLIANCE COVARIATE **/
     SampCompMixed(n_grp, n_samp, n_fixedC, Xc, betaC, Zc, grp, 
 		  xiC, n_randomC, *AT, *logitC, qC, qN, Z, D, R, 
 		  prC, prN, Zo, Zr, C, Xo, Xr, *random, Xobs, Zobs, 
@@ -1298,7 +1298,7 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
 	      tune_fixed, tune_random, acc_fixed, acc_random, A, 
 	      *max_samp_grp, betaA, T0A);
 
-    /** Step 3: SAMPLE COMPLIANCE COVARITE **/
+    /** Step 3: SAMPLE COMPLIANCE COVARIATE **/
     SampCompMixed(n_grp, n_samp, n_fixedC, Xc, betaC, Zc, grp, 
 		  xiC, n_randomC, *AT, *logitC, qC, qN, Z, D, R, 
 		  prC, prN, Zo, Zr, C, Xo, Xr, *random, Xobs, Zobs, 
@@ -1780,7 +1780,7 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 	      tune_fixed, tune_random, acc_fixed, acc_random, A, 
 	      *max_samp_grp, betaA, T0A);
 
-    /** Step 3: SAMPLE COMPLIANCE COVARITE **/
+    /** Step 3: SAMPLE COMPLIANCE COVARIATE **/
     SampCompMixed(n_grp, n_samp, n_fixedC, Xc, betaC, Zc, grp, 
 		  xiC, n_randomC, *AT, *logitC, qC, qN, Z, D, R, 
 		  prC, prN, Zo, Zr, C, Xo, Xr, *random, Xobs, Zobs, 
@@ -2157,3 +2157,489 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
   free(acc_tau);
 
 } /* end of LIboprobitMixed */
+
+
+/* 
+   Bayesian Normal mixed effects model for clustered randomized
+   experiments with noncompliance; Latent Ignorability assumption for
+   subsequent missing outcomes 
+*/
+
+void LINegBinMixed(int *Y,         /* count outcome variable */ 
+		   int *R,         /* missingness indicator for Y */
+		   int *Z,         /* treatment assignment */
+		   int *D,         /* treatment status */ 
+		   int *C,         /* compliance status; 
+				      for probit, complier = 1,
+				      noncomplier = 0
+				      for logit, never-taker = 0,
+				      complier = 1, always-taker = 2
+				   */
+		   int *A,         /* always-takers; always-taker = 1, others
+				      = 0 */
+		   int *grp,       /* group indicator: 0, 1, 2, ... */
+		   int *Ymiss,     /* number of missing obs in Y */
+		   int *AT,        /* Are there always-takers? */
+		   int *Insample,  /* Insample (=1) or population QoI? */
+		   int *random,    /* Want to include compliance
+				      random effects? */
+		   double *dXc,    /* fixed effects for compliance model */
+		   double *dZc,    /* random effects for compliance model */
+		   double *dXo,    /* fixed effects for outcome model */
+		   double *dZo,    /* random effects for outcome model */
+		   double *dXr,    /* fixed effects for response model */
+		   double *dZr,    /* random effects for response model */
+		   double *betaC,  /* fixed effects for compliance model */
+		   double *betaA,  /* fixed effects for always-takers model */
+		   double *gamma,  /* fixed effects for outcome model */
+		   double *delta,  /* fixed effects for response model */
+		   double *sig2,   /* dispersion parameter for outcome model */
+		   int *in_samp,   /* # of observations */
+		   int *n_gen,     /* # of Gibbs draws */
+		   int *in_grp,    /* # of groups */
+		   int *max_samp_grp, /* max # of obs within group */
+		   int *in_fixed,  /* # of fixed effects for
+				      compliance, outcome, and response models */
+		   int *in_random, /* # of random effects for
+				      compliance, outcome, and response modeld */ 
+		   double *dPsiC,  /* precision for compliance model */
+		   double *dPsiA,  /* precision for always-takers model */
+		   double *dPsiO,  /* precision for outcome model */
+		   double *dPsiR,  /* precision for response model */
+		   double *beta0,  /* prior mean for betaC and betaA */ 
+		   double *gamma0, /* prior mean for gamma */
+		   double *delta0, /* prior mean for delta */
+		   double *dA0C,   /* prior precision for betaC and betaA */ 
+		   double *dA0O,   /* prior precision for gamma */
+		   double *dA0R,   /* prior precision for delta */
+		   double *a0,     /* prior shape for sig2 */
+		   double *b0,     /* prior scale for sig2 */
+		   int *tau0s,     /* prior df for PsiC, PsiA, PsiO, PsiR */
+		   double *dT0C,   /* prior scale for PsiC */
+		   double *dT0A,   /* prior scale for PsiA */
+		   double *dT0O,   /* prior scale for PsiO */
+		   double *dT0R,   /* prior scale for PsiR */
+		   double *tune_fixed, /* proposal variance */
+		   double *tune_random, /* proposal variance */
+		   int *logitC,    /* Use logistic regression for the
+				      compliance model? */
+		   double *varb,   /* proposal variance for beta */
+		   double *vars,   /* proposal variance for sig2 */
+		   double *varg,   /* proposal variance for gamma */
+		   int *param,     /* Want to keep paramters? */
+		   int *burnin,    /* number of burnin */
+		   int *iKeep,     /* keep ?th draws */
+		   int *verbose,   /* print out messages */
+		   double *coefC,  /* Storage for coefficients of the
+				      compliance model */
+		   double *coefA,  /* Storage for coefficients of the
+				      always-takers model */
+		   double *coefO,  /* Storage for coefficients of the
+				      outcome model */
+		   double *coefR,  /* Storage for coefficients of the
+				      response model */	
+		   double *ssig2,  /* Storage for outcome variance */
+		   double *sPsiC,  /* Storage for precisions of
+				      random effects */
+		   double *sPsiA,
+		   double *sPsiO,
+		   double *sPsiR, 
+		   double *QoI     /* Storage of quantities of
+				      interest */		 
+		   ) {
+   /** conuters **/
+  int n_samp = *in_samp; 
+  int n_grp = *in_grp;
+  int n_fixedC = in_fixed[0]; int n_randomC = in_random[0];
+  int n_fixedO = in_fixed[1]; int n_randomO = in_random[1];
+  int n_fixedR = in_fixed[2]; int n_randomR = in_random[2];
+  int n_miss = *Ymiss;
+  int n_obs = n_samp - n_miss;
+
+  /*** data ***/
+  int *grp_obs = intArray(n_obs);
+
+  /*** observed Y ***/
+  int *Yobs = intArray(n_obs);
+  int **Ygrp = intMatrix(n_grp, *max_samp_grp);
+
+  /* covariates for fixed effects in the compliance model */
+  double **Xc = doubleMatrix(n_samp+n_fixedC, n_fixedC+1);
+  /* covariates for random effects */
+  double ***Zc = doubleMatrix3D(n_grp, *max_samp_grp + n_randomC,
+				n_randomC +1);
+
+  /* covariates for fixed effects in the outcome model */
+  double **Xo = doubleMatrix(n_samp, n_fixedO);    
+  /* covariates for random effects */
+  double ***Zo = doubleMatrix3D(n_grp, *max_samp_grp, n_randomO);
+
+  /* covariates for fixed effecs in the outcome model: only units with observed Y */     
+  double **Xobs = doubleMatrix(n_obs, n_fixedO);    
+  /* covariates for random effects */
+  double ***Zobs = doubleMatrix3D(n_grp, *max_samp_grp, n_randomO);
+
+  /* covariates for fixed effects in the response model: includes all obs */     
+  double **Xr = doubleMatrix(n_samp+n_fixedR, n_fixedR+1);    
+  /* covariates for random effects */
+  double ***Zr = doubleMatrix3D(n_grp, *max_samp_grp + n_randomR,
+				n_randomR +1);
+
+  /*** model parameters ***/
+  /* random effects */
+  double ***xiC = doubleMatrix3D(2, n_grp, n_randomC);
+  double **xiO = doubleMatrix(n_grp, n_randomO);
+  double **xiR = doubleMatrix(n_grp, n_randomR);
+
+  /* covariances for random effects */
+  double ***Psi = doubleMatrix3D(2, n_randomC, n_randomC);
+  double **PsiO = doubleMatrix(n_randomO, n_randomO);
+  double **PsiR = doubleMatrix(n_randomR, n_randomR);
+
+  /* mean vector for the outcome model */
+  double *meano = doubleArray(n_samp);
+
+  /* density of Y = Yobs for a complier */
+  double *pC = doubleArray(n_samp); 
+  double *pN = doubleArray(n_samp);
+
+  /* probability of R = 1 */
+  double *prC = doubleArray(n_samp);
+  double *prN = doubleArray(n_samp);
+  double *prA = doubleArray(n_samp);
+
+  /* probability of being a complier and never-taker */
+  double *qC = doubleArray(n_samp);
+  double *qN = doubleArray(n_samp);
+
+  /* probability of being a always-taker */
+  double *pA = doubleArray(n_samp);
+
+  /* prior precision matrices */
+  double **A0C = doubleMatrix(n_fixedC*2, n_fixedC*2);
+  double **A0O = doubleMatrix(n_fixedO, n_fixedO);
+  double **A0R = doubleMatrix(n_fixedR, n_fixedR);
+  
+  /* prior scale for Psi's */
+  double **T0C = doubleMatrix(n_randomC, n_randomC);
+  double **T0A = doubleMatrix(n_randomC, n_randomC);
+  double **T0O = doubleMatrix(n_randomO, n_randomO);
+  double **T0R = doubleMatrix(n_randomR, n_randomR);
+
+  /* quantities of interest: ITT, CACE  */
+  double ITT, CACE;
+  double Y1barC, Y0barC, YbarN, YbarA;
+  int *n_comp = intArray(2);          /* number of compliers */
+  int *n_never = intArray(2);
+  int *n_always = intArray(2);
+  double p_comp, p_never; /* prob. of being a particular type */
+
+  /*** storage parameters and loop counters **/
+  int *vitemp = intArray(n_grp);
+  int progress; progress = 1;
+  int keep; keep = 1;
+  int *acc_fixed = intArray(n_fixedC*2);      /* number of acceptance */
+  int *acc_random = intArray(2*n_grp);      /* number of acceptance */
+  int *counter = intArray(2); 
+  int **counterg = intMatrix(n_grp, 2);
+  int i, j, main_loop;
+  int itempP = ftrunc((double) *n_gen/10);
+  int itemp, itempA, itempC, itempO, itempQ, itempR;
+  int itempAv, itempCv, itempOv, itempRv, itempS;
+
+  /*** get random seed **/
+  GetRNGstate();
+
+  /*** Data prep etc. ***/
+  PrepMixed(dXc, dZc, dXo, dZo, dXr, dZr, Xc, Xo, Xr, Xobs, Zc, Zo,
+	    Zr, n_samp, n_grp, n_obs, n_miss, n_fixedC, n_fixedO,
+	    n_fixedR, n_randomC, n_randomO, n_randomR, Zobs, R,
+	    grp, grp_obs, xiC, xiO, xiR, dPsiC, dPsiA, dPsiO, dPsiR,
+	    Psi, PsiO, PsiR, dT0C, T0C, dT0A, T0A, dT0O, T0O, dT0R,
+	    T0R, dA0C, A0C, dA0O, A0O, dA0R, A0R, *logitC, pC, pN,
+	    pA, prC, prN, prA, *AT, beta0, gamma0, delta0, 0);
+
+  itemp = 0;
+  for (j = 0; j < n_grp; j++)
+    vitemp[j] = 0;
+  for (i = 0; i < n_samp; i++) 
+    if (R[i] == 1) {
+      Yobs[itemp++] = Y[i];
+      Ygrp[grp[i]][vitemp[grp[i]]++] = Y[i];
+    }
+
+  /*** Gibbs Sampler! ***/
+  itempA = 0; itempC = 0; itempO = 0; itempQ = 0; itempR = 0;   
+  itempAv = 0; itempCv = 0; itempOv = 0; itempRv = 0; itempS = 0;   
+  for (j = 0; j < n_fixedC*2; j++)
+    acc_fixed[j] = 0;
+  acc_random[0] = 0; acc_random[1] = 0; 
+  counter[0] = 0; counter[1] = 0;
+  for (j = 0; j < n_grp; j++) {
+    counterg[j][0] = 0; counterg[j][1] = 0;
+  }
+  for (main_loop = 1; main_loop <= *n_gen; main_loop++){
+    /* Step 1: RESPONSE MODEL */
+    ResponseMixed(n_miss, R, Xr, Zr, grp, delta, xiR, PsiR, n_samp, 
+		  n_fixedR, n_randomR, n_grp, delta0, A0R, tau0s, T0R,
+		  *AT, *random, Z, D, prC,prN, prA);
+
+    /** Step 2: COMPLIANCE MODEL **/
+    CompMixed(*logitC, *AT, C, Xc, Zc, grp, betaC, xiC, Psi, n_samp,
+	      n_fixedC, n_randomC , n_grp, beta0, A0C, tau0s, T0C, 
+	      tune_fixed, tune_random, acc_fixed, acc_random, A, 
+	      *max_samp_grp, betaA, T0A);
+
+    /** Step 3: SAMPLE COMPLIANCE COVARIATE **/
+    SampCompMixed(n_grp, n_samp, n_fixedC, Xc, betaC, Zc, grp, 
+		  xiC, n_randomC, *AT, *logitC, qC, qN, Z, D, R, 
+		  prC, prN, Zo, Zr, C, Xo, Xr, *random, Xobs, Zobs, 
+		  prA, pA, A, betaA, pC, pN);
+
+    /** Step 4: OUTCOME MODEL **/
+    bnegbinMixedMCMC(Yobs, Ygrp, Xobs, Zobs, grp_obs, gamma, 
+		     xiO, sig2, PsiO, n_obs, n_fixedO, 
+		     n_randomO, n_grp, *max_samp_grp, gamma0, A0O, 
+		     *a0, *b0, tau0s[2], T0O, varb, *vars, varg, 
+		     counter, counterg, 1); 
+    
+    /** Compute probabilities of Y = 1 **/
+    for (j = 0; j < n_grp; j++)
+      vitemp[j] = 0;
+    for (i = 0; i < n_samp; i++) {
+      meano[i] = 0;
+      if (*AT) { /* always-takers */
+	for (j = 3; j < n_fixedO; j++)
+	  meano[i] += Xo[i][j]*gamma[j];
+	if (*random)
+	  for (j = 2; j < n_randomO; j++)
+	    meano[i] += Zo[grp[i]][vitemp[grp[i]]][j]*xiO[grp[i]][j];
+	else
+	  for (j = 0; j < n_randomO; j++)
+	    meano[i] += Zo[grp[i]][vitemp[grp[i]]][j]*xiO[grp[i]][j];
+	if (R[i] == 1) {
+	  if ((Z[i] == 0) && (D[i] == 0)) {
+	    if (*random)
+	      pC[i] = dnegbin(Y[i], exp(meano[i]+gamma[1]+xiO[grp[i]][0]), *sig2, 0);
+	    else
+	      pC[i] = dnegbin(Y[i], exp(meano[i]+gamma[1]), *sig2, 0);
+	    pN[i] = dnegbin(Y[i], exp(meano[i]), *sig2, 0);
+	  } 
+	  if ((Z[i] == 1) && (D[i] == 1)) {
+	    if (*random) {
+	      pC[i] = dnegbin(Y[i], exp(meano[i]+gamma[0]+xiO[grp[i]][0]), *sig2, 0);
+	      pA[i] = dnegbin(Y[i], exp(meano[i]+gamma[2]+xiO[grp[i]][1]), *sig2, 0);
+	    } else {
+	      pC[i] = dnegbin(Y[i], exp(meano[i]+gamma[0]), *sig2, 0);
+	      pA[i] = dnegbin(Y[i], exp(meano[i]+gamma[2]), *sig2, 0);
+	    }
+	  }
+	}
+      } else { /* no always-takers */
+	for (j = 2; j < n_fixedO; j++)
+	  meano[i] += Xo[i][j]*gamma[j];
+	if (*random)
+	  for (j = 1; j < n_randomO; j++)
+	    meano[i] += Zo[grp[i]][vitemp[grp[i]]][j]*xiO[grp[i]][j];
+	else
+	  for (j = 0; j < n_randomO; j++)
+	    meano[i] += Zo[grp[i]][vitemp[grp[i]]][j]*xiO[grp[i]][j];
+	if (R[i] == 1)
+	  if (Z[i] == 0) {
+	    if (*random) 
+	      pC[i] = dnegbin(Y[i], exp(meano[i]+gamma[1]+xiO[grp[i]][0]), *sig2, 0);
+	    else 
+	      pC[i] = dnegbin(Y[i], exp(meano[i]+gamma[1]), *sig2, 0);
+	    pN[i] = dnegbin(Y[i], exp(meano[i]), *sig2, 0);
+	  } 
+      }
+    }
+    
+    /** storing the results **/
+    if (main_loop > *burnin) {
+      if (keep == *iKeep) {
+	/** Computing Quantities of Interest **/
+	n_comp[0] = 0; n_comp[1] = 0; 
+	n_never[0] = 0; n_never[1] = 0;
+	n_always[0] = 0; n_always[1] = 0;
+	p_comp = 0; p_never = 0; 
+	Y1barC = 0; Y0barC = 0; YbarN = 0; YbarA = 0;
+	for (i = 0; i < n_samp; i++){
+	  p_comp += qC[i];
+	  p_never += qN[i];
+	  if (C[i] == 1) { /* ITT effects */
+	    if (Z[i] == 1) 
+	      n_comp[1]++;
+	    else
+	      n_comp[0]++;
+	    if (*Insample) { /* insample QoI */
+	      if (Z[i] == 1) 
+		if (R[i] == 1)
+		  Y1barC += Y[i];
+		else 
+		  Y1barC += rnegbin(exp(meano[i]+gamma[0]+xiO[grp[i]][0]), *sig2);
+	      else 
+		if (R[i] == 1)
+		  Y0barC += Y[i];
+		else
+		  Y0barC += rnegbin(exp(meano[i]+gamma[1]+xiO[grp[i]][0]), *sig2);
+	    } else { /* population QoI */
+	      Y1barC += exp(meano[i]+gamma[0]+xiO[grp[i]][0]);
+	      Y0barC += exp(meano[i]+gamma[1]+xiO[grp[i]][0]); 
+	    }
+	  } else { /* Estimates for always-takers and never-takers */
+	    if (A[i] == 1) {
+	      if (Z[i] == 1)
+		n_always[1]++;
+	      else
+		n_always[0]++;
+	      if (*Insample)
+		if (R[i] == 1)
+		  YbarA += Y[i];
+		else 
+		  YbarA += rnegbin(exp(meano[i]+gamma[2]+xiO[grp[i]][1]), *sig2);
+	      else 
+		YbarA += exp(meano[i]+gamma[2]+xiO[grp[i]][1]);
+	    } else {
+	      if (Z[i] == 1)
+		n_never[1]++;
+	      else
+		n_never[0]++;
+	      if (*Insample)
+		if (R[i] == 1)
+		  YbarN += Y[i];
+		else 
+		  YbarN += rnegbin(exp(meano[i]), *sig2);
+	      else 
+		YbarN += exp(meano[i]);
+	    }
+	  }
+	}
+	if (*Insample) { 
+	  ITT = Y1barC/(double)(n_comp[1]+n_never[1]+n_always[1]) -
+	    Y0barC/(double)(n_comp[0]+n_never[0]+n_always[0]);
+	  Y1barC /= (double)n_comp[1];  
+	  Y0barC /= (double)n_comp[0]; 
+	  p_comp = (double)(n_comp[0]+n_comp[1])/(double)n_samp;
+	  p_never = (double)(n_never[0]+n_never[1])/(double)n_samp;
+	} else {
+	  ITT = (Y1barC-Y0barC)/(double)n_samp;     /* ITT effect */
+	  Y1barC /= (double)(n_comp[0]+n_comp[1]);  
+	  Y0barC /= (double)(n_comp[0]+n_comp[1]); 
+	  p_comp /= (double)n_samp;  /* ITT effect on D; Prob. of being
+					   a complier */ 
+	  p_never /= (double)n_samp; /* Prob. of being a never-taker */
+	}
+	CACE = Y1barC-Y0barC;    /* CACE */
+	YbarN /= (double)(n_never[0]+n_never[1]);
+	if (*AT)
+	  YbarA /= (double)(n_always[0]+n_always[1]);
+	
+	QoI[itempQ++] = ITT;   
+	QoI[itempQ++] = CACE;   
+	QoI[itempQ++] = p_comp; 	  
+	QoI[itempQ++] = p_never;
+	QoI[itempQ++] = Y1barC;
+	QoI[itempQ++] = Y0barC;
+	QoI[itempQ++] = YbarN;
+	if (*AT)
+	  QoI[itempQ++] = YbarA;
+
+	if (*param) {
+	  for (j = 0; j < n_fixedC; j++)
+	    coefC[itempC++] = betaC[j];
+	  ssig2[itempS++] = sig2[0];
+	  if (*AT) {
+	    if (*logitC) {
+	      for (j = 0; j < n_fixedC; j++)
+		coefA[itempA++] = betaC[j+n_fixedC];
+	    } else {
+	      for (j = 0; j < n_fixedC; j++)
+		coefA[itempA++] = betaA[j];
+	    }
+	  }
+	  for (j = 0; j < n_fixedO; j++)
+	    coefO[itempO++] = gamma[j];
+	  if (n_miss > 0) 
+	    for (j = 0; j < n_fixedR; j++)
+	      coefR[itempR++] = delta[j];
+	}
+	keep = 1;
+      } else
+	keep++;
+    }
+
+
+    if (*verbose) {
+      if (main_loop == itempP) {
+	Rprintf("%3d percent done.\n", progress*10);
+       	if (*logitC) {
+	  Rprintf("  Current Acceptance Ratio for fixed effects:");
+	  if (*AT)
+	    for (j = 0; j < n_fixedC*2; j++)
+	      Rprintf("%10g", (double)acc_fixed[j]/(double)main_loop);
+	  else
+	    for (j = 0; j < n_fixedC; j++)
+	      Rprintf("%10g", (double)acc_fixed[j]/(double)main_loop);
+	  Rprintf("\n");
+	  Rprintf("  Current Acceptance Ratio for random effects:");
+	  if (*AT)
+	    for (j = 0; j < 2; j++)
+	      Rprintf("%10g", (double)acc_random[j]/(double)main_loop);
+	  else
+	    Rprintf("%10g", (double)acc_random[0]/(double)main_loop);
+	  Rprintf("\n");
+	} 
+	itempP += ftrunc((double) *n_gen/10); 
+	progress++;
+	R_FlushConsole(); 
+      }
+    }
+    R_FlushConsole();
+    R_CheckUserInterrupt();
+  } /* end of Gibbs sampler */
+
+  /** write out the random seed **/
+  PutRNGstate();
+
+  /** freeing memory **/
+  free(grp_obs);
+  free(Yobs);
+  FreeMatrix(Xc, n_samp+n_fixedC);
+  Free3DMatrix(Zc, n_grp, *max_samp_grp + n_randomC);
+  FreeMatrix(Xo, n_samp+n_fixedO);
+  Free3DMatrix(Zo, n_grp, *max_samp_grp + n_randomO);
+  FreeMatrix(Xobs, n_obs+n_fixedO);
+  Free3DMatrix(Zobs, n_grp, *max_samp_grp + n_randomO);
+  FreeMatrix(Xr, n_samp+n_fixedR);
+  Free3DMatrix(Zr, n_grp, *max_samp_grp + n_randomR);
+  Free3DMatrix(xiC, 2, n_grp);
+  FreeMatrix(xiO, n_grp);
+  FreeMatrix(xiR, n_grp);
+  Free3DMatrix(Psi, 2, n_randomC);
+  FreeMatrix(PsiO, n_randomO);
+  FreeMatrix(PsiR, n_randomR);
+  free(meano);
+  free(pC);
+  free(pN);
+  free(prC);
+  free(prN);
+  free(prA);
+  free(qC);
+  free(qN);
+  free(pA);
+  free(n_comp);
+  free(n_never);
+  free(n_always);
+  FreeMatrix(A0C, n_fixedC*2);
+  FreeMatrix(A0O, n_fixedO);
+  FreeMatrix(A0R, n_fixedR);
+  FreeMatrix(T0C, n_randomC);
+  FreeMatrix(T0A, n_randomC);
+  FreeMatrix(T0O, n_randomO);
+  FreeMatrix(T0R, n_randomR);
+  free(vitemp);
+  free(acc_fixed);
+  free(acc_random);
+
+} /* end of LINegBinMixed */
