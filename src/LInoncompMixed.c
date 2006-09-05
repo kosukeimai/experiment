@@ -260,7 +260,7 @@ void ResponseMixed(int n_miss, int *R, double **Xr, double ***Zr,
 		   int AT, int random, int *Z, int *D, double *prC,
 		   double *prN, double *prA
 		   ){
-  int i, j, k;
+  int i, j;
   double dtemp;
   int *vitemp = intArray(n_grp);
 
@@ -345,7 +345,7 @@ void CompMixed(int logitC, int AT, int *C, double **Xc, double ***Zc,
 	       int *acc_random, int *A, int max_samp_grp, 
 	       double *betaA, double **T0A
 	       ){
-  int i, j, k;
+  int i, j;
   int itemp;
   int *vitemp = intArray(n_grp);
   int *vitemp1 = intArray(n_grp);
@@ -424,7 +424,7 @@ void SampCompMixed(int n_grp, int n_samp, int n_fixedC, double **Xc,
 		   double *pC, double *pN
 		   ) {
 
-  int i, j, k;
+  int i, j;
   int itemp;
   double dtemp;
   int *vitemp = intArray(n_grp);
@@ -760,7 +760,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
   int keep = 1;
   int *acc_fixed = intArray(n_fixedC*2);      /* number of acceptance */
   int *acc_random = intArray(2*n_grp);      /* number of acceptance */
-  int i, j, k, main_loop;
+  int i, j, main_loop;
   int itempP = ftrunc((double) *n_gen/10);
   int itemp, itempA, itempC, itempO, itempQ, itempR;
   int itempAv, itempCv, itempOv, itempRv;
@@ -1256,7 +1256,7 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
   int keep; keep = 1;
   int *acc_fixed = intArray(n_fixedC*2);      /* number of acceptance */
   int *acc_random = intArray(2*n_grp);      /* number of acceptance */
-  int i, j, k, main_loop;
+  int i, j, main_loop;
   int itempP = ftrunc((double) *n_gen/10);
   int itemp, itempA, itempC, itempO, itempQ, itempR;
   int itempAv, itempCv, itempOv, itempRv, itempS;
@@ -1738,7 +1738,7 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
   int *acc_fixed = intArray(n_fixedC*2);    /* number of acceptance */
   int *acc_tau = intArray(0);
   int *acc_random = intArray(2*n_grp);      /* number of acceptance */
-  int i, j, k, main_loop;
+  int i, j, main_loop;
   int itempP = ftrunc((double) *n_gen/10);
   int itemp, itempA, itempC, itempO, itempQ, itempR, itempT;
   int itempAv, itempCv, itempOv, itempRv;
