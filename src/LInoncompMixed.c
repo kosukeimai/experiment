@@ -434,155 +434,154 @@ void SampCompMixed(int n_grp, int n_samp, int n_fixedC, double **Xc,
   double *meanc = doubleArray(n_samp);
   double *meana = doubleArray(n_samp);
 
-
   itemp = 0;
-    for (j = 0; j < n_grp; j++) {
-      vitemp[j] = 0; vitemp1[j] = 0;
-    }
-    for (i = 0; i < n_samp; i++) {
-      meanc[i] = 0;
-      for (j = 0; j < n_fixedC; j++) 
-	meanc[i] += Xc[i][j]*betaC[j];
+  for (j = 0; j < n_grp; j++) {
+    vitemp[j] = 0; vitemp1[j] = 0;
+  }
+  for (i = 0; i < n_samp; i++) {
+    meanc[i] = 0;
+    for (j = 0; j < n_fixedC; j++) 
+      meanc[i] += Xc[i][j]*betaC[j];
+    for (j = 0; j < n_randomC; j++)
+      meanc[i] += Zc[grp[i]][vitemp[grp[i]]][j]*xiC[0][grp[i]][j];
+    if (AT) { /* some always-takers */
+      meana[i] = 0;
       for (j = 0; j < n_randomC; j++)
-	meanc[i] += Zc[grp[i]][vitemp[grp[i]]][j]*xiC[0][grp[i]][j];
-      if (AT) { /* some always-takers */
-	meana[i] = 0;
-	for (j = 0; j < n_randomC; j++)
-	  meana[i] += Zc[grp[i]][vitemp[grp[i]]][j]*xiC[1][grp[i]][j];
-	if (logitC) { /* if logistic regression is used */
-	  for (j = 0; j < n_fixedC; j++) 
-	    meana[i] += Xc[i][j]*betaC[j+n_fixedC];
-	  qC[i] = exp(meanc[i])/(1 + exp(meanc[i]) + exp(meana[i]));
-	  qN[i] = 1/(1 + exp(meanc[i]) + exp(meana[i]));
-	} else { /* double probit regressions */
-	  for (j = 0; j < n_fixedC; j++) 
-	    meana[i] += Xc[i][j]*betaA[j];
-	  qC[i] = pnorm(meanc[i], 0, 1, 1, 0);
-	  qN[i] = (1-qC[i])*pnorm(meana[i], 0, 1, 0, 0);
-	}
-	if ((Z[i] == 0) && (D[i] == 0)){
-	  if (R[i] == 1)
-	    dtemp = qC[i]*pC[i]*prC[i] / 
-	      (qC[i]*pC[i]*prC[i]+qN[i]*pN[i]*prN[i]);
-	  else 
-	    dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+qN[i]*prN[i]);
-	  if (unif_rand() < dtemp) {
-	    C[i] = 1; Xo[i][1] = 1; Xr[i][1] = 1;
+	meana[i] += Zc[grp[i]][vitemp[grp[i]]][j]*xiC[1][grp[i]][j];
+      if (logitC) { /* if logistic regression is used */
+	for (j = 0; j < n_fixedC; j++) 
+	  meana[i] += Xc[i][j]*betaC[j+n_fixedC];
+	qC[i] = exp(meanc[i])/(1 + exp(meanc[i]) + exp(meana[i]));
+	qN[i] = 1/(1 + exp(meanc[i]) + exp(meana[i]));
+      } else { /* double probit regressions */
+	for (j = 0; j < n_fixedC; j++) 
+	  meana[i] += Xc[i][j]*betaA[j];
+	qC[i] = pnorm(meanc[i], 0, 1, 1, 0);
+	qN[i] = (1-qC[i])*pnorm(meana[i], 0, 1, 0, 0);
+      }
+      if ((Z[i] == 0) && (D[i] == 0)){
+	if (R[i] == 1)
+	  dtemp = qC[i]*pC[i]*prC[i] / 
+	    (qC[i]*pC[i]*prC[i]+qN[i]*pN[i]*prN[i]);
+	else 
+	  dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+qN[i]*prN[i]);
+	if (unif_rand() < dtemp) {
+	  C[i] = 1; Xo[i][1] = 1; Xr[i][1] = 1;
+	  if (random) {
+	    Zo[grp[i]][vitemp[grp[i]]][0] = 1;
+	    Zr[grp[i]][vitemp[grp[i]]][0] = 1;
+	  }
+	  if (R[i] == 1) {
+	    Xobs[itemp][1] = 1;
+	    if (random)
+	      Zobs[grp[i]][vitemp1[grp[i]]][0] = 1;
+	  }
+	} else {
+	  C[i] = 0; Xo[i][1] = 0; Xr[i][1] = 0;
+	  if (random) {
+	    Zo[grp[i]][vitemp[grp[i]]][0] = 0;
+	    Zr[grp[i]][vitemp[grp[i]]][0] = 0;
+	  }
+	  if (R[i] == 1) {
+	    Xobs[itemp][1] = 0; 
+	    if (random)
+	      Zobs[grp[i]][vitemp1[grp[i]]][0] = 0; 
+	  }
+	}  
+      }
+      if ((Z[i] == 1) && (D[i] == 1)){
+	if (R[i] == 1)
+	  dtemp = qC[i]*pC[i]*prC[i] / 
+	    (qC[i]*pC[i]*prC[i]+(1-qC[i]-qN[i])*pA[i]*prA[i]);
+	else
+	  dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+(1-qC[i]-qN[i])*prA[i]);
+	if (unif_rand() < dtemp) {
+	  C[i] = 1; Xo[i][0] = 1; Xr[i][0] = 1; 
+	  if (random) {
+	    Zo[grp[i]][vitemp[grp[i]]][0] = 1;
+	    Zr[grp[i]][vitemp[grp[i]]][0] = 1;
+	  }
+	  A[i] = 0; Xo[i][2] = 0; Xr[i][2] = 0; 
+	  if (random) {
+	    Zo[grp[i]][vitemp[grp[i]]][1] = 0;
+	    Zr[grp[i]][vitemp[grp[i]]][1] = 0;
+	  }
+	  if (R[i] == 1) {
+	    Xobs[itemp][0] = 1; Xobs[itemp][2] = 0; 
 	    if (random) {
-	      Zo[grp[i]][vitemp[grp[i]]][0] = 1;
-	      Zr[grp[i]][vitemp[grp[i]]][0] = 1;
+	      Zobs[grp[i]][vitemp1[grp[i]]][0] = 1; 
+	      Zobs[grp[i]][vitemp1[grp[i]]][1] = 0;
 	    }
-	    if (R[i] == 1) {
-	      Xobs[itemp][1] = 1;
-	      if (random)
-		Zobs[grp[i]][vitemp1[grp[i]]][0] = 1;
-	    }
-	  } else {
-	    C[i] = 0; Xo[i][1] = 0; Xr[i][1] = 0;
-	    if (random) {
-	      Zo[grp[i]][vitemp[grp[i]]][0] = 0;
-	      Zr[grp[i]][vitemp[grp[i]]][0] = 0;
-	    }
-	    if (R[i] == 1) {
-	      Xobs[itemp][1] = 0; 
-	      if (random)
-		Zobs[grp[i]][vitemp1[grp[i]]][0] = 0; 
-	    }
-	  }  
-	}
-	if ((Z[i] == 1) && (D[i] == 1)){
-	  if (R[i] == 1)
-	    dtemp = qC[i]*pC[i]*prC[i] / 
-	      (qC[i]*pC[i]*prC[i]+(1-qC[i]-qN[i])*pA[i]*prA[i]);
-	  else
-	    dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+(1-qC[i]-qN[i])*prA[i]);
-	  if (unif_rand() < dtemp) {
-	    C[i] = 1; Xo[i][0] = 1; Xr[i][0] = 1; 
-	    if (random) {
-	      Zo[grp[i]][vitemp[grp[i]]][0] = 1;
-	      Zr[grp[i]][vitemp[grp[i]]][0] = 1;
-	    }
-	    A[i] = 0; Xo[i][2] = 0; Xr[i][2] = 0; 
-	    if (random) {
-	      Zo[grp[i]][vitemp[grp[i]]][1] = 0;
-	      Zr[grp[i]][vitemp[grp[i]]][1] = 0;
-	    }
-	    if (R[i] == 1) {
-	      Xobs[itemp][0] = 1; Xobs[itemp][2] = 0; 
-	      if (random) {
-		Zobs[grp[i]][vitemp1[grp[i]]][0] = 1; 
-		Zobs[grp[i]][vitemp1[grp[i]]][1] = 0;
-	      }
-	    }
-	  } else {
-	    if (logitC)
-	      C[i] = 2;
-	    else
-	      C[i] = 0; 
-	    A[i] = 1; Xo[i][0] = 0; Xr[i][0] = 0; 
-	    Xo[i][2] = 1; Xr[i][2] = 1;
-	    if (random) {
-	      Zo[grp[i]][vitemp[grp[i]]][0] = 0; 
-	      Zr[grp[i]][vitemp[grp[i]]][0] = 0; 
-	      Zo[grp[i]][vitemp[grp[i]]][1] = 1;
-	      Zr[grp[i]][vitemp[grp[i]]][1] = 1;
-	    }
-	    if (R[i] == 1) {
-	      Xobs[itemp][0] = 0; 
-	      Xobs[itemp][2] = 1; 
-	      if (random) {
-		Zobs[grp[i]][vitemp1[grp[i]]][0] = 0;
-		Zobs[grp[i]][vitemp1[grp[i]]][1] = 1;
-	      } 
-	    }
-	  }  
-	}
-      } else { /* no always-takers */
-	if (Z[i] == 0){
+	  }
+	} else {
 	  if (logitC)
-	    qC[i] = 1/(1+exp(-meanc[i]));
+	    C[i] = 2;
 	  else
-	    qC[i] = pnorm(meanc[i], 0, 1, 1, 0);
-	  if (R[i] == 1)
-	    dtemp = qC[i]*pC[i]*prC[i] / 
-	      (qC[i]*pC[i]*prC[i]+(1-qC[i])*pN[i]*prN[i]);
-	  else
-	    dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+(1-qC[i])*prN[i]);
-	  if (unif_rand() < dtemp) {
-	    C[i] = 1; Xo[i][1] = 1; Xr[i][1] = 1;
+	    C[i] = 0; 
+	  A[i] = 1; Xo[i][0] = 0; Xr[i][0] = 0; 
+	  Xo[i][2] = 1; Xr[i][2] = 1;
+	  if (random) {
+	    Zo[grp[i]][vitemp[grp[i]]][0] = 0; 
+	    Zr[grp[i]][vitemp[grp[i]]][0] = 0; 
+	    Zo[grp[i]][vitemp[grp[i]]][1] = 1;
+	    Zr[grp[i]][vitemp[grp[i]]][1] = 1;
+	  }
+	  if (R[i] == 1) {
+	    Xobs[itemp][0] = 0; 
+	    Xobs[itemp][2] = 1; 
 	    if (random) {
-	      Zo[grp[i]][vitemp[grp[i]]][0] = 1;
-	      Zr[grp[i]][vitemp[grp[i]]][0] = 1;
-	    }
-	    if (R[i] == 1) {
-	      Xobs[itemp][1] = 1; 
-	      if (random)
-		Zobs[grp[i]][vitemp1[grp[i]]][0] = 1;
-	    } 
-	  } else {
-	    C[i] = 0; Xo[i][1] = 0; Xr[i][1] = 0;
-	    if (random) {
-	      Zo[grp[i]][vitemp[grp[i]]][0] = 0;
-	      Zr[grp[i]][vitemp[grp[i]]][0] = 0;
-	    }
-	    if (R[i] == 1) {
-	      Xobs[itemp][1] = 0;
-	      if (random)
-		Zobs[grp[i]][vitemp1[grp[i]]][0] = 0;
+	      Zobs[grp[i]][vitemp1[grp[i]]][0] = 0;
+	      Zobs[grp[i]][vitemp1[grp[i]]][1] = 1;
 	    } 
 	  }
+	}  
+      }
+    } else { /* no always-takers */
+      if (Z[i] == 0){
+	if (logitC)
+	  qC[i] = 1/(1+exp(-meanc[i]));
+	else
+	  qC[i] = pnorm(meanc[i], 0, 1, 1, 0);
+	if (R[i] == 1)
+	  dtemp = qC[i]*pC[i]*prC[i] / 
+	    (qC[i]*pC[i]*prC[i]+(1-qC[i])*pN[i]*prN[i]);
+	else
+	  dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+(1-qC[i])*prN[i]);
+	if (unif_rand() < dtemp) {
+	  C[i] = 1; Xo[i][1] = 1; Xr[i][1] = 1;
+	  if (random) {
+	    Zo[grp[i]][vitemp[grp[i]]][0] = 1;
+	    Zr[grp[i]][vitemp[grp[i]]][0] = 1;
+	  }
+	  if (R[i] == 1) {
+	    Xobs[itemp][1] = 1; 
+	    if (random)
+	      Zobs[grp[i]][vitemp1[grp[i]]][0] = 1;
+	  } 
+	} else {
+	  C[i] = 0; Xo[i][1] = 0; Xr[i][1] = 0;
+	  if (random) {
+	    Zo[grp[i]][vitemp[grp[i]]][0] = 0;
+	    Zr[grp[i]][vitemp[grp[i]]][0] = 0;
+	  }
+	  if (R[i] == 1) {
+	    Xobs[itemp][1] = 0;
+	    if (random)
+	      Zobs[grp[i]][vitemp1[grp[i]]][0] = 0;
+	  } 
 	}
       }
-      if (R[i] == 1) {
-	itemp++; vitemp1[grp[i]]++;
-      }
-      vitemp[grp[i]]++;
     }
-
-    free(vitemp);
-    free(vitemp1);
+    if (R[i] == 1) {
+      itemp++; vitemp1[grp[i]]++;
+    }
+    vitemp[grp[i]]++;
+  }
+  
+  free(vitemp);
+  free(vitemp1);
   free(meana);
-
+  free(meanc);
 }
 
 /* 

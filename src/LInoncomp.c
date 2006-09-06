@@ -2009,12 +2009,13 @@ void LIcount(int *Y,         /*count outcome variable */
   PutRNGstate();
 
   /** freeing memory **/
+  free(Yobs);
   FreeMatrix(Xc, n_samp+n_covC);
   FreeMatrix(Xo, n_samp);
   FreeMatrix(Xobs, n_obs);
   FreeMatrix(Xr, n_samp+n_covR);
-  free(cont);
   free(meano);
+  free(cont);
   free(pC);
   free(pN);
   free(prC);
