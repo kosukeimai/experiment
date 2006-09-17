@@ -2,9 +2,10 @@
 ### Assumption of nonignorability
 ###
 
-NI.nocov <- function(Y, D, Z, CI = 0.9) {
-
+NInocov <- function(Y, D, Z, CI = 0.9) {
+  
   if (is.null(Z)) {
+    ## Without noncompliance
     n <- length(D)
     R <- (!is.na(Y))*1
     pi00 <- mean((D == 0)*(R == 0))
