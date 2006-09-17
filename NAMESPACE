@@ -2,11 +2,7 @@ useDynLib(experiment)
 
 importFrom(MASS, mvrnorm)
 
-export(#Noncomp.mom, 
-       Noncomp.bayes, 
-#       Noncomp.bayesMixed, 
-       MARnocov,
-       NIbprobit, 
-       NInocov)
+export(Noncomp.bayes, 
+       Noncomp.bayesMixed)
 
 
