@@ -29,6 +29,10 @@ NInocov <- function(Y, D, Z = NULL, CI = 0.9) {
     pi111 <- mean(Y == 1 & D == 1 & R == 1)
     pi101 <- mean(Y == 1 & D == 0 & R == 1)
 
+    ## bounds
+    lb <- (p11*pi11*(pi00+pi01)-(pi00+p01*pi01)*(pi10+pi11))/((pi10+pi11)*(pi00+pi01))
+    ub <- ((pi10+p11*pi11)*(pi00+pi01)-p01*pi01*(pi10+pi11))/((pi10+pi11)*(pi00+pi01))
+    
     ## asymptotic variance of ATE
     Sigma <- matrix(NA, ncol = 5, nrow = 5)
     Sigma[1,1] <- pi01*(1-pi01)
@@ -74,8 +78,8 @@ NInocov <- function(Y, D, Z = NULL, CI = 0.9) {
     z <- qnorm(1-(1-CI)/2)
     ci.est <- matrix(c(ATE[1]-z*se, ATE[1]+z*se), nrow = 1)
     colnames(ci.est) <- c("lower CI", "upper CI")
-    return(list(Ybar = Ybar, ATE = ATE, CI = ci.est, ps = ps,
-                pis = pis, n = n)) 
+    return(list(Ybar = Ybar, ATE = ATE, CI = ci.est,
+                bounds = c(lb, ub), ps = ps, pis = pis, n = n)) 
   } else {
     ## WITH NONCOMPLIANCE
     n <- length(D)

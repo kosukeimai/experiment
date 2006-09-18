@@ -46,9 +46,14 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
   D <- eval(call$D, envir = data)
   if (sum(is.na(Z)) > 0)
     stop("missing values not allowed in the encouragement variable")
-  if (sum(is.na(D)) > 0)
-    stop("missing values not allowed in the treatment variable")
 
+  res <- list(call = call, Y = Y, Xo = Xo, Xc = Xc, Xr = Xr,
+              D = D, Z = Z, n.draws = n.draws)
+  if (sum(is.na(D)) > 0) {
+    RD <- (!is.na(D))*1
+    D[is.na(D)] <- (runif(sum(is.na(D))) > 0.5)*1
+  }
+  
   ## Random starting values for missing Y using Bernoulli(0.5) for
   ## binary and ordinal
   R <- (!is.na(Y))*1
@@ -91,8 +96,9 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
     AT <- FALSE
     C[Z == 1 & D == 1] <- 1   # compliers
   }
-  res <- list(call = call, Y = Y, R = R, Xo = Xo, Xc = Xc, Xr = Xr,
-              A = A, C = C, D = D, Z = Z, n.draws = n.draws)
+  res$R <- R
+  res$A <- A
+  res$C <- C
   
   ## Random starting values for missing compliance status
   if (AT) {
@@ -274,7 +280,7 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
   ## calling C function
   if (model.o == "probit" || model.o == "logit")
     out <- .C("LIbinary",
-              as.integer(Y), as.integer(R), as.integer(Z),
+              as.integer(Y), as.integer(R), as.integer(RD), as.integer(Z),
               as.integer(D), as.integer(C), as.integer(A),
               as.integer(Ymiss), as.integer(AT), as.integer(in.sample), 
               as.double(Xc), as.double(Xo), as.double(Xr),
@@ -300,7 +306,7 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
               PACKAGE = "experiment")
   else if (model.o == "oprobit")
     out <- .C("LIordinal",
-              as.integer(Y), as.integer(R), as.integer(Z),
+              as.integer(Y), as.integer(R), as.integer(RD), as.integer(Z),
               as.integer(D), as.integer(C), as.integer(A),
               as.integer(Ymiss), as.integer(AT), as.integer(in.sample), 
               as.double(Xc), as.double(Xo), as.double(Xr),
@@ -327,7 +333,7 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
               PACKAGE = "experiment")
   else if (model.o == "gaussian")
     out <- .C("LIgaussian",
-              as.double(Y), as.integer(R), as.integer(Z),
+              as.double(Y), as.integer(R), as.integer(RD), as.integer(Z),
               as.integer(D), as.integer(C), as.integer(A),
               as.integer(Ymiss), as.integer(AT), as.integer(in.sample), 
               as.double(Xc), as.double(Xo), as.double(Xr),
@@ -355,7 +361,7 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
               PACKAGE = "experiment")
   else if (model.o == "negbin")
     out <- .C("LIcount",
-              as.integer(Y), as.integer(R), as.integer(Z),
+              as.integer(Y), as.integer(R), as.integer(RD), as.integer(Z),
               as.integer(D), as.integer(C), as.integer(A),
               as.integer(Ymiss), as.integer(AT), as.integer(in.sample), 
               as.double(Xc), as.double(Xo), as.double(Xr),
