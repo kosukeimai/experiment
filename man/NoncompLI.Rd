@@ -2,39 +2,41 @@
 
 \alias{Noncomp.bayes}
 
-\title{Analysis of Randomized Experiments with Noncompliance and
-  Nonignorable Missing Outcomes}
+\title{Bayesian Analysis of Randomized Experiments with Noncompliance
+and Nonignorable Missing Outcomes}
 
 \description{
   This function estimates the average causal effects for randomized
-  experiments with noncompliance and nonignorable missing outcomes.
+  experiments with noncompliance and nonignorable missing
+  outcomes. The missing data mechanism is modeled using the latent
+  ignorability assumption of Frangakis and Rubin (1999, Biometrika). 
 }
 
 \usage{
   Noncomp.bayes(formulae, Z, D, data = parent.frame(),
-                          n.draws = 5000, param = TRUE,
-                          in.sample = FALSE, model.c = "probit", 
-                          model.o = "probit", model.r = "probit", 
-                          tune.c = 0.01, tune.o = 0.01, tune.r = 0.01,
-                          tune.v = 0.01, p.mean.c = 0, p.mean.o = 0,
-                          p.mean.r = 0, p.prec.c = 0.001,
-                          p.prec.o = 0.001, p.prec.r = 0.001,
-                          p.df.o = 10, p.scale.o = 1, p.shape.o = 1,
-                          mda.probit = TRUE, coef.start.c = 0,
-                          coef.start.o = 0, tau.start.o = NULL,
-                          coef.start.r = 0, var.start.o = 1,
-                          burnin = 0, thin = 0, verbose = TRUE)
+                n.draws = 5000, param = TRUE,
+                in.sample = FALSE, model.c = "probit", 
+                model.o = "probit", model.r = "probit", 
+                tune.c = 0.01, tune.o = 0.01, tune.r = 0.01,
+                tune.v = 0.01, p.mean.c = 0, p.mean.o = 0,
+                p.mean.r = 0, p.prec.c = 0.001,
+                p.prec.o = 0.001, p.prec.r = 0.001,
+                p.df.o = 10, p.scale.o = 1, p.shape.o = 1,
+                mda.probit = TRUE, coef.start.c = 0,
+                coef.start.o = 0, tau.start.o = NULL,
+                coef.start.r = 0, var.start.o = 1,
+                burnin = 0, thin = 0, verbose = TRUE)
 }
 
 \arguments{
   \item{formulae}{
-    a list of formulae.
+    list of formulae.
   }
   \item{Z}{
-    randomized encouragement.
+    randomized binary encouragement variable.
   }
   \item{D}{
-    Binary treatment variable.
+    binary treatment variable.
   }
   \item{data}{
     a data frame.
