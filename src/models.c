@@ -4,11 +4,10 @@
 #include <math.h>
 #include <Rmath.h>
 #include <R.h>
-#include "models.h"
 #include "vector.h"
 #include "subroutines.h"
 #include "rand.h"
-
+#include "models.h"
 
 /*** 
      Bayesian Normal Regression: see Chap.14 of Gelman et al. (2004) 

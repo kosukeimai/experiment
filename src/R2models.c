@@ -1,14 +1,14 @@
-#include <stddef.h>
 #include <stdio.h>      
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <Rmath.h>
+#include <R_ext/Utils.h>
 #include <R.h>
 #include "vector.h"
 #include "subroutines.h"
 #include "rand.h"
 #include "models.h"
-
 
 void R2bNormalReg(double *Y,       /* binary outcome variable */
 		  double *dX,      /* model matrix */
