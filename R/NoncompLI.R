@@ -49,10 +49,9 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
 
   res <- list(call = call, Y = Y, Xo = Xo, Xc = Xc, Xr = Xr,
               D = D, Z = Z, n.draws = n.draws)
-  if (sum(is.na(D)) > 0) {
-    RD <- (!is.na(D))*1
-    D[is.na(D)] <- (runif(sum(is.na(D))) > 0.5)*1
-  }
+  RD <- (!is.na(D))*1
+  if (sum(is.na(D)) > 0) 
+    D[is.na(D)] <- Z[is.na(D)]
   
   ## Random starting values for missing Y using Bernoulli(0.5) for
   ## binary and ordinal
