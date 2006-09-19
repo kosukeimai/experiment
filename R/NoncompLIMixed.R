@@ -56,10 +56,14 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
   ngrp <- length(table(grp))
   if (sum(is.na(Z)) > 0)
     stop("missing values not allowed in the encouragement variable")
-  if (sum(is.na(D)) > 0)
-    stop("missing values not allowed in the treatment variable")
   if (sum(is.na(grp)) > 0)
     stop("missing values not allowed in the group variable")
+  res <- list(call = call, Y = Y, Xo = Xo, Xc = Xc, Xr = Xr,
+              Zo = Wo, Zc = Wc, Zr = Wr, D = D, Z = Z,
+              grp = grp, n.draws = n.draws)
+  RD <- (!is.na(D))*1
+  if (sum(is.na(D)) > 0) 
+    D[is.na(D)] <- Z[is.na(D)]
   
   ## Random starting values for missing Y using Bernoulli(0.5)
   R <- (!is.na(Y))*1
@@ -108,9 +112,9 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
     AT <- FALSE
     C[Z == 1 & D == 1] <- 1 # compliers
   }
-  res <- list(call = call, Y = Y, R = R, Xo = Xo, Xc = Xc, Xr = Xr,
-              Zo = Wo, Zc = Wc, Zr = Wr, A = A, C = C, D = D, Z = Z,
-              grp = grp, n.draws = n.draws)
+  res$R <- R
+  res$C <- C
+  res$A <- A
   
   ## Random starting values for missing compliance status
   if (AT) {
@@ -379,7 +383,7 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
   ## calling C function
   if (model.o == "probit") 
     out <- .C("LIbprobitMixed",
-              as.integer(Y), as.integer(R), as.integer(Z),
+              as.integer(Y), as.integer(R), as.integer(RD), as.integer(Z),
               as.integer(D), as.integer(C), as.integer(A),
               as.integer(grp), as.integer(Ymiss), as.integer(AT),
               as.integer(in.sample), as.integer(random),
@@ -413,7 +417,7 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
               PACKAGE = "experiment")
   else if (model.o == "oprobit")
     out <- .C("LIboprobitMixed",
-              as.integer(Y), as.integer(R), as.integer(Z),
+              as.integer(Y), as.integer(R), as.integer(RD), as.integer(Z),
               as.integer(D), as.integer(C), as.integer(A),
               as.integer(grp), as.integer(Ymiss), as.integer(AT),
               as.integer(in.sample), as.integer(random), as.double(Xc), as.double(Wc),
@@ -449,7 +453,7 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
               PACKAGE = "experiment")
   else if (model.o == "negbin")
     out <- .C("LINegBinMixed",
-              as.integer(Y), as.integer(R), as.integer(Z),
+              as.integer(Y), as.integer(R), as.integer(RD), as.integer(Z),
               as.integer(D), as.integer(C), as.integer(A),
               as.integer(grp), as.integer(Ymiss), as.integer(AT),
               as.integer(in.sample), as.integer(random), as.double(Xc),
@@ -486,7 +490,7 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
               PACKAGE = "experiment")
   else
     out <- .C("LINormalMixed",
-              as.double(Y), as.integer(R), as.integer(Z),
+              as.double(Y), as.integer(R), as.integer(RD), as.integer(Z),
               as.integer(D), as.integer(C), as.integer(A),
               as.integer(grp), as.integer(Ymiss), as.integer(AT),
               as.integer(in.sample), as.integer(random), as.double(Xc),

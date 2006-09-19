@@ -390,13 +390,17 @@ void SampleComp(int n_samp,
 	    Xo[i][1] = 0; Xr[i][1] = 0; 
 	    Xo[i][2] = 0; Xr[i][2] = 0;
 	  } 
-	} else if (dtemp2 < dtemp + dtemp1){
+	} else if (dtemp2 < (dtemp + dtemp1)){
 	  C[i] = 0; A[i] = 0; D[i] = 0; 
 	  Xo[i][0] = 0; Xr[i][0] = 0;
 	  Xo[i][1] = 0; Xr[i][1] = 0;
 	  Xo[i][2] = 0; Xr[i][2] = 0;
 	} else {
-	  C[i] = 2; A[i] = 1; D[i] = 1;
+	  if (logitC)
+	    C[i] = 2;
+	  else
+	    C[i] = 0; 
+	  A[i] = 1; D[i] = 1;
 	  Xo[i][0] = 0; Xr[i][0] = 0;
 	  Xo[i][1] = 0; Xr[i][1] = 0;
 	  Xo[i][2] = 1; Xr[i][2] = 1;
