@@ -76,7 +76,7 @@ void dinv(double **X,
     }
   }
 
-  Free(pdInv);
+  free(pdInv);
 }
 
 /* Cholesky decomposition */
@@ -103,7 +103,7 @@ void dcholdc(double **X, int size, double **L)
     }
   }
 
-  Free(pdTemp);
+  free(pdTemp);
 }
 
 /* calculate the determinant of the positive definite symmetric matrix
