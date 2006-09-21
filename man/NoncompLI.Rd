@@ -128,6 +128,13 @@ and Nonignorable Missing Outcomes}
   
 }
 
+\examples{
+  n <- 5
+  Y <- rep(c(0,1), n)
+  X <- rnorm(n*2)
+  res <- Noncomp.bayes(list(Y ~ X, ~ X, ~ X), D = 1-Y, Z = Y)
+}
+
 \author{
   Kosuke Imai, Department of Politics, Princeton University
   \email{kimai@Princeton.Edu}, \url{http://imai.princeton.edu};
