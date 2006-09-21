@@ -253,7 +253,7 @@ void PrepMixed(double *dXc, double *dZc, double *dXo, double *dZo,
    Response probabilities 
 */
 
-void ResponseMixed(int n_miss, int *R, double **Xr, double ***Zr, 
+void ResponseMixed(int *R, double **Xr, double ***Zr, 
 		   int *grp, double *delta, double **xiR, 
 		   double **PsiR, int n_samp, int n_fixedR, 
 		   int n_randomR, int n_grp, double *delta0, 
@@ -265,69 +265,67 @@ void ResponseMixed(int n_miss, int *R, double **Xr, double ***Zr,
   double dtemp;
   int *vitemp = intArray(n_grp);
 
-  if (n_miss > 0) {
-    bprobitMixedGibbs(R, Xr, Zr, grp, delta, xiR, PsiR, n_samp, 
-		      n_fixedR, n_randomR, n_grp, 0, 
-		      delta0, A0R, tau0s[3], T0R, 1);
-    
-    /* Compute probabilities of R = Robs */ 
-    for (j = 0; j < n_grp; j++) vitemp[j] = 0;
-    for (i = 0; i < n_samp; i++) {
-      dtemp = 0;
-      if (AT) { /* always-takers */
-	for (j = 3; j < n_fixedR; j++)
-	  dtemp += Xr[i][j]*delta[j];
+  bprobitMixedGibbs(R, Xr, Zr, grp, delta, xiR, PsiR, n_samp, 
+		    n_fixedR, n_randomR, n_grp, 0, 
+		    delta0, A0R, tau0s[3], T0R, 1);
+  
+  /* Compute probabilities of R = Robs */ 
+  for (j = 0; j < n_grp; j++) vitemp[j] = 0;
+  for (i = 0; i < n_samp; i++) {
+    dtemp = 0;
+    if (AT) { /* always-takers */
+      for (j = 3; j < n_fixedR; j++)
+	dtemp += Xr[i][j]*delta[j];
+      if (random) 
+	for (j = 2; j < n_randomR; j++)
+	  dtemp += Zr[grp[i]][vitemp[grp[i]]][j]*xiR[grp[i]][j];
+      else
+	for (j = 0; j < n_randomR; j++)
+	  dtemp += Zr[grp[i]][vitemp[grp[i]]][j]*xiR[grp[i]][j];
+      if ((Z[i] == 0) && (D[i] == 0)) {
 	if (random) 
-	  for (j = 2; j < n_randomR; j++)
-	    dtemp += Zr[grp[i]][vitemp[grp[i]]][j]*xiR[grp[i]][j];
-	else
-	  for (j = 0; j < n_randomR; j++)
-	    dtemp += Zr[grp[i]][vitemp[grp[i]]][j]*xiR[grp[i]][j];
-	if ((Z[i] == 0) && (D[i] == 0)) {
-	  if (random) 
-	    prC[i] = R[i]*pnorm(dtemp+delta[1]+xiR[grp[i]][0], 0, 1, 1, 0) +
-	      (1-R[i])*pnorm(dtemp+delta[1]+xiR[grp[i]][0], 0, 1, 0, 0);
+	  prC[i] = R[i]*pnorm(dtemp+delta[1]+xiR[grp[i]][0], 0, 1, 1, 0) +
+	    (1-R[i])*pnorm(dtemp+delta[1]+xiR[grp[i]][0], 0, 1, 0, 0);
 	  else 
 	    prC[i] = R[i]*pnorm(dtemp+delta[1], 0, 1, 1, 0) +
 	      (1-R[i])*pnorm(dtemp+delta[1], 0, 1, 0, 0);
-	  prN[i] = R[i]*pnorm(dtemp, 0, 1, 1, 0) +
-	    (1-R[i])*pnorm(dtemp, 0, 1, 0, 0);
-	} 
-	if ((Z[i] == 1) && (D[i] == 1)) {
-	  if (random) {
-	    prC[i] = R[i]*pnorm(dtemp+delta[0]+xiR[grp[i]][0], 0, 1, 1, 0) +
-	      (1-R[i])*pnorm(dtemp+delta[0]+xiR[grp[i]][0], 0, 1, 0, 0);
-	    prA[i] = R[i]*pnorm(dtemp+delta[2]+xiR[grp[i]][1], 0, 1, 1, 0) +
-	      (1-R[i])*pnorm(dtemp+delta[2]+xiR[grp[i]][1], 0, 1, 0, 0);
-	  } else {
-	    prC[i] = R[i]*pnorm(dtemp+delta[0], 0, 1, 1, 0) +
-	      (1-R[i])*pnorm(dtemp+delta[0], 0, 1, 0, 0);
-	    prA[i] = R[i]*pnorm(dtemp+delta[2], 0, 1, 1, 0) +
-	      (1-R[i])*pnorm(dtemp+delta[2], 0, 1, 0, 0);
-	  }
-	}
-      } else { /* no always-takers */
-	for (j = 2; j < n_fixedR; j++)
-	  dtemp += Xr[i][j]*delta[j];
-	if (random) 
-	  for (j = 1; j < n_randomR; j++)
-	    dtemp += Zr[grp[i]][vitemp[grp[i]]][j]*xiR[grp[i]][j];
-	else
-	  for (j = 0; j < n_randomR; j++)
-	    dtemp += Zr[grp[i]][vitemp[grp[i]]][j]*xiR[grp[i]][j];
-	if (Z[i] == 0) {
-	  if (random)
-	    prC[i] = R[i]*pnorm(dtemp+delta[1]+xiR[grp[i]][0], 0, 1, 1, 0) + 
-	      (1-R[i])*pnorm(dtemp+delta[1]+xiR[grp[i]][0], 0, 1, 0, 0);
-	  else
-	    prC[i] = R[i]*pnorm(dtemp+delta[1], 0, 1, 1, 0) + 
-	      (1-R[i])*pnorm(dtemp+delta[1], 0, 1, 0, 0);
-	  prN[i] = R[i]*pnorm(dtemp, 0, 1, 1, 0) +
-	    (1-R[i])*pnorm(dtemp, 0, 1, 0, 0);
-	}
+	prN[i] = R[i]*pnorm(dtemp, 0, 1, 1, 0) +
+	  (1-R[i])*pnorm(dtemp, 0, 1, 0, 0);
       } 
-      vitemp[grp[i]]++;
-    }
+      if ((Z[i] == 1) && (D[i] == 1)) {
+	if (random) {
+	  prC[i] = R[i]*pnorm(dtemp+delta[0]+xiR[grp[i]][0], 0, 1, 1, 0) +
+	    (1-R[i])*pnorm(dtemp+delta[0]+xiR[grp[i]][0], 0, 1, 0, 0);
+	  prA[i] = R[i]*pnorm(dtemp+delta[2]+xiR[grp[i]][1], 0, 1, 1, 0) +
+	    (1-R[i])*pnorm(dtemp+delta[2]+xiR[grp[i]][1], 0, 1, 0, 0);
+	} else {
+	  prC[i] = R[i]*pnorm(dtemp+delta[0], 0, 1, 1, 0) +
+	    (1-R[i])*pnorm(dtemp+delta[0], 0, 1, 0, 0);
+	  prA[i] = R[i]*pnorm(dtemp+delta[2], 0, 1, 1, 0) +
+	    (1-R[i])*pnorm(dtemp+delta[2], 0, 1, 0, 0);
+	}
+      }
+    } else { /* no always-takers */
+      for (j = 2; j < n_fixedR; j++)
+	dtemp += Xr[i][j]*delta[j];
+      if (random) 
+	for (j = 1; j < n_randomR; j++)
+	  dtemp += Zr[grp[i]][vitemp[grp[i]]][j]*xiR[grp[i]][j];
+      else
+	for (j = 0; j < n_randomR; j++)
+	  dtemp += Zr[grp[i]][vitemp[grp[i]]][j]*xiR[grp[i]][j];
+      if (Z[i] == 0) {
+	if (random)
+	  prC[i] = R[i]*pnorm(dtemp+delta[1]+xiR[grp[i]][0], 0, 1, 1, 0) + 
+	    (1-R[i])*pnorm(dtemp+delta[1]+xiR[grp[i]][0], 0, 1, 0, 0);
+	else
+	  prC[i] = R[i]*pnorm(dtemp+delta[1], 0, 1, 1, 0) + 
+	    (1-R[i])*pnorm(dtemp+delta[1], 0, 1, 0, 0);
+	prN[i] = R[i]*pnorm(dtemp, 0, 1, 1, 0) +
+	  (1-R[i])*pnorm(dtemp, 0, 1, 0, 0);
+      }
+    } 
+    vitemp[grp[i]]++;
   }
  
   free(vitemp);
@@ -791,16 +789,23 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
   double **T0O = doubleMatrix(n_randomO, n_randomO);
   double **T0R = doubleMatrix(n_randomR, n_randomR);
 
-  /* quantities of interest: ITT, CACE  */
-  double ITT, CACE;
-  double Y1barC, Y0barC, YbarN, YbarA;
-  int *n_comp = intArray(2);          /* number of compliers */
-  int *n_never = intArray(2);
-  int *n_always = intArray(2);
-  double p_comp, p_never; /* prob. of being a particular type */
+  /* qoi by groups */
+  double *ITT = doubleArray(n_grp+1);
+  double *CACE = doubleArray(n_grp+1);
+  double *Y1barC = doubleArray(n_grp+1);
+  double *Y0barC = doubleArray(n_grp+1);
+  double *YbarN = doubleArray(n_grp+1); 
+  double *YbarA = doubleArray(n_grp+1);
+  int **n_comp = intMatrix(n_grp+1, 2);          /* number of compliers */
+  int **n_never = intMatrix(n_grp+1, 2);
+  int **n_always = intMatrix(n_grp+1, 2);
+  double *p_comp = doubleArray(n_grp+1); 
+  double *p_never = doubleArray(n_grp+1); /* prob. of being a particular type */
+
 
   /*** storage parameters and loop counters **/
   int *vitemp = intArray(n_grp);
+  double dtemp, dtemp1;
   int progress = 1;
   int keep = 1;
   int *acc_fixed = intArray(n_fixedC*2);      /* number of acceptance */
@@ -835,10 +840,11 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
   acc_random[0] = 0; acc_random[1] = 0;
   for (main_loop = 1; main_loop <= *n_gen; main_loop++){
     /* Step 1: RESPONSE MODEL */
-    ResponseMixed(n_miss, R, Xr, Zr, grp, delta, xiR, PsiR, n_samp, 
-		  n_fixedR, n_randomR, n_grp, delta0, A0R, tau0s, T0R,
-		  *AT, *random, Z, D, prC,prN, prA);
-
+    if (n_miss > 0)
+      ResponseMixed(R, Xr, Zr, grp, delta, xiR, PsiR, n_samp, 
+		    n_fixedR, n_randomR, n_grp, delta0, A0R, tau0s, T0R,
+		    *AT, *random, Z, D, prC,prN, prA);
+    
     /** Step 2: COMPLIANCE MODEL **/
     CompMixed(*logitC, *AT, C, Xc, Zc, grp, betaC, xiC, Psi, n_samp,
 	      n_fixedC, n_randomC , n_grp, beta0, A0C, tau0s, T0C, 
@@ -922,106 +928,118 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
     if (main_loop > *burnin) {
       if (keep == *iKeep) {
 	/** Computing Quantities of Interest **/
-	n_comp[0] = 0; n_comp[1] = 0; 
-	n_never[0] = 0; n_never[1] = 0;
-	n_always[0] = 0; n_always[1] = 0;
-	p_comp = 0; p_never = 0; 
-	Y1barC = 0; Y0barC = 0; YbarN = 0; YbarA = 0;
+	for (j = 0; j < (n_grp+1); j++) {
+	  n_comp[j][0] = 0; n_comp[j][1] = 0;
+	  n_never[j][0] = 0; n_never[j][1] = 0;
+	  n_always[j][0] = 0; n_always[j][1] = 0;
+	  p_comp[j] = 0; p_never[j] = 0;
+	  Y1barC[j] = 0; Y0barC[j] = 0; YbarN[j] = 0; YbarA[j] = 0;
+	}
 	for (i = 0; i < n_samp; i++){
-	  p_comp += qC[i];
-	  p_never += qN[i];
+	  p_comp[grp[i]] += qC[i]; p_comp[n_grp] += qC[i];
+	  p_never[grp[i]] += qN[i]; p_never[n_grp] += qN[i];
 	  if (C[i] == 1) { /* ITT effects */
-	    if (Z[i] == 1) 
-	      n_comp[1]++;
-	    else
-	      n_comp[0]++;
+	    if (Z[i] == 1) {
+	      n_comp[grp[i]][1]++; n_comp[n_grp][1]++;
+	    } else {
+	      n_comp[grp[i]][0]++; n_comp[n_grp][0]++;
+	    }
 	    if (*Insample) { /* insample QoI */
-	      if (Z[i] == 1) {
-		if (R[i] == 1)
-		  Y1barC += (double)Y[i];
-		else if (*random)
-		  Y1barC += (double)((meano[i]+gamma[0]+xiO[grp[i]][0]+norm_rand()) > 0);
-		else
-		  Y1barC += (double)((meano[i]+gamma[0]+norm_rand()) > 0);
-	      } else {
-		if (R[i] == 1)
-		  Y0barC += (double)Y[i];
-		else if (*random)
-		  Y0barC += (double)((meano[i]+gamma[1]+xiO[grp[i]][0]+norm_rand()) > 0);
-		else
-		  Y0barC += (double)((meano[i]+gamma[1]+norm_rand()) > 0);
+	      if (*random) {
+		dtemp = (double)((meano[i]+gamma[0]+xiO[grp[i]][0]+norm_rand()) > 0);
+		dtemp1 = (double)((meano[i]+gamma[1]+xiO[grp[i]][0]+norm_rand()) > 0);
+	      } else { 
+		dtemp = (double)((meano[i]+gamma[0]+norm_rand()) > 0);
+		dtemp1 = (double)((meano[i]+gamma[1]+norm_rand()) > 0);
 	      }
+	      if (R[i] == 1) 
+		if (Z[i] == 1) 
+		  dtemp = (double)Y[i]; 
+		else 
+		  dtemp1 = (double)Y[i];
 	    } else { /* population QoI */
 	      if (*random) {
-		Y1barC += pnorm(meano[i]+gamma[0]+xiO[grp[i]][0], 0, 1, 1, 0);
-		Y0barC += pnorm(meano[i]+gamma[1]+xiO[grp[i]][0], 0, 1, 1, 0); 
+		dtemp = pnorm(meano[i]+gamma[0]+xiO[grp[i]][0], 0, 1, 1, 0);
+		dtemp1 = pnorm(meano[i]+gamma[1]+xiO[grp[i]][0], 0, 1, 1, 0); 
 	      } else {
-		Y1barC += pnorm(meano[i]+gamma[0], 0, 1, 1, 0);
-		Y0barC += pnorm(meano[i]+gamma[1], 0, 1, 1, 0); 
+		dtemp = pnorm(meano[i]+gamma[0], 0, 1, 1, 0);
+		dtemp1 = pnorm(meano[i]+gamma[1], 0, 1, 1, 0); 
 	      }
 	    }
+	    Y1barC[grp[i]] += dtemp; Y0barC[grp[i]] += dtemp1;
+	    Y1barC[n_grp] += dtemp; Y0barC[n_grp] += dtemp1;
 	  } else { /* Estimates for always-takers and never-takers */
 	    if (A[i] == 1) {
-	      if (Z[i] == 1)
-		n_always[1]++;
-	      else
-		n_always[0]++;
-	      if (*Insample)
+	      if (Z[i] == 1) {
+		n_always[grp[i]][1]++; n_always[n_grp][1]++;
+	      } else {
+		n_always[grp[i]][0]++; n_always[n_grp][0]++;
+	      }
+	      if (*Insample) 
 		if (R[i] == 1)
-		  YbarA += (double)Y[i];
-		else if (*random)
-		  YbarA += (double)((meano[i]+gamma[2]+xiO[grp[i]][1]+norm_rand()) > 0);
+		  dtemp = (double)Y[i];
+		else if (*random) 
+		  dtemp = (double)((meano[i]+gamma[2]+xiO[grp[i]][1]+norm_rand()) > 0);
 		else
-		  YbarA += (double)((meano[i]+gamma[2]+norm_rand()) > 0);
-	      else if (*random)
-		YbarA += pnorm(meano[i]+gamma[2]+xiO[grp[i]][1], 0, 1, 1, 0);
+		  dtemp = (double)((meano[i]+gamma[2]+norm_rand()) > 0);
 	      else
-		YbarA += pnorm(meano[i]+gamma[2], 0, 1, 1, 0);
+		if (*random)
+		  dtemp = pnorm(meano[i]+gamma[2]+xiO[grp[i]][1], 0, 1, 1, 0);
+		else
+		  dtemp = pnorm(meano[i]+gamma[2], 0, 1, 1, 0);
+	      YbarA[grp[i]] += dtemp; YbarA[n_grp] += dtemp;
 	    } else {
-	      if (Z[i] == 1)
-		n_never[1]++;
-	      else
-		n_never[0]++;
+	      if (Z[i] == 1) {
+		n_never[grp[i]][1]++; n_never[n_grp][1]++;
+	      } else {
+		n_never[grp[i]][0]++; n_never[n_grp][0]++;
+	      }
 	      if (*Insample)
 		if (R[i] == 1)
-		  YbarN += (double)Y[i];
-		else 
-		  YbarN += (double)((meano[i]+norm_rand()) > 0);
+		  dtemp = (double)Y[i];
+		else
+		  dtemp = (double)((meano[i]+norm_rand()) > 0);
 	      else 
-		YbarN += pnorm(meano[i], 0, 1, 1, 0);
+		dtemp = pnorm(meano[i], 0, 1, 1, 0);
+	      YbarN[grp[i]] += dtemp; YbarN[n_grp] += dtemp;
 	    }
 	  }
 	}
-	if (*Insample) { 
-	  ITT = Y1barC/(double)(n_comp[1]+n_never[1]+n_always[1]) -
-	    Y0barC/(double)(n_comp[0]+n_never[0]+n_always[0]);
-	  Y1barC /= (double)n_comp[1];  
-	  Y0barC /= (double)n_comp[0]; 
-	  p_comp = (double)(n_comp[0]+n_comp[1])/(double)n_samp;
-	  p_never = (double)(n_never[0]+n_never[1])/(double)n_samp;
-	} else {
-	  ITT = (Y1barC-Y0barC)/(double)n_samp;     /* ITT effect */
-	  Y1barC /= (double)(n_comp[0]+n_comp[1]);  
-	  Y0barC /= (double)(n_comp[0]+n_comp[1]); 
-	  p_comp /= (double)n_samp;  /* ITT effect on D; Prob. of being
-					   a complier */ 
-	  p_never /= (double)n_samp; /* Prob. of being a never-taker */
-	}
-	CACE = Y1barC-Y0barC;    /* CACE */
-	YbarN /= (double)(n_never[0]+n_never[1]);
-	if (*AT)
-	  YbarA /= (double)(n_always[0]+n_always[1]);
-	
-	QoI[itempQ++] = ITT;   
-	QoI[itempQ++] = CACE;   
-	QoI[itempQ++] = p_comp; 	  
-	QoI[itempQ++] = p_never;
-	QoI[itempQ++] = Y1barC;
-	QoI[itempQ++] = Y0barC;
-	QoI[itempQ++] = YbarN;
-	if (*AT)
-	  QoI[itempQ++] = YbarA;
 
+	for (j = 0; j < (n_grp+1); j++) {
+	  ITT[j] = (Y1barC[j]-Y0barC[j]) /
+	    (double)(n_comp[j][0]+n_never[j][0]+n_always[j][0] + 
+		     n_comp[j][1]+n_never[j][1]+n_always[j][1]);
+	  Y1barC[j] /= (double)(n_comp[j][0]+n_comp[j][1]);  
+	  Y0barC[j] /= (double)(n_comp[j][0]+n_comp[j][1]); 
+	  p_comp[j] /= (double)(n_comp[j][0]+n_never[j][0]+n_always[j][0] + 
+				n_comp[j][1]+n_never[j][1]+n_always[j][1]);  
+	  p_never[j] /= (double)(n_comp[j][0]+n_never[j][0]+n_always[j][0] + 
+				 n_comp[j][1]+n_never[j][1]+n_always[j][1]);  
+	  CACE[j] = Y1barC[j]-Y0barC[j];    /* CACE */
+	  YbarN[j] /= (double)(n_never[j][0]+n_never[j][1]);
+	  if (*AT)
+	    YbarA[j] /= (double)(n_always[j][0]+n_always[j][1]);
+	}
+
+	for (j = 0; j < (n_grp+1); j++)
+	  QoI[itempQ++] = ITT[j];   
+	for (j = 0; j < (n_grp+1); j++)
+	  QoI[itempQ++] = CACE[j];   
+	for (j = 0; j < (n_grp+1); j++)
+	  QoI[itempQ++] = p_comp[j]; 	  
+	for (j = 0; j < (n_grp+1); j++)
+	  QoI[itempQ++] = p_never[j];
+	for (j = 0; j < (n_grp+1); j++)
+	  QoI[itempQ++] = Y1barC[j];
+	for (j = 0; j < (n_grp+1); j++)
+	  QoI[itempQ++] = Y0barC[j];
+	for (j = 0; j < (n_grp+1); j++)
+	  QoI[itempQ++] = YbarN[j];
+	if (*AT)
+	  for (j = 0; j < (n_grp+1); j++)
+	    QoI[itempQ++] = YbarA[j];
+	
 	if (*param) {
 	  for (j = 0; j < n_fixedC; j++)
 	    coefC[itempC++] = betaC[j];
@@ -1110,9 +1128,17 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
   FreeMatrix(T0A, n_randomC);
   FreeMatrix(T0O, n_randomO);
   FreeMatrix(T0R, n_randomR);
-  free(n_comp);
-  free(n_never);
-  free(n_always);
+  free(ITT);
+  free(CACE);
+  free(Y1barC);
+  free(Y0barC);
+  free(YbarN);
+  free(YbarA);
+  FreeintMatrix(n_comp, n_grp+1);
+  FreeintMatrix(n_never, n_grp+1);
+  FreeintMatrix(n_always, n_grp+1);
+  free(p_comp);
+  free(p_never);
   free(vitemp);
   free(acc_fixed);
   free(acc_random);
@@ -1288,13 +1314,18 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
   double **T0O = doubleMatrix(n_randomO, n_randomO);
   double **T0R = doubleMatrix(n_randomR, n_randomR);
 
-  /* quantities of interest: ITT, CACE  */
-  double ITT, CACE;
-  double Y1barC, Y0barC, YbarN, YbarA;
-  int *n_comp = intArray(2);          /* number of compliers */
-  int *n_never = intArray(2);
-  int *n_always = intArray(2);
-  double p_comp, p_never; /* prob. of being a particular type */
+  /* qoi by groups */
+  double *ITT = doubleArray(n_grp+1);
+  double *CACE = doubleArray(n_grp+1);
+  double *Y1barC = doubleArray(n_grp+1);
+  double *Y0barC = doubleArray(n_grp+1);
+  double *YbarN = doubleArray(n_grp+1); 
+  double *YbarA = doubleArray(n_grp+1);
+  int **n_comp = intMatrix(n_grp+1, 2);          /* number of compliers */
+  int **n_never = intMatrix(n_grp+1, 2);
+  int **n_always = intMatrix(n_grp+1, 2);
+  double *p_comp = doubleArray(n_grp+1); 
+  double *p_never = doubleArray(n_grp+1); /* prob. of being a particular type */
 
   /*** storage parameters and loop counters **/
   int *vitemp = intArray(n_grp);
@@ -1306,6 +1337,7 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
   int itempP = ftrunc((double) *n_gen/10);
   int itemp, itempA, itempC, itempO, itempQ, itempR;
   int itempAv, itempCv, itempOv, itempRv, itempS;
+  double dtemp, dtemp1;
 
   /*** get random seed **/
   GetRNGstate();
@@ -1334,10 +1366,11 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
   acc_random[0] = 0; acc_random[1] = 0;
   for (main_loop = 1; main_loop <= *n_gen; main_loop++){
     /* Step 1: RESPONSE MODEL */
-    ResponseMixed(n_miss, R, Xr, Zr, grp, delta, xiR, PsiR, n_samp, 
-		  n_fixedR, n_randomR, n_grp, delta0, A0R, tau0s, T0R,
-		  *AT, *random, Z, D, prC,prN, prA);
-
+    if (n_miss > 0)
+      ResponseMixed(R, Xr, Zr, grp, delta, xiR, PsiR, n_samp, 
+		    n_fixedR, n_randomR, n_grp, delta0, A0R, tau0s, T0R,
+		    *AT, *random, Z, D, prC,prN, prA);
+    
     /** Step 2: COMPLIANCE MODEL **/
     CompMixed(*logitC, *AT, C, Xc, Zc, grp, betaC, xiC, Psi, n_samp,
 	      n_fixedC, n_randomC , n_grp, beta0, A0C, tau0s, T0C, 
@@ -1412,91 +1445,116 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
     if (main_loop > *burnin) {
       if (keep == *iKeep) {
 	/** Computing Quantities of Interest **/
-	n_comp[0] = 0; n_comp[1] = 0; 
-	n_never[0] = 0; n_never[1] = 0;
-	n_always[0] = 0; n_always[1] = 0;
-	p_comp = 0; p_never = 0; 
-	Y1barC = 0; Y0barC = 0; YbarN = 0; YbarA = 0;
+	for (j = 0; j < (n_grp+1); j++) {
+	  n_comp[j][0] = 0; n_comp[j][1] = 0;
+	  n_never[j][0] = 0; n_never[j][1] = 0;
+	  n_always[j][0] = 0; n_always[j][1] = 0;
+	  p_comp[j] = 0; p_never[j] = 0;
+	  Y1barC[j] = 0; Y0barC[j] = 0; YbarN[j] = 0; YbarA[j] = 0;
+	}
 	for (i = 0; i < n_samp; i++){
-	  p_comp += qC[i];
-	  p_never += qN[i];
+	  p_comp[grp[i]] += qC[i]; p_comp[n_grp] += qC[i];
+	  p_never[grp[i]] += qN[i]; p_never[n_grp] += qN[i];
 	  if (C[i] == 1) { /* ITT effects */
-	    if (Z[i] == 1) 
-	      n_comp[1]++;
-	    else
-	      n_comp[0]++;
-	    if (*Insample) { /* insample QoI */
-	      if (Z[i] == 1) 
-		if (R[i] == 1)
-		  Y1barC += Y[i];
-		else 
-		  Y1barC += rnorm(meano[i]+gamma[0]+xiO[grp[i]][0], sqrt(*sig2));
-	      else 
-		if (R[i] == 1)
-		  Y0barC += Y[i];
-		else
-		  Y0barC += rnorm(meano[i]+gamma[1]+xiO[grp[i]][0], sqrt(*sig2));
-	    } else { /* population QoI */
-	      Y1barC += (meano[i]+gamma[0]+xiO[grp[i]][0]);
-	      Y0barC += (meano[i]+gamma[1]+xiO[grp[i]][0]); 
+	    if (Z[i] == 1) {
+	      n_comp[grp[i]][1]++; n_comp[n_grp][1]++;
+	    } else {
+	      n_comp[grp[i]][0]++; n_comp[n_grp][0]++;
 	    }
+	    if (*Insample) { /* insample QoI */
+	      if (*random) {
+		dtemp = rnorm(meano[i]+gamma[0]+xiO[grp[i]][0], sqrt(*sig2));
+		dtemp1 = rnorm(meano[i]+gamma[1]+xiO[grp[i]][0], sqrt(*sig2));
+	      } else { 
+		dtemp = rnorm(meano[i]+gamma[0], sqrt(*sig2));
+		dtemp1 = rnorm(meano[i]+gamma[1], sqrt(*sig2));
+	      }
+	      if (R[i] == 1) 
+		if (Z[i] == 1) 
+		  dtemp = Y[i]; 
+		else 
+		  dtemp1 = Y[i];
+	    } else { /* population QoI */
+	      if (*random) {
+		dtemp = (meano[i]+gamma[0]+xiO[grp[i]][0]);
+		dtemp1 = (meano[i]+gamma[1]+xiO[grp[i]][0]); 
+	      } else {
+		dtemp = (meano[i]+gamma[0]);
+		dtemp1 = (meano[i]+gamma[1]); 
+	      }
+	    }
+	    Y1barC[grp[i]] += dtemp; Y0barC[grp[i]] += dtemp1;
+	    Y1barC[n_grp] += dtemp; Y0barC[n_grp] += dtemp1;
 	  } else { /* Estimates for always-takers and never-takers */
 	    if (A[i] == 1) {
-	      if (Z[i] == 1)
-		n_always[1]++;
-	      else
-		n_always[0]++;
-	      if (*Insample)
+	      if (Z[i] == 1) {
+		n_always[grp[i]][1]++; n_always[n_grp][1]++;
+	      } else {
+		n_always[grp[i]][0]++; n_always[n_grp][0]++;
+	      }
+	      if (*Insample) 
 		if (R[i] == 1)
-		  YbarA += Y[i];
-		else 
-		  YbarA += rnorm(meano[i]+gamma[2]+xiO[grp[i]][1], sqrt(*sig2));
-	      else 
-		YbarA += (meano[i]+gamma[2]+xiO[grp[i]][1]);
+		  dtemp = Y[i];
+		else if (*random) 
+		  dtemp = rnorm(meano[i]+gamma[2]+xiO[grp[i]][1], sqrt(*sig2));
+		else
+		  dtemp = rnorm(meano[i]+gamma[2], sqrt(*sig2));
+	      else
+		if (*random)
+		  dtemp = (meano[i]+gamma[2]+xiO[grp[i]][1]);
+		else
+		  dtemp = (meano[i]+gamma[2]);
+	      YbarA[grp[i]] += dtemp; YbarA[n_grp] += dtemp;
 	    } else {
-	      if (Z[i] == 1)
-		n_never[1]++;
-	      else
-		n_never[0]++;
+	      if (Z[i] == 1) {
+		n_never[grp[i]][1]++; n_never[n_grp][1]++;
+	      } else {
+		n_never[grp[i]][0]++; n_never[n_grp][0]++;
+	      }
 	      if (*Insample)
 		if (R[i] == 1)
-		  YbarN += Y[i];
-		else 
-		  YbarN += rnorm(meano[i], sqrt(*sig2));
+		  dtemp = Y[i];
+		else
+		  dtemp = rnorm(meano[i], sqrt(*sig2));
 	      else 
-		YbarN += meano[i];
+		dtemp = meano[i];
+	      YbarN[grp[i]] += dtemp; YbarN[n_grp] += dtemp;
 	    }
 	  }
 	}
-	if (*Insample) { 
-	  ITT = Y1barC/(double)(n_comp[1]+n_never[1]+n_always[1]) -
-	    Y0barC/(double)(n_comp[0]+n_never[0]+n_always[0]);
-	  Y1barC /= (double)n_comp[1];  
-	  Y0barC /= (double)n_comp[0]; 
-	  p_comp = (double)(n_comp[0]+n_comp[1])/(double)n_samp;
-	  p_never = (double)(n_never[0]+n_never[1])/(double)n_samp;
-	} else {
-	  ITT = (Y1barC-Y0barC)/(double)n_samp;     /* ITT effect */
-	  Y1barC /= (double)(n_comp[0]+n_comp[1]);  
-	  Y0barC /= (double)(n_comp[0]+n_comp[1]); 
-	  p_comp /= (double)n_samp;  /* ITT effect on D; Prob. of being
-					   a complier */ 
-	  p_never /= (double)n_samp; /* Prob. of being a never-taker */
+	for (j = 0; j < (n_grp+1); j++) {
+	  ITT[j] = (Y1barC[j]-Y0barC[j]) /
+	    (double)(n_comp[j][0]+n_never[j][0]+n_always[j][0] + 
+		     n_comp[j][1]+n_never[j][1]+n_always[j][1]);
+	  Y1barC[j] /= (double)(n_comp[j][0]+n_comp[j][1]);  
+	  Y0barC[j] /= (double)(n_comp[j][0]+n_comp[j][1]); 
+	  p_comp[j] /= (double)(n_comp[j][0]+n_never[j][0]+n_always[j][0] + 
+				n_comp[j][1]+n_never[j][1]+n_always[j][1]);  
+	  p_never[j] /= (double)(n_comp[j][0]+n_never[j][0]+n_always[j][0] + 
+				 n_comp[j][1]+n_never[j][1]+n_always[j][1]);  
+	  CACE[j] = Y1barC[j]-Y0barC[j];    /* CACE */
+	  YbarN[j] /= (double)(n_never[j][0]+n_never[j][1]);
+	  if (*AT)
+	    YbarA[j] /= (double)(n_always[j][0]+n_always[j][1]);
 	}
-	CACE = Y1barC-Y0barC;    /* CACE */
-	YbarN /= (double)(n_never[0]+n_never[1]);
+
+	for (j = 0; j < (n_grp+1); j++)
+	  QoI[itempQ++] = ITT[j];   
+	for (j = 0; j < (n_grp+1); j++)
+	  QoI[itempQ++] = CACE[j];   
+	for (j = 0; j < (n_grp+1); j++)
+	  QoI[itempQ++] = p_comp[j]; 	  
+	for (j = 0; j < (n_grp+1); j++)
+	  QoI[itempQ++] = p_never[j];
+	for (j = 0; j < (n_grp+1); j++)
+	  QoI[itempQ++] = Y1barC[j];
+	for (j = 0; j < (n_grp+1); j++)
+	  QoI[itempQ++] = Y0barC[j];
+	for (j = 0; j < (n_grp+1); j++)
+	  QoI[itempQ++] = YbarN[j];
 	if (*AT)
-	  YbarA /= (double)(n_always[0]+n_always[1]);
-	
-	QoI[itempQ++] = ITT;   
-	QoI[itempQ++] = CACE;   
-	QoI[itempQ++] = p_comp; 	  
-	QoI[itempQ++] = p_never;
-	QoI[itempQ++] = Y1barC;
-	QoI[itempQ++] = Y0barC;
-	QoI[itempQ++] = YbarN;
-	if (*AT)
-	  QoI[itempQ++] = YbarA;
+	  for (j = 0; j < (n_grp+1); j++)
+	    QoI[itempQ++] = YbarA[j];
 
 	if (*param) {
 	  for (j = 0; j < n_fixedC; j++)
@@ -1581,9 +1639,6 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
   free(qC);
   free(qN);
   free(pA);
-  free(n_comp);
-  free(n_never);
-  free(n_always);
   FreeMatrix(A0C, n_fixedC*2);
   FreeMatrix(A0O, n_fixedO);
   FreeMatrix(A0R, n_fixedR);
@@ -1591,6 +1646,17 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
   FreeMatrix(T0A, n_randomC);
   FreeMatrix(T0O, n_randomO);
   FreeMatrix(T0R, n_randomR);
+  free(ITT);
+  free(CACE);
+  free(Y1barC);
+  free(Y0barC);
+  free(YbarN);
+  free(YbarA);
+  FreeintMatrix(n_comp, n_grp+1);
+  FreeintMatrix(n_never, n_grp+1);
+  FreeintMatrix(n_always, n_grp+1);
+  free(p_comp);
+  free(p_never);
   free(vitemp);
   free(acc_fixed);
   free(acc_random);
@@ -1767,16 +1833,17 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
   double **T0R = doubleMatrix(n_randomR, n_randomR);
 
   /* quantities of interest: ITT, CACE  */
-  double *ITT = doubleArray(n_cat-1);
-  double *CACE = doubleArray(n_cat-1);
-  double *Y1barC = doubleArray(n_cat-1); 
-  double *Y0barC = doubleArray(n_cat-1); 
-  double *YbarN = doubleArray(n_cat-1);
-  double *YbarA = doubleArray(n_cat-1);
-  int *n_comp = intArray(2);          /* number of compliers */
-  int *n_never = intArray(2);
-  int *n_always = intArray(2);
-  double p_comp, p_never; /* prob. of being a particular type */
+  double **ITT = doubleMatrix(n_grp+1, n_cat-1);
+  double **CACE = doubleMatrix(n_grp+1, n_cat-1);
+  double **Y1barC = doubleMatrix(n_grp+1, n_cat-1); 
+  double **Y0barC = doubleMatrix(n_grp+1, n_cat-1); 
+  double **YbarN = doubleMatrix(n_grp+1, n_cat-1);
+  double **YbarA = doubleMatrix(n_grp+1, n_cat-1);
+  int **n_comp = intMatrix(n_grp+1, 2);          /* number of compliers */
+  int **n_never = intMatrix(n_grp+1, 2);
+  int **n_always = intMatrix(n_grp+1, 2);
+  double *p_comp = doubleArray(n_grp+1); 
+  double *p_never = doubleArray(n_grp+1); /* prob. of being a particular type */
 
   /*** storage parameters and loop counters **/
   int *vitemp = intArray(n_grp);
@@ -1785,7 +1852,7 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
   int *acc_fixed = intArray(n_fixedC*2);    /* number of acceptance */
   int *acc_tau = intArray(0);
   int *acc_random = intArray(2*n_grp);      /* number of acceptance */
-  int i, j, main_loop;
+  int i, j, k, main_loop;
   int itempP = ftrunc((double) *n_gen/10);
   int itemp, itempA, itempC, itempO, itempQ, itempR, itempT;
   int itempAv, itempCv, itempOv, itempRv;
@@ -1817,10 +1884,11 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
   for (main_loop = 1; main_loop <= *n_gen; main_loop++){
 
     /* Step 1: RESPONSE MODEL */
-    ResponseMixed(n_miss, R, Xr, Zr, grp, delta, xiR, PsiR, n_samp, 
-		  n_fixedR, n_randomR, n_grp, delta0, A0R, tau0s, T0R,
-		  *AT, *random, Z, D, prC,prN, prA);
-
+    if (n_miss > 0)
+      ResponseMixed(R, Xr, Zr, grp, delta, xiR, PsiR, n_samp, 
+		    n_fixedR, n_randomR, n_grp, delta0, A0R, tau0s, T0R,
+		    *AT, *random, Z, D, prC,prN, prA);
+    
     /** Step 2: COMPLIANCE MODEL **/
     CompMixed(*logitC, *AT, C, Xc, Zc, grp, betaC, xiC, Psi, n_samp,
 	      n_fixedC, n_randomC , n_grp, beta0, A0C, tau0s, T0C, 
@@ -1956,153 +2024,153 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
     if (main_loop > *burnin) {
       if (keep == *iKeep) {
 	/** Computing Quantities of Interest **/
-	n_comp[0] = 0; n_comp[1] = 0; 
-	n_never[0] = 0; n_never[1] = 0;
-	n_always[0] = 0; n_always[1] = 0;
-	p_comp = 0; p_never = 0; 
-	for (j = 0; j < (n_cat-1); j++) {
-	  Y1barC[j] = 0; Y0barC[j] = 0; YbarN[j] = 0; YbarA[j] = 0;
+	for (j = 0; j < (n_grp+1); j++) {
+	  n_comp[j][0] = 0; n_comp[j][1] = 0;
+	  n_never[j][0] = 0; n_never[j][1] = 0;
+	  n_always[j][0] = 0; n_always[j][1] = 0;
+	  p_comp[j] = 0; p_never[j] = 0;
+	  for (k = 0; k < (n_cat-1); k++) {
+	    Y1barC[j][k] = 0; Y0barC[j][k] = 0; 
+	    YbarN[j][k] = 0; YbarA[j][k] = 0;
+	  }
 	}
 	for (i = 0; i < n_samp; i++){
-	  p_comp += qC[i];
-	  p_never += qN[i];
-	  if (Z[i] == 1) 
-	    if (C[i] == 1)
-	      n_comp[1]++;
-	    else if (A[i] == 1)
-	      n_always[1]++;
-	    else
-	      n_never[1]++;
-	  else
-	    if (C[i] == 1)
-	      n_comp[0]++;
-	    else if (A[i] == 1)
-	      n_always[0]++;
-	    else 
-	      n_never[0]++;
+	  p_comp[grp[i]] += qC[i]; p_comp[n_grp] += qC[i];
+	  p_never[grp[i]] += qN[i]; p_never[n_grp] += qN[i];
+	  if (Z[i] == 1) {
+	    if (C[i] == 1) {
+	      n_comp[grp[i]][1]++; n_comp[n_grp][1]++;
+	    } else if (A[i] == 1) {
+	      n_always[grp[i]][1]++; n_always[n_grp][1]++;
+	    } else {
+	      n_never[grp[i]][1]++; n_never[n_grp][1]++;
+	    }
+	  } else {
+	    if (C[i] == 1) {
+	      n_comp[grp[i]][0]++; n_comp[n_grp][0]++;
+	    } else if (A[i] == 1) {
+	      n_always[grp[i]][0]++; n_always[n_grp][0]++;
+	    } else { 
+	      n_never[grp[i]][0]++; n_never[n_grp][0]++;
+	    }
+	  }
 	  for (j = 1; j < n_cat; j++) {
 	    if (C[i] == 1) { /* ITT effects */
 	      if (*Insample) { /* insample QoI */
-		if (Z[i] == 1) {
-		  if (R[i] == 1)
-		    Y1barC[j-1] += (double)(Y[i] == j);
-		  else 
-		    if (*random)
-		      Y1barC[j-1] += (double)(unif_rand() < 
-					      (pnorm(tau[j], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 1, 0) 
-					       -pnorm(tau[j-1], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 1, 0)));
-		    else
-		      Y1barC[j-1] += (double)(unif_rand() < 
-					      (pnorm(tau[j], meano[i]+gamma[0], 1, 1, 0) 
-					       -pnorm(tau[j-1], meano[i]+gamma[0], 1, 1, 0)));
+		if (*random) {
+		  dtemp = (double)(unif_rand() < 
+				   (pnorm(tau[j], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 1, 0) 
+				    -pnorm(tau[j-1], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 1, 0)));
+		  dtemp1 = (double)(unif_rand() < 
+				    (pnorm(tau[j], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0) 
+				     -pnorm(tau[j-1], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0)));
 		} else {
-		  if (R[i] == 1)
-		    Y0barC[j-1] += (double)(Y[i] == j);
-		  else
-		    if (*random)
-		      Y0barC[j-1] += (double)(unif_rand() < 
-					      (pnorm(tau[j], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0) 
-					       -pnorm(tau[j-1], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0)));
-		    else
-		      Y0barC[j-1] += (double)(unif_rand() < 
-					      (pnorm(tau[j], meano[i]+gamma[1], 1, 1, 0) 
-					       -pnorm(tau[j-1], meano[i]+gamma[1], 1, 1, 0)));		
+		  dtemp = (double)(unif_rand() < 
+				   (pnorm(tau[j], meano[i]+gamma[0], 1, 1, 0) 
+				    -pnorm(tau[j-1], meano[i]+gamma[0], 1, 1, 0)));
+		  dtemp1 = (double)(unif_rand() < 
+				    (pnorm(tau[j], meano[i]+gamma[1], 1, 1, 0) 
+				     -pnorm(tau[j-1], meano[i]+gamma[1], 1, 1, 0)));		
 		}
+		if (R[i] == 1)
+		  if (Z[i] == 1) 
+		    dtemp = (double)(Y[i] == j);
+		  else 
+		    dtemp1 = (double)(Y[i] == j);
 	      } else { /* population QoI */
-		if (Z[i] == 1)
-		  if (*random)
-		    Y1barC[j-1] += (pnorm(tau[j], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 1, 0) 
-				    -pnorm(tau[j-1], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 1, 0));
-		  else
-		    Y1barC[j-1] += (pnorm(tau[j], meano[i]+gamma[0], 1, 1, 0) 
-				    -pnorm(tau[j-1], meano[i]+gamma[0], 1, 1, 0));
-		else
-		  if (*random)
-		    Y0barC[j-1] += (pnorm(tau[j], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0) 
-				    -pnorm(tau[j-1], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0));
-		  else
-		    Y0barC[j-1] += (pnorm(tau[j], meano[i]+gamma[1], 1, 1, 0) 
-				    -pnorm(tau[j-1], meano[i]+gamma[1], 1, 1, 0));
+		if (*random) {
+		  dtemp = (pnorm(tau[j], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 1, 0) 
+			   -pnorm(tau[j-1], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 1, 0));
+		  dtemp1 = (pnorm(tau[j], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0) 
+			    -pnorm(tau[j-1], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0));
+		} else {
+		  dtemp = (pnorm(tau[j], meano[i]+gamma[0], 1, 1, 0) 
+			   -pnorm(tau[j-1], meano[i]+gamma[0], 1, 1, 0));
+		  dtemp1 = (pnorm(tau[j], meano[i]+gamma[1], 1, 1, 0) 
+			    -pnorm(tau[j-1], meano[i]+gamma[1], 1, 1, 0));
+		}
 	      }
+	      Y1barC[grp[i]][j-1] += dtemp; Y0barC[grp[i]][j-1] += dtemp1;
+	      Y1barC[n_grp][j-1] += dtemp; Y0barC[n_grp][j-1] += dtemp1;
 	    } else { /* Estimates for always-takers and never-takers */
 	      if (A[i] == 1) {
 		if (*Insample)
 		  if (R[i] == 1)
-		    YbarA[j-1] += (double)(Y[i] == j);
+		    dtemp = (double)(Y[i] == j);
+		  else if (*random)
+		    dtemp = (double)(unif_rand() < 
+				     (pnorm(tau[j], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 1, 0) 
+				      -pnorm(tau[j-1], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 1, 0)));	
 		  else
-		    if (*random)
-		      YbarA[j-1] += (double)(unif_rand() < 
-					     (pnorm(tau[j], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 1, 0) 
-					      -pnorm(tau[j-1], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 1, 0)));	
-		    else
-		      YbarA[j-1] += (double)(unif_rand() < 
-					     (pnorm(tau[j], meano[i]+gamma[2], 1, 1, 0) 
-					      -pnorm(tau[j-1], meano[i]+gamma[2], 1, 1, 0)));	
+		    dtemp = (double)(unif_rand() < 
+				     (pnorm(tau[j], meano[i]+gamma[2], 1, 1, 0) 
+				      -pnorm(tau[j-1], meano[i]+gamma[2], 1, 1, 0)));	
 		else 
 		  if (*random)
-		    YbarA[j-1] += (pnorm(tau[j], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 1, 0) 
-				   -pnorm(tau[j-1], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 1, 0));
+		    dtemp = (pnorm(tau[j], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 1, 0) 
+			     -pnorm(tau[j-1], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 1, 0));
 		  else
-		    YbarA[j-1] += (pnorm(tau[j], meano[i]+gamma[2], 1, 1, 0) 
-				   -pnorm(tau[j-1], meano[i]+gamma[2], 1, 1, 0));
+		    dtemp += (pnorm(tau[j], meano[i]+gamma[2], 1, 1, 0) 
+			      -pnorm(tau[j-1], meano[i]+gamma[2], 1, 1, 0));
+		YbarA[grp[i]][j-1] += dtemp; YbarA[n_grp][j-1] += dtemp;
 	      } else {
 		if (*Insample)
 		  if (R[i] == 1)
-		    YbarN[j-1] += (double)(Y[i] == j);
+		    dtemp = (double)(Y[i] == j);
 		  else 
-		    YbarN[j-1] += (double)(unif_rand() < 
-					   (pnorm(tau[j], meano[i], 1, 1, 0) 
-					    -pnorm(tau[j-1], meano[i], 1, 1, 0)));		
+		    dtemp = (double)(unif_rand() < 
+				     (pnorm(tau[j], meano[i], 1, 1, 0) 
+				      -pnorm(tau[j-1], meano[i], 1, 1, 0)));		
 		else 
-		  YbarN[j-1] += (pnorm(tau[j], meano[i], 1, 1, 0) 
-				 -pnorm(tau[j-1], meano[i], 1, 1, 0));
+		  dtemp = (pnorm(tau[j], meano[i], 1, 1, 0) 
+			   -pnorm(tau[j-1], meano[i], 1, 1, 0));
+		YbarN[grp[i]][j-1] += dtemp; YbarN[n_grp][j-1] += dtemp;
 	      }
 	    }
 	  }
 	}
 	
-	if (*Insample) { 
-	  for (j = 0; j < (n_cat-1); j++) {
-	    ITT[j] = Y1barC[j]/(double)(n_comp[1]+n_never[1]+n_always[1]) -
-	      Y0barC[j]/(double)(n_comp[0]+n_never[0]+n_always[0]);
-	    Y1barC[j] /= (double)n_comp[1];  
-	    Y0barC[j] /= (double)n_comp[0]; 
+	for (j = 0; j < (n_grp+1); j++) {
+	  for (k = 0; k < (n_cat-1); k++) {
+	    ITT[j][k] = (Y1barC[j][k]-Y0barC[j][k]) /
+	      (double)(n_comp[j][0]+n_never[j][0]+n_always[j][0] + 
+		       n_comp[j][1]+n_never[j][1]+n_always[j][1]);
+	    Y1barC[j][k] /= (double)(n_comp[j][0]+n_comp[j][1]);  
+	    Y0barC[j][k] /= (double)(n_comp[j][0]+n_comp[j][1]); 
+	    CACE[j][k] = Y1barC[j]-Y0barC[j];    /* CACE */
+	    YbarN[j][k] /= (double)(n_never[j][0]+n_never[j][1]);
+	    if (*AT)
+	      YbarA[j][k] /= (double)(n_always[j][0]+n_always[j][1]);
 	  }
-	  p_comp = (double)(n_comp[0]+n_comp[1])/(double)n_samp;
-	  p_never = (double)(n_never[0]+n_never[1])/(double)n_samp;
-	} else {
-	  for (j = 0; j < (n_cat-1); j++) {
-	    ITT[j] = (Y1barC[j]-Y0barC[j])/(double)n_samp;     /* ITT effect */
-	    Y1barC[j] /= (double)(n_comp[0]+n_comp[1]);  
-	    Y0barC[j] /= (double)(n_comp[0]+n_comp[1]);
-	  } 
-	  p_comp /= (double)n_samp;  /* ITT effect on D; Prob. of being
-					a complier */ 
-	  p_never /= (double)n_samp; /* Prob. of being a never-taker */
-	}
-	for (j = 0; j < (n_cat-1); j++) {
-	  CACE[j] = Y1barC[j]-Y0barC[j];    /* CACE */
-	  YbarN[j] /= (double)(n_never[0]+n_never[1]);
-	  if (*AT)
-	    YbarA[j] /= (double)(n_always[0]+n_always[1]);
+	  p_comp[j] /= (double)(n_comp[j][0]+n_never[j][0]+n_always[j][0] + 
+				n_comp[j][1]+n_never[j][1]+n_always[j][1]);  
+	  p_never[j] /= (double)(n_comp[j][0]+n_never[j][0]+n_always[j][0] + 
+				 n_comp[j][1]+n_never[j][1]+n_always[j][1]);  
 	}
 	
-	for (j = 0; j < (n_cat-1); j++) 
-	  QoI[itempQ++] = ITT[j];   
-	for (j = 0; j < (n_cat-1); j++) 
-	  QoI[itempQ++] = CACE[j];   
-	for (j = 0; j < (n_cat-1); j++) 
-	  QoI[itempQ++] = Y1barC[j];
-	for (j = 0; j < (n_cat-1); j++) 
-	  QoI[itempQ++] = Y0barC[j];
-	for (j = 0; j < (n_cat-1); j++) 
-	  QoI[itempQ++] = YbarN[j];
-	QoI[itempQ++] = p_comp; 	  
-	QoI[itempQ++] = p_never;
+	for (j = 0; j < (n_grp+1); j++)
+	  for (k = 0; k < (n_cat-1); k++) 
+	    QoI[itempQ++] = ITT[j][k];   
+	for (j = 0; j < (n_grp+1); j++)
+	  for (k = 0; k < (n_cat-1); k++) 
+	    QoI[itempQ++] = CACE[j][k];   
+	for (j = 0; j < (n_grp+1); j++)
+	  QoI[itempQ++] = Y1barC[j][k];
+	for (j = 0; j < (n_grp+1); j++)
+	  for (k = 0; k < (n_cat-1); k++) 
+	    QoI[itempQ++] = Y0barC[j][k];
+	for (j = 0; j < (n_grp+1); j++)
+	  for (k = 0; k < (n_cat-1); k++) 
+	    QoI[itempQ++] = YbarN[j][k];
+	for (j = 0; j < (n_grp+1); j++)
+	  QoI[itempQ++] = p_comp[j]; 	  
+	for (j = 0; j < (n_grp+1); j++)
+	  QoI[itempQ++] = p_never[j];
 	if (*AT)
-	  for (j = 0; j < (n_cat-1); j++) 
-	    QoI[itempQ++] = YbarA[j];
-	
+	  for (j = 0; j < (n_grp+1); j++)
+	    for (k = 0; k < (n_cat-1); k++) 
+	      QoI[itempQ++] = YbarA[j][k];
+
 	if (*param) {
 	  for (j = 0; j < (n_cat-1); j++)
 	    tauO[itempT++] = tau[j];
@@ -2188,9 +2256,6 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
   free(qC);
   free(qN);
   free(pA);
-  free(n_comp);
-  free(n_never);
-  free(n_always);
   FreeMatrix(A0C, n_fixedC*2);
   FreeMatrix(A0O, n_fixedO);
   FreeMatrix(A0R, n_fixedR);
@@ -2198,6 +2263,17 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
   FreeMatrix(T0A, n_randomC);
   FreeMatrix(T0O, n_randomO);
   FreeMatrix(T0R, n_randomR);
+  FreeMatrix(ITT, n_grp+1);
+  FreeMatrix(CACE, n_grp+1);
+  FreeMatrix(Y1barC, n_grp+1);
+  FreeMatrix(Y0barC, n_grp+1);
+  FreeMatrix(YbarN, n_grp+1);
+  FreeMatrix(YbarA, n_grp+1);
+  FreeintMatrix(n_comp, n_grp+1);
+  FreeintMatrix(n_never, n_grp+1);
+  FreeintMatrix(n_always, n_grp+1);
+  free(p_comp);
+  free(p_never);
   free(vitemp);
   free(acc_fixed);
   free(acc_random);
@@ -2374,13 +2450,18 @@ void LINegBinMixed(int *Y,         /* count outcome variable */
   double **T0O = doubleMatrix(n_randomO, n_randomO);
   double **T0R = doubleMatrix(n_randomR, n_randomR);
 
-  /* quantities of interest: ITT, CACE  */
-  double ITT, CACE;
-  double Y1barC, Y0barC, YbarN, YbarA;
-  int *n_comp = intArray(2);          /* number of compliers */
-  int *n_never = intArray(2);
-  int *n_always = intArray(2);
-  double p_comp, p_never; /* prob. of being a particular type */
+  /* qoi by groups */
+  double *ITT = doubleArray(n_grp+1);
+  double *CACE = doubleArray(n_grp+1);
+  double *Y1barC = doubleArray(n_grp+1);
+  double *Y0barC = doubleArray(n_grp+1);
+  double *YbarN = doubleArray(n_grp+1); 
+  double *YbarA = doubleArray(n_grp+1);
+  int **n_comp = intMatrix(n_grp+1, 2);          /* number of compliers */
+  int **n_never = intMatrix(n_grp+1, 2);
+  int **n_always = intMatrix(n_grp+1, 2);
+  double *p_comp = doubleArray(n_grp+1); 
+  double *p_never = doubleArray(n_grp+1); /* prob. of being a particular type */
 
   /*** storage parameters and loop counters **/
   int *vitemp = intArray(n_grp);
@@ -2394,6 +2475,7 @@ void LINegBinMixed(int *Y,         /* count outcome variable */
   int itempP = ftrunc((double) *n_gen/10);
   int itemp, itempA, itempC, itempO, itempQ, itempR;
   int itempAv, itempCv, itempOv, itempRv, itempS;
+  double dtemp, dtemp1;
 
   /*** get random seed **/
   GetRNGstate();
@@ -2428,9 +2510,10 @@ void LINegBinMixed(int *Y,         /* count outcome variable */
   }
   for (main_loop = 1; main_loop <= *n_gen; main_loop++){
     /* Step 1: RESPONSE MODEL */
-    ResponseMixed(n_miss, R, Xr, Zr, grp, delta, xiR, PsiR, n_samp, 
-		  n_fixedR, n_randomR, n_grp, delta0, A0R, tau0s, T0R,
-		  *AT, *random, Z, D, prC,prN, prA);
+    if (n_miss > 0)
+      ResponseMixed(R, Xr, Zr, grp, delta, xiR, PsiR, n_samp, 
+		    n_fixedR, n_randomR, n_grp, delta0, A0R, tau0s, T0R,
+		    *AT, *random, Z, D, prC,prN, prA);
 
     /** Step 2: COMPLIANCE MODEL **/
     CompMixed(*logitC, *AT, C, Xc, Zc, grp, betaC, xiC, Psi, n_samp,
@@ -2507,91 +2590,117 @@ void LINegBinMixed(int *Y,         /* count outcome variable */
     if (main_loop > *burnin) {
       if (keep == *iKeep) {
 	/** Computing Quantities of Interest **/
-	n_comp[0] = 0; n_comp[1] = 0; 
-	n_never[0] = 0; n_never[1] = 0;
-	n_always[0] = 0; n_always[1] = 0;
-	p_comp = 0; p_never = 0; 
-	Y1barC = 0; Y0barC = 0; YbarN = 0; YbarA = 0;
+	for (j = 0; j < (n_grp+1); j++) {
+	  n_comp[j][0] = 0; n_comp[j][1] = 0;
+	  n_never[j][0] = 0; n_never[j][1] = 0;
+	  n_always[j][0] = 0; n_always[j][1] = 0;
+	  p_comp[j] = 0; p_never[j] = 0;
+	  Y1barC[j] = 0; Y0barC[j] = 0; YbarN[j] = 0; YbarA[j] = 0;
+	}
 	for (i = 0; i < n_samp; i++){
-	  p_comp += qC[i];
-	  p_never += qN[i];
+	  p_comp[grp[i]] += qC[i]; p_comp[n_grp] += qC[i];
+	  p_never[grp[i]] += qN[i]; p_never[n_grp] += qN[i];
 	  if (C[i] == 1) { /* ITT effects */
-	    if (Z[i] == 1) 
-	      n_comp[1]++;
-	    else
-	      n_comp[0]++;
-	    if (*Insample) { /* insample QoI */
-	      if (Z[i] == 1) 
-		if (R[i] == 1)
-		  Y1barC += Y[i];
-		else 
-		  Y1barC += rnegbin(exp(meano[i]+gamma[0]+xiO[grp[i]][0]), *sig2);
-	      else 
-		if (R[i] == 1)
-		  Y0barC += Y[i];
-		else
-		  Y0barC += rnegbin(exp(meano[i]+gamma[1]+xiO[grp[i]][0]), *sig2);
-	    } else { /* population QoI */
-	      Y1barC += exp(meano[i]+gamma[0]+xiO[grp[i]][0]);
-	      Y0barC += exp(meano[i]+gamma[1]+xiO[grp[i]][0]); 
+	    if (Z[i] == 1) {
+	      n_comp[grp[i]][1]++; n_comp[n_grp][1]++;
+	    } else {
+	      n_comp[grp[i]][0]++; n_comp[n_grp][0]++;
 	    }
+	    if (*Insample) { /* insample QoI */
+	      if (*random) {
+		dtemp = rnegbin(exp(meano[i]+gamma[0]+xiO[grp[i]][0]), *sig2);
+		dtemp1 = rnegbin(exp(meano[i]+gamma[1]+xiO[grp[i]][0]), *sig2);
+	      } else { 
+		dtemp = rnegbin(exp(meano[i]+gamma[0]), *sig2);
+		dtemp1 = rnegbin(exp(meano[i]+gamma[1]), *sig2);
+	      }
+	      if (R[i] == 1) 
+		if (Z[i] == 1) 
+		  dtemp = (double)Y[i]; 
+		else 
+		  dtemp1 = (double)Y[i];
+	    } else { /* population QoI */
+	      if (*random) {
+		dtemp = exp(meano[i]+gamma[0]+xiO[grp[i]][0]);
+		dtemp1 = exp(meano[i]+gamma[1]+xiO[grp[i]][0]);
+	      } else {
+		dtemp = exp(meano[i]+gamma[0]);
+		dtemp1 = exp(meano[i]+gamma[1]);
+	      }
+	    }
+	    Y1barC[grp[i]] += dtemp; Y0barC[grp[i]] += dtemp1;
+	    Y1barC[n_grp] += dtemp; Y0barC[n_grp] += dtemp1;
 	  } else { /* Estimates for always-takers and never-takers */
 	    if (A[i] == 1) {
-	      if (Z[i] == 1)
-		n_always[1]++;
+	      if (Z[i] == 1) {
+		n_always[grp[i]][1]++; n_always[n_grp][1]++;
+	      } else {
+		n_always[grp[i]][0]++; n_always[n_grp][0]++;
+	      }
+	      if (*Insample) 
+		if (R[i] == 1)
+		  dtemp = (double)Y[i];
+		else if (*random) 
+		  dtemp = rnegbin(exp(meano[i]+gamma[2]+xiO[grp[i]][1]), *sig2);
+		else
+		  dtemp = rnegbin(exp(meano[i]+gamma[2]), *sig2);
 	      else
-		n_always[0]++;
+		if (*random)
+		  dtemp = exp(meano[i]+gamma[2]+xiO[grp[i]][1]);
+		else
+		  dtemp = exp(meano[i]+gamma[2]);
+	      YbarA[grp[i]] += dtemp; YbarA[n_grp] += dtemp;
+	    } else { /* never-takers */
+	      if (Z[i] == 1) {
+		n_never[grp[i]][1]++; n_never[n_grp][1]++;
+	      } else {
+		n_never[grp[i]][0]++; n_never[n_grp][0]++;
+	      }
 	      if (*Insample)
 		if (R[i] == 1)
-		  YbarA += Y[i];
-		else 
-		  YbarA += rnegbin(exp(meano[i]+gamma[2]+xiO[grp[i]][1]), *sig2);
+		  dtemp = (double)Y[i];
+		else
+		  dtemp = rnegbin(exp(meano[i]), *sig2);
 	      else 
-		YbarA += exp(meano[i]+gamma[2]+xiO[grp[i]][1]);
-	    } else {
-	      if (Z[i] == 1)
-		n_never[1]++;
-	      else
-		n_never[0]++;
-	      if (*Insample)
-		if (R[i] == 1)
-		  YbarN += Y[i];
-		else 
-		  YbarN += rnegbin(exp(meano[i]), *sig2);
-	      else 
-		YbarN += exp(meano[i]);
+		dtemp = exp(meano[i]);
+	      YbarN[grp[i]] += dtemp; YbarN[n_grp] += dtemp;
 	    }
 	  }
 	}
-	if (*Insample) { 
-	  ITT = Y1barC/(double)(n_comp[1]+n_never[1]+n_always[1]) -
-	    Y0barC/(double)(n_comp[0]+n_never[0]+n_always[0]);
-	  Y1barC /= (double)n_comp[1];  
-	  Y0barC /= (double)n_comp[0]; 
-	  p_comp = (double)(n_comp[0]+n_comp[1])/(double)n_samp;
-	  p_never = (double)(n_never[0]+n_never[1])/(double)n_samp;
-	} else {
-	  ITT = (Y1barC-Y0barC)/(double)n_samp;     /* ITT effect */
-	  Y1barC /= (double)(n_comp[0]+n_comp[1]);  
-	  Y0barC /= (double)(n_comp[0]+n_comp[1]); 
-	  p_comp /= (double)n_samp;  /* ITT effect on D; Prob. of being
-					   a complier */ 
-	  p_never /= (double)n_samp; /* Prob. of being a never-taker */
+
+	for (j = 0; j < (n_grp+1); j++) {
+	  ITT[j] = (Y1barC[j]-Y0barC[j]) /
+	    (double)(n_comp[j][0]+n_never[j][0]+n_always[j][0] + 
+		     n_comp[j][1]+n_never[j][1]+n_always[j][1]);
+	  Y1barC[j] /= (double)(n_comp[j][0]+n_comp[j][1]);  
+	  Y0barC[j] /= (double)(n_comp[j][0]+n_comp[j][1]); 
+	  p_comp[j] /= (double)(n_comp[j][0]+n_never[j][0]+n_always[j][0] + 
+				n_comp[j][1]+n_never[j][1]+n_always[j][1]);  
+	  p_never[j] /= (double)(n_comp[j][0]+n_never[j][0]+n_always[j][0] + 
+				 n_comp[j][1]+n_never[j][1]+n_always[j][1]);  
+	  CACE[j] = Y1barC[j]-Y0barC[j];    /* CACE */
+	  YbarN[j] /= (double)(n_never[j][0]+n_never[j][1]);
+	  if (*AT)
+	    YbarA[j] /= (double)(n_always[j][0]+n_always[j][1]);
 	}
-	CACE = Y1barC-Y0barC;    /* CACE */
-	YbarN /= (double)(n_never[0]+n_never[1]);
+
+	for (j = 0; j < (n_grp+1); j++)
+	  QoI[itempQ++] = ITT[j];   
+	for (j = 0; j < (n_grp+1); j++)
+	  QoI[itempQ++] = CACE[j];   
+	for (j = 0; j < (n_grp+1); j++)
+	  QoI[itempQ++] = p_comp[j]; 	  
+	for (j = 0; j < (n_grp+1); j++)
+	  QoI[itempQ++] = p_never[j];
+	for (j = 0; j < (n_grp+1); j++)
+	  QoI[itempQ++] = Y1barC[j];
+	for (j = 0; j < (n_grp+1); j++)
+	  QoI[itempQ++] = Y0barC[j];
+	for (j = 0; j < (n_grp+1); j++)
+	  QoI[itempQ++] = YbarN[j];
 	if (*AT)
-	  YbarA /= (double)(n_always[0]+n_always[1]);
-	
-	QoI[itempQ++] = ITT;   
-	QoI[itempQ++] = CACE;   
-	QoI[itempQ++] = p_comp; 	  
-	QoI[itempQ++] = p_never;
-	QoI[itempQ++] = Y1barC;
-	QoI[itempQ++] = Y0barC;
-	QoI[itempQ++] = YbarN;
-	if (*AT)
-	  QoI[itempQ++] = YbarA;
+	  for (j = 0; j < (n_grp+1); j++)
+	    QoI[itempQ++] = YbarA[j];
 
 	if (*param) {
 	  for (j = 0; j < n_fixedC; j++)
@@ -2688,9 +2797,17 @@ void LINegBinMixed(int *Y,         /* count outcome variable */
   FreeMatrix(T0A, n_randomC);
   FreeMatrix(T0O, n_randomO);
   FreeMatrix(T0R, n_randomR);
-  free(n_comp);
-  free(n_never);
-  free(n_always);
+  free(ITT);
+  free(CACE);
+  free(Y1barC);
+  free(Y0barC);
+  free(YbarN);
+  free(YbarA);
+  FreeintMatrix(n_comp, n_grp+1);
+  FreeintMatrix(n_never, n_grp+1);
+  FreeintMatrix(n_always, n_grp+1);
+  free(p_comp);
+  free(p_never);
   free(vitemp);
   free(acc_fixed);
   free(acc_random);

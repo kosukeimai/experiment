@@ -171,8 +171,7 @@ void Prep(double *dXc,
    Response function 
 */
 
-void Response(int n_miss,
-	      int logitR,
+void Response(int logitR,
 	      int *R,
 	      double **Xr,
 	      double *delta,
@@ -193,64 +192,62 @@ void Response(int n_miss,
   double dtemp;
   int i, j;
 
-    if (n_miss > 0) {
-      if (logitR)
-	logitMetro(R, Xr, delta, n_samp, 1, n_covR, delta0, A0R, VarR,
-		   1, acceptR);
-      else
-	bprobitGibbs(R, Xr, delta, n_samp, n_covR, 0, delta0, A0R, mda, 1);
-
-      /* Compute probabilities of R = Robs */ 
-      for (i = 0; i < n_samp; i++) {
-	dtemp = 0;
-	if (AT) { /* always-takers */
-	  for (j = 3; j < n_covR; j++)
-	    dtemp += Xr[i][j]*delta[j];
-	  if ((Z[i] == 0) && (D[i] == 0)) {
-	    if (logitR) {
-	      prC[i] = R[i]/(1+exp(-dtemp-delta[1])) + 
-		(1-R[i])/(1+exp(dtemp+delta[1]));
-	      prN[i] = R[i]/(1+exp(-dtemp)) + 
-		(1-R[i])/(1+exp(dtemp));
-	    } else {
-	      prC[i] = R[i]*pnorm(dtemp+delta[1], 0, 1, 1, 0) +
-		(1-R[i])*pnorm(dtemp+delta[1], 0, 1, 0, 0);
-	      prN[i] = R[i]*pnorm(dtemp, 0, 1, 1, 0) +
-		(1-R[i])*pnorm(dtemp, 0, 1, 0, 0);
-	    } 
-	  }
-	  if ((Z[i] == 1) && (D[i] == 1)) {
-	    if (logitR) {
-	      prC[i] = R[i]/(1+exp(-dtemp-delta[0])) + 
-		(1-R[i])/(1+exp(dtemp+delta[0]));
-	      prA[i] = R[i]/(1+exp(-dtemp-delta[2])) + 
-		(1-R[i])/(1+exp(dtemp+delta[2]));
-	    } else {
-	      prC[i] = R[i]*pnorm(dtemp+delta[0], 0, 1, 1, 0) +
-		(1-R[i])*pnorm(dtemp+delta[0], 0, 1, 0, 0);
-	      prA[i] = R[i]*pnorm(dtemp+delta[2], 0, 1, 1, 0) +
-		(1-R[i])*pnorm(dtemp+delta[2], 0, 1, 0, 0);
-	    }
-	  }
-	} else { /* no always-takers */
-	  for (j = 2; j < n_covR; j++)
-	    dtemp += Xr[i][j]*delta[j];
-	  if (Z[i] == 0) {
-	    if (logitR) {
-	      prC[i] = R[i]/(1+exp(-dtemp-delta[1])) +
-		(1-R[i])/(1+exp(dtemp+delta[1]));
-	      prN[i] = R[i]/(1+exp(-dtemp)) +
-		(1-R[i])/(1+exp(dtemp));
-	    } else { 
-	      prC[i] = R[i]*pnorm(dtemp+delta[1], 0, 1, 1, 0) + 
-		(1-R[i])*pnorm(dtemp+delta[1], 0, 1, 0, 0);
-	      prN[i] = R[i]*pnorm(dtemp, 0, 1, 1, 0) +
-		(1-R[i])*pnorm(dtemp, 0, 1, 0, 0);
-	    }
-	  }
+  if (logitR)
+    logitMetro(R, Xr, delta, n_samp, 1, n_covR, delta0, A0R, VarR,
+	       1, acceptR);
+  else
+    bprobitGibbs(R, Xr, delta, n_samp, n_covR, 0, delta0, A0R, mda, 1);
+  
+  /* Compute probabilities of R = Robs */ 
+  for (i = 0; i < n_samp; i++) {
+    dtemp = 0;
+    if (AT) { /* always-takers */
+      for (j = 3; j < n_covR; j++)
+	dtemp += Xr[i][j]*delta[j];
+      if ((Z[i] == 0) && (D[i] == 0)) {
+	if (logitR) {
+	  prC[i] = R[i]/(1+exp(-dtemp-delta[1])) + 
+	    (1-R[i])/(1+exp(dtemp+delta[1]));
+	  prN[i] = R[i]/(1+exp(-dtemp)) + 
+	    (1-R[i])/(1+exp(dtemp));
+	} else {
+	  prC[i] = R[i]*pnorm(dtemp+delta[1], 0, 1, 1, 0) +
+	    (1-R[i])*pnorm(dtemp+delta[1], 0, 1, 0, 0);
+	  prN[i] = R[i]*pnorm(dtemp, 0, 1, 1, 0) +
+	    (1-R[i])*pnorm(dtemp, 0, 1, 0, 0);
 	} 
       }
-    }
+      if ((Z[i] == 1) && (D[i] == 1)) {
+	if (logitR) {
+	  prC[i] = R[i]/(1+exp(-dtemp-delta[0])) + 
+	    (1-R[i])/(1+exp(dtemp+delta[0]));
+	  prA[i] = R[i]/(1+exp(-dtemp-delta[2])) + 
+	    (1-R[i])/(1+exp(dtemp+delta[2]));
+	} else {
+	  prC[i] = R[i]*pnorm(dtemp+delta[0], 0, 1, 1, 0) +
+	    (1-R[i])*pnorm(dtemp+delta[0], 0, 1, 0, 0);
+	  prA[i] = R[i]*pnorm(dtemp+delta[2], 0, 1, 1, 0) +
+	    (1-R[i])*pnorm(dtemp+delta[2], 0, 1, 0, 0);
+	}
+      }
+    } else { /* no always-takers */
+      for (j = 2; j < n_covR; j++)
+	dtemp += Xr[i][j]*delta[j];
+      if (Z[i] == 0) {
+	if (logitR) {
+	  prC[i] = R[i]/(1+exp(-dtemp-delta[1])) +
+	    (1-R[i])/(1+exp(dtemp+delta[1]));
+	  prN[i] = R[i]/(1+exp(-dtemp)) +
+	    (1-R[i])/(1+exp(dtemp));
+	} else { 
+	  prC[i] = R[i]*pnorm(dtemp+delta[1], 0, 1, 1, 0) + 
+	    (1-R[i])*pnorm(dtemp+delta[1], 0, 1, 0, 0);
+	  prN[i] = R[i]*pnorm(dtemp, 0, 1, 1, 0) +
+	    (1-R[i])*pnorm(dtemp, 0, 1, 0, 0);
+	}
+      }
+    } 
+  }
 } /* end of Response */
 
 
@@ -602,6 +599,7 @@ void LIbinary(int *Y,         /* binary outcome variable */
   int i, j, main_loop;
   int itempP = ftrunc((double) *n_gen/10);
   int itemp, itempA, itempC, itempO, itempQ, itempR;
+  double dtemp, dtemp1;
 
   /*** get random seed ***/
   GetRNGstate();
@@ -626,8 +624,9 @@ void LIbinary(int *Y,         /* binary outcome variable */
   for (main_loop = 1; main_loop <= *n_gen; main_loop++){
 
     /* Step 1: RESPONSE MODEL */
-    Response(n_miss, *logitR, R, Xr, delta, n_samp, n_covR, delta0, A0R, VarR,
-	     acceptR, *mda, *AT, Z, D, prC, prN, prA);
+    if (n_miss > 0)
+      Response(*logitR, R, Xr, delta, n_samp, n_covR, delta0, A0R, VarR,
+	       acceptR, *mda, *AT, Z, D, prC, prN, prA);
 
     /** Step 2: COMPLIANCE MODEL **/
     Compliance(*logitC, *AT, C, Xc, betaC, n_samp, n_covC, beta0, A0C, 
@@ -710,24 +709,19 @@ void LIbinary(int *Y,         /* binary outcome variable */
 	    else
 	      n_comp[0]++;
 	    if (*Insample) { /* insample QoI */
-	      if (Z[i] == 1) {
-		if (R[i] == 1)
-		  Y1barC += (double)Y[i];
-		else 
-		  if (*logitO)
-		    Y1barC += (double)(1/(1+exp(-meano[i]-gamma[0])) > unif_rand());
-		  else
-		    Y1barC += (double)((meano[i]+gamma[0]+norm_rand()) > 0);
+	      if (*logitO) {
+		dtemp = (double)(1/(1+exp(-meano[i]-gamma[0])) > unif_rand());
+		dtemp1 = (double)(1/(1+exp(-meano[i]-gamma[1])) > unif_rand());
 	      } else {
-		if (R[i] == 1)
-		  Y0barC += (double)Y[i];
-		else {
-		  if (*logitO)
-		    Y0barC += (double)(1/(1+exp(-meano[i]-gamma[1])) > unif_rand());
-		  else
-		    Y0barC += (double)((meano[i]+gamma[1]+norm_rand()) > 0);
-		}
+		dtemp = (double)((meano[i]+gamma[0]+norm_rand()) > 0);
+		dtemp1 = (double)((meano[i]+gamma[1]+norm_rand()) > 0);
 	      }
+	      if (R[i] == 1)
+		if (Z[i] == 1) 
+		  dtemp = (double)Y[i];
+		else 
+		  dtemp1 = (double)Y[i];
+	      Y1barC += dtemp; Y0barC += dtemp1;
 	    } else { /* population QoI */
 	      if (*logitO) {
 		Y1barC += 1/(1+exp(-meano[i]-gamma[0]));
@@ -743,7 +737,7 @@ void LIbinary(int *Y,         /* binary outcome variable */
 		n_always[1]++;
 	      else
 		n_always[0]++;
-	      if (*Insample)
+	      if (*Insample) 
 		if (R[i] == 1)
 		  YbarA += (double)Y[i];
 		else {
@@ -781,21 +775,12 @@ void LIbinary(int *Y,         /* binary outcome variable */
 	    }
 	  }
 	}
-	if (*Insample) { 
-	  ITT = Y1barC/(double)(n_comp[1]+n_never[1]+n_always[1]) -
-	    Y0barC/(double)(n_comp[0]+n_never[0]+n_always[0]);
-	  Y1barC /= (double)n_comp[1];  
-	  Y0barC /= (double)n_comp[0]; 
-	  p_comp = (double)(n_comp[0]+n_comp[1])/(double)n_samp;
-	  p_never = (double)(n_never[0]+n_never[1])/(double)n_samp;
-	} else {
-	  ITT = (Y1barC-Y0barC)/(double)n_samp;     /* ITT effect */
-	  Y1barC /= (double)(n_comp[0]+n_comp[1]);  
-	  Y0barC /= (double)(n_comp[0]+n_comp[1]); 
-	  p_comp /= (double)n_samp;  /* ITT effect on D; Prob. of being
-					   a complier */ 
-	  p_never /= (double)n_samp; /* Prob. of being a never-taker */
-	}
+	ITT = (Y1barC-Y0barC)/(double)n_samp;     /* ITT effect */
+	Y1barC /= (double)(n_comp[0]+n_comp[1]);  
+	Y0barC /= (double)(n_comp[0]+n_comp[1]); 
+	p_comp /= (double)n_samp;  /* ITT effect on D; Prob. of being
+				      a complier */ 
+	p_never /= (double)n_samp; /* Prob. of being a never-taker */
 	CACE = Y1barC-Y0barC;    /* CACE */
 	YbarN /= (double)(n_never[0]+n_never[1]);
 	if (*AT)
@@ -1017,6 +1002,7 @@ void LIgaussian(double *Y,      /* gaussian outcome variable */
   int i, j, main_loop;
   int itempP = ftrunc((double) *n_gen/10);
   int itemp, itempA, itempC, itempO, itempQ, itempR, itempS;
+  double dtemp, dtemp1;
 
   /*** get random seed **/
   GetRNGstate();
@@ -1038,8 +1024,9 @@ void LIgaussian(double *Y,      /* gaussian outcome variable */
   for (main_loop = 1; main_loop <= *n_gen; main_loop++){
 
     /* Step 1: RESPONSE MODEL */
-    Response(n_miss, *logitR, R, Xr, delta, n_samp, n_covR, delta0, A0R, VarR,
-	     acceptR, *mda, *AT, Z, D, prC, prN, prA);
+    if (n_miss > 0)
+      Response(*logitR, R, Xr, delta, n_samp, n_covR, delta0, A0R, VarR,
+	       acceptR, *mda, *AT, Z, D, prC, prN, prA);
 
     /** Step 2: COMPLIANCE MODEL **/
     Compliance(*logitC, *AT, C, Xc, betaC, n_samp, n_covC, beta0, A0C, 
@@ -1098,16 +1085,14 @@ void LIgaussian(double *Y,      /* gaussian outcome variable */
 	    else
 	      n_comp[0]++;
 	    if (*Insample) { /* insample QoI */
-	      if (Z[i] == 1) 
-		if (R[i] == 1)
-		  Y1barC += Y[i];
+	      dtemp = rnorm(meano[i]+gamma[0], sqrt(*sig2));
+	      dtemp1 = rnorm(meano[i]+gamma[1], sqrt(*sig2));
+	      if (R[i] == 1) 
+		if (Z[i] == 1)
+		  dtemp = Y[i];
 		else 
-		  Y1barC += rnorm(meano[i]+gamma[0], sqrt(*sig2));
-	      else 
-		if (R[i] == 1)
-		  Y0barC += Y[i];
-		else
-		  Y0barC += rnorm(meano[i]+gamma[1], sqrt(*sig2));
+		  dtemp1 = Y[i];
+	      Y1barC += dtemp; Y0barC += dtemp1;
 	    } else { /* population QoI */
 	      Y1barC += (meano[i]+gamma[0]);
 	      Y0barC += (meano[i]+gamma[1]); 
@@ -1140,21 +1125,12 @@ void LIgaussian(double *Y,      /* gaussian outcome variable */
 	    }
 	  }
 	}
-	if (*Insample) { 
-	  ITT = Y1barC/(double)(n_comp[1]+n_never[1]+n_always[1]) -
-	    Y0barC/(double)(n_comp[0]+n_never[0]+n_always[0]);
-	  Y1barC /= (double)n_comp[1];  
-	  Y0barC /= (double)n_comp[0]; 
-	  p_comp = (double)(n_comp[0]+n_comp[1])/(double)n_samp;
-	  p_never = (double)(n_never[0]+n_never[1])/(double)n_samp;
-	} else {
-	  ITT = (Y1barC-Y0barC)/(double)n_samp;     /* ITT effect */
-	  Y1barC /= (double)(n_comp[0]+n_comp[1]);  
-	  Y0barC /= (double)(n_comp[0]+n_comp[1]); 
-	  p_comp /= (double)n_samp;  /* ITT effect on D; Prob. of being
-					   a complier */ 
-	  p_never /= (double)n_samp; /* Prob. of being a never-taker */
-	}
+	ITT = (Y1barC-Y0barC)/(double)n_samp;     /* ITT effect */
+	Y1barC /= (double)(n_comp[0]+n_comp[1]);  
+	Y0barC /= (double)(n_comp[0]+n_comp[1]); 
+	p_comp /= (double)n_samp;  /* ITT effect on D; Prob. of being
+				      a complier */ 
+	p_never /= (double)n_samp; /* Prob. of being a never-taker */
 	CACE = Y1barC-Y0barC;    /* CACE */
 	YbarN /= (double)(n_never[0]+n_never[1]);
 	if (*AT)
@@ -1379,6 +1355,7 @@ void LIordinal(int *Y,         /* binary outcome variable */
   int i, j, main_loop;
   int itempP = ftrunc((double) *n_gen/10);
   int itemp, itempA, itempC, itempO, itempQ, itempR, itempT;
+  double dtemp, dtemp1;
 
   /*** get random seed **/
   GetRNGstate();
@@ -1400,8 +1377,9 @@ void LIordinal(int *Y,         /* binary outcome variable */
   for (main_loop = 1; main_loop <= *n_gen; main_loop++){
 
     /* Step 1: RESPONSE MODEL */
-    Response(n_miss, *logitR, R, Xr, delta, n_samp, n_covR, delta0, A0R, VarR,
-	     acceptR, *mda, *AT, Z, D, prC, prN, prA);
+    if (n_miss > 0)
+      Response(*logitR, R, Xr, delta, n_samp, n_covR, delta0, A0R, VarR,
+	       acceptR, *mda, *AT, Z, D, prC, prN, prA);
 
     /** Step 2: COMPLIANCE MODEL **/    
     Compliance(*logitC, *AT, C, Xc, betaC, n_samp, n_covC, beta0, A0C, 
@@ -1503,29 +1481,26 @@ void LIordinal(int *Y,         /* binary outcome variable */
 	  for (j = 1; j < *n_cat; j++) {
 	    if (C[i] == 1) { /* ITT effects */
 	      if (*Insample) { /* insample QoI */
-		if (Z[i] == 1) {
-		  if (R[i] == 1)
-		    Y1barC[j-1] += (double)(Y[i] == j);
-		  else 
-		    if (j == (*n_cat-1))
-		      Y1barC[j-1] += (double)(unif_rand() <
-					      pnorm(tau[*n_cat-2], meano[i]+gamma[0], 1, 0, 0));
-		    else
-		      Y1barC[j-1] += (double)(unif_rand() < 
-					      (pnorm(tau[j], meano[i]+gamma[0], 1, 1, 0) 
-					       -pnorm(tau[j-1], meano[i]+gamma[0], 1, 1, 0)));
-		} else {
-		  if (R[i] == 1)
-		    Y0barC[j-1] += (double)(Y[i] == j);
-		  else
-		    if (j == (*n_cat-1))
-		      Y0barC[j-1] += (double)(unif_rand() <
+		if (j == (*n_cat-1)) { 
+		  /* Y1barC[j-1] and Y0barC[j-1] */
+		  dtemp = (double)(unif_rand() <
+				   pnorm(tau[*n_cat-2], meano[i]+gamma[0], 1, 0, 0));
+		  dtemp1 = (double)(unif_rand() <
 					      pnorm(tau[*n_cat-2], meano[i]+gamma[1], 1, 0, 0));
-		    else
-		      Y0barC[j-1] += (double)(unif_rand() < 
-					      (pnorm(tau[j], meano[i]+gamma[1], 1, 1, 0) 
-					       -pnorm(tau[j-1], meano[i]+gamma[1], 1, 1, 0)));		
+		} else {
+		  dtemp = (double)(unif_rand() < 
+				   (pnorm(tau[j], meano[i]+gamma[0], 1, 1, 0) 
+				    -pnorm(tau[j-1], meano[i]+gamma[0], 1, 1, 0)));
+		  dtemp1 = (double)(unif_rand() < 
+				    (pnorm(tau[j], meano[i]+gamma[1], 1, 1, 0) 
+				     -pnorm(tau[j-1], meano[i]+gamma[1], 1, 1, 0)));		
 		}
+		if (R[i] == 1)
+		  if (Z[i] == 1) 
+		    dtemp = (double)(Y[i] == j);
+		  else 
+		    dtemp1 += (double)(Y[i] == j);
+		Y1barC[j-1] += dtemp; Y0barC[j-1] += dtemp1;
 	      } else { /* population QoI */
 		if (Z[i] == 1)
 		  if (j == (*n_cat-1))
@@ -1582,25 +1557,14 @@ void LIordinal(int *Y,         /* binary outcome variable */
 	  }
 	}
 
-	if (*Insample) { 
-	  for (j = 0; j < (*n_cat-1); j++) {
-	    ITT[j] = Y1barC[j]/(double)(n_comp[1]+n_never[1]+n_always[1]) -
-	      Y0barC[j]/(double)(n_comp[0]+n_never[0]+n_always[0]);
-	    Y1barC[j] /= (double)n_comp[1];  
-	    Y0barC[j] /= (double)n_comp[0]; 
-	  }
-	  p_comp = (double)(n_comp[0]+n_comp[1])/(double)n_samp;
-	  p_never = (double)(n_never[0]+n_never[1])/(double)n_samp;
-	} else {
-	  for (j = 0; j < (*n_cat-1); j++) {
-	    ITT[j] = (Y1barC[j]-Y0barC[j])/(double)n_samp;     /* ITT effect */
-	    Y1barC[j] /= (double)(n_comp[0]+n_comp[1]);  
-	    Y0barC[j] /= (double)(n_comp[0]+n_comp[1]);
-	  } 
-	  p_comp /= (double)n_samp;  /* ITT effect on D; Prob. of being
-					   a complier */ 
-	  p_never /= (double)n_samp; /* Prob. of being a never-taker */
-	}
+	for (j = 0; j < (*n_cat-1); j++) {
+	  ITT[j] = (Y1barC[j]-Y0barC[j])/(double)n_samp;     /* ITT effect */
+	  Y1barC[j] /= (double)(n_comp[0]+n_comp[1]);  
+	  Y0barC[j] /= (double)(n_comp[0]+n_comp[1]);
+	} 
+	p_comp /= (double)n_samp;  /* ITT effect on D; Prob. of being
+				      a complier */ 
+	p_never /= (double)n_samp; /* Prob. of being a never-taker */
 	for (j = 0; j < (*n_cat-1); j++) {
 	  CACE[j] = Y1barC[j]-Y0barC[j];    /* CACE */
 	  YbarN[j] /= (double)(n_never[0]+n_never[1]);
@@ -1841,6 +1805,7 @@ void LIcount(int *Y,         /*count outcome variable */
   int i, j, main_loop;
   int itempP = ftrunc((double) *n_gen/10);
   int itemp, itempA, itempC, itempO, itempQ, itempR, itempS;
+  double dtemp, dtemp1;
 
   /*** get random seed **/
   GetRNGstate();
@@ -1866,8 +1831,9 @@ void LIcount(int *Y,         /*count outcome variable */
   for (main_loop = 1; main_loop <= *n_gen; main_loop++){
 
     /* Step 1: RESPONSE MODEL */
-    Response(n_miss, *logitR, R, Xr, delta, n_samp, n_covR, delta0, A0R, VarR,
-	     acceptR, *mda, *AT, Z, D, prC, prN, prA);
+    if (n_miss > 0)
+      Response(*logitR, R, Xr, delta, n_samp, n_covR, delta0, A0R, VarR,
+	       acceptR, *mda, *AT, Z, D, prC, prN, prA);
 
     /** Step 2: COMPLIANCE MODEL **/
     Compliance(*logitC, *AT, C, Xc, betaC, n_samp, n_covC, beta0, A0C, 
@@ -1926,16 +1892,14 @@ void LIcount(int *Y,         /*count outcome variable */
 	    else
 	      n_comp[0]++;
 	    if (*Insample) { /* insample QoI */
-	      if (Z[i] == 1) 
-		if (R[i] == 1)
-		  Y1barC += (double)Y[i];
+	      dtemp = rnegbin(exp(meano[i]+gamma[0]), *sig2);
+	      dtemp1 = rnegbin(exp(meano[i]+gamma[1]), *sig2);
+	      if (R[i] == 1)
+		if (Z[i] == 1) 
+		  dtemp = (double)Y[i];
 		else 
-		  Y1barC += rnegbin(exp(meano[i]+gamma[0]), *sig2);
-	      else 
-		if (R[i] == 1)
-		  Y0barC += (double) Y[i];
-		else
-		  Y0barC += rnegbin(exp(meano[i]+gamma[1]), *sig2);
+		  dtemp1 = (double) Y[i];
+	      Y1barC += dtemp; Y0barC += dtemp1;
 	    } else { /* population QoI */
 	      Y1barC += exp(meano[i]+gamma[0]);
 	      Y0barC += exp(meano[i]+gamma[1]); 
@@ -1968,21 +1932,13 @@ void LIcount(int *Y,         /*count outcome variable */
 	    }
 	  }
 	}
-	if (*Insample) { 
-	  ITT = Y1barC/(double)(n_comp[1]+n_never[1]+n_always[1]) -
-	    Y0barC/(double)(n_comp[0]+n_never[0]+n_always[0]);
-	  Y1barC /= (double)n_comp[1];  
-	  Y0barC /= (double)n_comp[0]; 
-	  p_comp = (double)(n_comp[0]+n_comp[1])/(double)n_samp;
-	  p_never = (double)(n_never[0]+n_never[1])/(double)n_samp;
-	} else {
-	  ITT = (Y1barC-Y0barC)/(double)n_samp;     /* ITT effect */
-	  Y1barC /= (double)(n_comp[0]+n_comp[1]);  
-	  Y0barC /= (double)(n_comp[0]+n_comp[1]); 
-	  p_comp /= (double)n_samp;  /* ITT effect on D; Prob. of being
-					   a complier */ 
-	  p_never /= (double)n_samp; /* Prob. of being a never-taker */
-	}
+
+	ITT = (Y1barC-Y0barC)/(double)n_samp;     /* ITT effect */
+	Y1barC /= (double)(n_comp[0]+n_comp[1]);  
+	Y0barC /= (double)(n_comp[0]+n_comp[1]); 
+	p_comp /= (double)n_samp;  /* ITT effect on D; Prob. of being
+				      a complier */ 
+	p_never /= (double)n_samp; /* Prob. of being a never-taker */
 	CACE = Y1barC-Y0barC;    /* CACE */
 	YbarN /= (double)(n_never[0]+n_never[1]);
 	if (*AT)

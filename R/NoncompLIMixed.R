@@ -1,7 +1,7 @@
 Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
                                n.draws = 5000, param = TRUE, in.sample = FALSE,
                                model.c = "probit", model.o = "probit",
-                               random = TRUE, tune.tau = 0.01,
+                               random = FALSE, tune.tau = 0.01,
                                tune.var = 0.01, tune.fixed.c = 0.01,
                                tune.random.c = 0.01, tune.fixed.o = 0.01,
                                tune.random.o = 0.01,
@@ -191,6 +191,7 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
       nqoi <- 8
     else
       nqoi <- 7
+  nqoi <- nqoi * (ngrp+1)
   
   ## checking starting values and prior for fixed effects
   if (model.c == "logit" & AT) {
@@ -552,26 +553,24 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
   }
   QoI <- matrix(out$QoI, byrow = TRUE, ncol = nqoi)
   if (model.o == "oprobit") {
-    res$ITT <- QoI[,1:(ncat-1)]
-    res$CACE <- QoI[,ncat:(2*(ncat-1))]
-    res$Y1barC <- QoI[,(2*(ncat-1)+1):(3*(ncat-1))]
-    res$Y0barC <- QoI[,(3*(ncat-1)+1):(4*(ncat-1))]
-    res$YbarN <- QoI[,(4*(ncat-1)+1):(5*(ncat-1))]
-    res$pC <- QoI[,(5*(ncat-1)+1)]
-    res$pN <- QoI[,(5*(ncat-1)+2)]
+    res$ITT <- QoI[,1:(ncat-1)*(ngrp+1)]
+    res$CACE <- QoI[,((ncat-1)*(ngrp+1)+1):(2*(ngrp+1)*(ncat-1))]
+    res$Y1barC <- QoI[,(2*(ngrp+1)*(ncat-1)+1):(3*(ngrp+1)*(ncat-1))]
+    res$Y0barC <- QoI[,(3*(ngrp+1)*(ncat-1)+1):(4*(ngrp+1)*(ncat-1))]
+    res$YbarN <- QoI[,(4*(ngrp+1)*(ncat-1)+1):(5*(ngrp+1)*(ncat-1))]
+    res$pC <- QoI[,(5*(ngrp+1)*(ncat-1)+1):(5*(ngrp+1)*(ncat-1)+ngrp+1)]
+    res$pN <- QoI[,(5*(ngrp+1)*(ncat-1)+ngrp+2):(5*(ngrp+1)*(ncat-1)+2*(ngrp+1))]
     if (AT) 
-      res$YbarA <- QoI[,(5*(ncat-1)+3):(6*(ncat-1)+2)]
-  } else {
-    res$ITT <- QoI[,1]
-    res$CACE <- QoI[,2]
-    res$pC <- QoI[,3]
-    res$pN <- QoI[,4]
-    res$Y1barC <- QoI[,5]
-    res$Y0barC <- QoI[,6]
-    res$YbarN <- QoI[,7]
-    if (AT) 
-      res$YbarA <- QoI[,8]
-  }
+      res$YbarA <- QoI[,(5*(ngrp+1)*(ncat-1)+2*(ngrp+1)+1):(6*(ngrp+1)*(ncat-1)+2*(ngrp+1))]
+   } else {
+     res$ITT <- QoI[,1:(ngrp+1)]
+     res$CACE <- QoI[,((ngrp+1)+1):(2*(ngrp+1))]
+     res$pC <- QoI[,(2*(ngrp+1)+1):(3*(ngrp+1))]
+     res$pN <- QoI[,(3*(ngrp+1)+1):(4*(ngrp+1))]
+     res$Y1barC <- QoI[,(4*(ngrp+1)+1):(5*(ngrp+1))]
+     res$Y0barC <- QoI[,(5*(ngrp+1)+1):(6*(ngrp+1))]
+     res$YbarN <- QoI[,(6*(ngrp+1)+1):(7*(ngrp+1))]
+   }
   if (AT) 
     res$pA <- 1-res$pC-res$pN
   
