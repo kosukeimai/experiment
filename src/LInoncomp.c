@@ -628,17 +628,28 @@ void LIbinary(int *Y,         /* binary outcome variable */
 	n_comp[0] = 0; n_comp[1] = 0; 
 	n_never[0] = 0; n_never[1] = 0;
 	n_always[0] = 0; n_always[1] = 0;
-	p_comp = 0; p_never = 0; 
+	p_comp = 0; p_never = 0; ITT = 0;
 	Y1barC = 0; Y0barC = 0; YbarN = 0; YbarA = 0;
 	for (i = 0; i < n_samp; i++){
-	  p_comp += qC[i];
-	  p_never += qN[i];
+	  p_comp += qC[i]; p_never += qN[i];
 	  if (C[i] == 1) { /* ITT effects */
 	    if (Z[i] == 1) 
 	      n_comp[1]++;
 	    else
 	      n_comp[0]++;
-	    if (*Insample) { /* insample QoI */
+	  } else if (A[i] == 1) {
+	    if (Z[i] == 1)
+	      n_always[1]++;
+	    else
+	      n_always[0]++;
+	  } else {
+	    if (Z[i] == 1)
+		n_never[1]++;
+	      else
+		n_never[0]++;
+	  }
+	  if (*Insample) { /* insample QoI */
+	    if (C[i] == 1) {
 	      if (*logitO) {
 		dtemp = (double)(1/(1+exp(-meano[i]-gamma[0])) > unif_rand());
 		dtemp1 = (double)(1/(1+exp(-meano[i]-gamma[1])) > unif_rand());
@@ -652,70 +663,69 @@ void LIbinary(int *Y,         /* binary outcome variable */
 		else 
 		  dtemp1 = (double)Y[i];
 	      Y1barC += dtemp; Y0barC += dtemp1;
-	    } else { /* population QoI */
-	      if (*logitO) {
-		Y1barC += 1/(1+exp(-meano[i]-gamma[0]));
-		Y0barC += 1/(1+exp(-meano[i]-gamma[1])); 
-	      } else {
-		Y1barC += pnorm(meano[i]+gamma[0], 0, 1, 1, 0);
-		Y0barC += pnorm(meano[i]+gamma[1], 0, 1, 1, 0); 
-	      }
-	    }
-	  } else { /* Estimates for always-takers and never-takers */
-	    if (A[i] == 1) {
-	      if (Z[i] == 1)
-		n_always[1]++;
-	      else
-		n_always[0]++;
-	      if (*Insample) 
-		if (R[i] == 1)
-		  YbarA += (double)Y[i];
-		else {
-		  if (*logitO)
-		    YbarA += (double)(1/(1+exp(-meano[i]-gamma[2])) > unif_rand());
-		  else
-		    YbarA += (double)((meano[i]+gamma[2]+norm_rand()) > 0);
-		}
+	    } else if (A[i] == 1) {
+	      if (R[i] == 1)
+		YbarA += (double)Y[i];
 	      else {
 		if (*logitO)
-		  YbarA += 1/(1+exp(-meano[i]-gamma[2]));
+		  YbarA += (double)(1/(1+exp(-meano[i]-gamma[2])) > unif_rand());
 		else
-		  YbarA += pnorm(meano[i]+gamma[2], 0, 1, 1, 0);
+		  YbarA += (double)((meano[i]+gamma[2]+norm_rand()) > 0);
 	      }
 	    } else {
-	      if (Z[i] == 1)
-		n_never[1]++;
-	      else
-		n_never[0]++;
-	      if (*Insample)
-		if (R[i] == 1)
-		  YbarN += (double)Y[i];
-		else {
-		  if (*logitO)
-		    YbarN += (double)(1/(1+exp(-meano[i])) > unif_rand());
-		  else
-		    YbarN += (double)((meano[i]+norm_rand()) > 0);
-		}
+	      if (R[i] == 1)
+		YbarN += (double)Y[i];
 	      else {
 		if (*logitO)
-		  YbarN += 1/(1+exp(-meano[i]));
+		  YbarN += (double)(1/(1+exp(-meano[i])) > unif_rand());
 		else
-		  YbarN += pnorm(meano[i], 0, 1, 1, 0);
+		  YbarN += (double)((meano[i]+norm_rand()) > 0);
 	      }
+	    } 
+	  } else { /* population QoI */
+	    /* compliers */
+	    if (*logitO) {
+	      dtemp = 1/(1+exp(-meano[i]-gamma[0]));
+	      dtemp1 = 1/(1+exp(-meano[i]-gamma[1])); 
+	    } else {
+	      dtemp = pnorm(meano[i]+gamma[0], 0, 1, 1, 0);
+	      dtemp1 = pnorm(meano[i]+gamma[1], 0, 1, 1, 0); 
 	    }
+	    Y1barC += dtemp; Y0barC += dtemp1;
+	    ITT += ((dtemp-dtemp1)*qC[i]);
+	    /* always-takers */
+	    if (*logitO)
+	      YbarA += 1/(1+exp(-meano[i]-gamma[2]));
+	    else
+	      YbarA += pnorm(meano[i]+gamma[2], 0, 1, 1, 0);
+	    /* never-takers */
+	    if (*logitO)
+	      YbarN += 1/(1+exp(-meano[i]));
+	    else
+	      YbarN += pnorm(meano[i], 0, 1, 1, 0);
 	  }
 	}
-	ITT = (Y1barC-Y0barC)/(double)n_samp;     /* ITT effect */
-	Y1barC /= (double)(n_comp[0]+n_comp[1]);  
-	Y0barC /= (double)(n_comp[0]+n_comp[1]); 
+
 	p_comp /= (double)n_samp;  /* ITT effect on D; Prob. of being
 				      a complier */ 
 	p_never /= (double)n_samp; /* Prob. of being a never-taker */
+	if (*Insample) {
+	  ITT = (Y1barC-Y0barC)/(double)n_samp;     /* ITT effect */
+	  Y1barC /= (double)(n_comp[0]+n_comp[1]);  
+	  Y0barC /= (double)(n_comp[0]+n_comp[1]); 
+	  YbarN /= (double)(n_never[0]+n_never[1]);
+	  if (*AT)
+	    YbarA /= (double)(n_always[0]+n_always[1]);
+	} else {
+	  ITT /= (double)n_samp;     /* ITT effect */
+	  Y1barC /= (double)n_samp;
+	  Y0barC /= (double)n_samp;
+	  YbarN /= (double)n_samp;
+	  if (*AT)
+	    YbarA /= (double)n_samp;
+	}
 	CACE = Y1barC-Y0barC;    /* CACE */
-	YbarN /= (double)(n_never[0]+n_never[1]);
-	if (*AT)
-	  YbarA /= (double)(n_always[0]+n_always[1]);
-	
+
 	QoI[itempQ++] = ITT;   
 	QoI[itempQ++] = CACE;   
 	QoI[itempQ++] = p_comp; 	  
@@ -1004,17 +1014,28 @@ void LIgaussian(double *Y,      /* gaussian outcome variable */
 	n_comp[0] = 0; n_comp[1] = 0; 
 	n_never[0] = 0; n_never[1] = 0;
 	n_always[0] = 0; n_always[1] = 0;
-	p_comp = 0; p_never = 0; 
+	p_comp = 0; p_never = 0; ITT = 0;
 	Y1barC = 0; Y0barC = 0; YbarN = 0; YbarA = 0;
 	for (i = 0; i < n_samp; i++){
-	  p_comp += qC[i];
-	  p_never += qN[i];
+	  p_comp += qC[i]; p_never += qN[i];
 	  if (C[i] == 1) { /* ITT effects */
 	    if (Z[i] == 1) 
 	      n_comp[1]++;
 	    else
 	      n_comp[0]++;
-	    if (*Insample) { /* insample QoI */
+	  } else if (A[i] == 1) {
+	    if (Z[i] == 1)
+	      n_always[1]++;
+	    else
+	      n_always[0]++;
+	  } else {
+	    if (Z[i] == 1)
+		n_never[1]++;
+	      else
+		n_never[0]++;
+	  }
+	  if (*Insample) { /* insample QoI */
+	    if (C[i] == 1) {
 	      dtemp = rnorm(meano[i]+gamma[0], sqrt(*sig2));
 	      dtemp1 = rnorm(meano[i]+gamma[1], sqrt(*sig2));
 	      if (R[i] == 1) 
@@ -1023,49 +1044,50 @@ void LIgaussian(double *Y,      /* gaussian outcome variable */
 		else 
 		  dtemp1 = Y[i];
 	      Y1barC += dtemp; Y0barC += dtemp1;
-	    } else { /* population QoI */
-	      Y1barC += (meano[i]+gamma[0]);
-	      Y0barC += (meano[i]+gamma[1]); 
-	    }
-	  } else { /* Estimates for always-takers and never-takers */
-	    if (A[i] == 1) {
-	      if (Z[i] == 1)
-		n_always[1]++;
-	      else
-		n_always[0]++;
-	      if (*Insample)
-		if (R[i] == 1)
-		  YbarA += Y[i];
-		else 
-		  YbarA += rnorm(meano[i]+gamma[2], sqrt(*sig2));
+	    } else if (A[i] == 1) {
+	      if (R[i] == 1)
+		YbarA += Y[i];
 	      else 
-		YbarA += (meano[i]+gamma[2]);
+		YbarA += rnorm(meano[i]+gamma[2], sqrt(*sig2));
 	    } else {
-	      if (Z[i] == 1)
-		n_never[1]++;
-	      else
-		n_never[0]++;
-	      if (*Insample)
-		if (R[i] == 1)
-		  YbarN += Y[i];
-		else 
-		  YbarN += rnorm(meano[i], sqrt(*sig2));
+	      if (R[i] == 1)
+		YbarN += Y[i];
 	      else 
-		YbarN += meano[i];
-	    }
+		YbarN += rnorm(meano[i], sqrt(*sig2));
+	    } 
+	  } else { /* population QoI */
+	    /* compliers */
+	    dtemp = (meano[i]+gamma[0]);
+	    dtemp1 = (meano[i]+gamma[1]); 
+	    Y1barC += dtemp; Y0barC += dtemp1;
+	    ITT += ((dtemp-dtemp1)*qC[i]);
+	    /* always-takers */
+	    YbarA += (meano[i]+gamma[2]);
+	    /* never-takers */
+	    YbarN += meano[i];
 	  }
 	}
-	ITT = (Y1barC-Y0barC)/(double)n_samp;     /* ITT effect */
-	Y1barC /= (double)(n_comp[0]+n_comp[1]);  
-	Y0barC /= (double)(n_comp[0]+n_comp[1]); 
+
 	p_comp /= (double)n_samp;  /* ITT effect on D; Prob. of being
 				      a complier */ 
 	p_never /= (double)n_samp; /* Prob. of being a never-taker */
+	if (*Insample) {
+	  ITT = (Y1barC-Y0barC)/(double)n_samp;     /* ITT effect */
+	  Y1barC /= (double)(n_comp[0]+n_comp[1]);  
+	  Y0barC /= (double)(n_comp[0]+n_comp[1]); 
+	  YbarN /= (double)(n_never[0]+n_never[1]);
+	  if (*AT)
+	    YbarA /= (double)(n_always[0]+n_always[1]);
+	} else {
+	  ITT /= (double)n_samp;     /* ITT effect */
+	  Y1barC /= (double)n_samp;
+	  Y0barC /= (double)n_samp;
+	  YbarN /= (double)n_samp;
+	  if (*AT)
+	    YbarA /= (double)n_samp;
+	}
 	CACE = Y1barC-Y0barC;    /* CACE */
-	YbarN /= (double)(n_never[0]+n_never[1]);
-	if (*AT)
-	  YbarA /= (double)(n_always[0]+n_always[1]);
-	
+
 	QoI[itempQ++] = ITT;   
 	QoI[itempQ++] = CACE;   
 	QoI[itempQ++] = p_comp; 	  
@@ -1387,36 +1409,37 @@ void LIordinal(int *Y,         /* binary outcome variable */
 	n_comp[0] = 0; n_comp[1] = 0; 
 	n_never[0] = 0; n_never[1] = 0;
 	n_always[0] = 0; n_always[1] = 0;
-	p_comp = 0; p_never = 0; 
+	p_comp = 0; p_never = 0; ITT = 0;
 	for (j = 0; j < *n_cat-1; j++) {
 	  Y1barC[j] = 0; Y0barC[j] = 0; YbarN[j] = 0; YbarA[j] = 0;
 	}
 	for (i = 0; i < n_samp; i++){
-	  p_comp += qC[i];
-	  p_never += qN[i];
-	  if (Z[i] == 1) 
-	    if (C[i] == 1)
+	  p_comp += qC[i]; p_never += qN[i];
+	  if (C[i] == 1) { /* ITT effects */
+	    if (Z[i] == 1) 
 	      n_comp[1]++;
-	    else if (A[i] == 1)
+	    else
+	      n_comp[0]++;
+	  } else if (A[i] == 1) {
+	    if (Z[i] == 1)
 	      n_always[1]++;
 	    else
-	      n_never[1]++;
-	  else
-	    if (C[i] == 1)
-	      n_comp[0]++;
-	    else if (A[i] == 1)
 	      n_always[0]++;
-	    else 
-	      n_never[0]++;
-	  for (j = 1; j < *n_cat; j++) {
-	    if (C[i] == 1) { /* ITT effects */
-	      if (*Insample) { /* insample QoI */
+	  } else {
+	    if (Z[i] == 1)
+		n_never[1]++;
+	      else
+		n_never[0]++;
+	  }
+	  if (*Insample) { /* insample QoI */
+	    for (j = 1; j < *n_cat; j++) {
+	      if (C[i] == 1) {
 		if (j == (*n_cat-1)) { 
 		  /* Y1barC[j-1] and Y0barC[j-1] */
 		  dtemp = (double)(unif_rand() <
 				   pnorm(tau[*n_cat-2], meano[i]+gamma[0], 1, 0, 0));
 		  dtemp1 = (double)(unif_rand() <
-					      pnorm(tau[*n_cat-2], meano[i]+gamma[1], 1, 0, 0));
+				    pnorm(tau[*n_cat-2], meano[i]+gamma[1], 1, 0, 0));
 		} else {
 		  dtemp = (double)(unif_rand() < 
 				   (pnorm(tau[j], meano[i]+gamma[0], 1, 1, 0) 
@@ -1429,79 +1452,84 @@ void LIordinal(int *Y,         /* binary outcome variable */
 		  if (Z[i] == 1) 
 		    dtemp = (double)(Y[i] == j);
 		  else 
-		    dtemp1 += (double)(Y[i] == j);
+		    dtemp1 = (double)(Y[i] == j);
 		Y1barC[j-1] += dtemp; Y0barC[j-1] += dtemp1;
-	      } else { /* population QoI */
-		if (Z[i] == 1)
-		  if (j == (*n_cat-1))
-		    Y1barC[j-1] += pnorm(tau[*n_cat-2], meano[i]+gamma[0], 1, 0, 0);
-		  else
-		    Y1barC[j-1] += (pnorm(tau[j], meano[i]+gamma[0], 1, 1, 0) 
-				    -pnorm(tau[j-1], meano[i]+gamma[0], 1, 1, 0));
+	      } else if (A[i] == 1) {
+		if (R[i] == 1)
+		  YbarA[j-1] += (double)(Y[i] == j);
 		else
 		  if (j == (*n_cat-1))
-		    Y0barC[j-1] += pnorm(tau[*n_cat-2], meano[i]+gamma[1], 1, 0, 0);
+		    YbarA[j-1] += (double)(unif_rand() <
+					   pnorm(tau[*n_cat-2], meano[i]+gamma[2], 1, 0, 0));
 		  else
-		    Y0barC[j-1] += (pnorm(tau[j], meano[i]+gamma[1], 1, 1, 0) 
-				    -pnorm(tau[j-1], meano[i]+gamma[1], 1, 1, 0));
-	      }
-	    } else { /* Estimates for always-takers and never-takers */
-	      if (A[i] == 1) {
-		if (*Insample)
-		  if (R[i] == 1)
-		    YbarA[j-1] += (double)(Y[i] == j);
-		  else
-		    if (j == (*n_cat-1))
-		      YbarA[j-1] += (double)(unif_rand() <
-					     pnorm(tau[*n_cat-2], meano[i]+gamma[2], 1, 0, 0));
-		    else
-		      YbarA[j-1] += (double)(unif_rand() < 
-					     (pnorm(tau[j], meano[i]+gamma[2], 1, 1, 0) 
-					      -pnorm(tau[j-1], meano[i]+gamma[2], 1, 1, 0)));		
-		else 
-		  if (j == (*n_cat-1))
-		    YbarA[j-1] += pnorm(tau[*n_cat-2], meano[i]+gamma[2], 1, 0, 0);
-		  else
-		    YbarA[j-1] += (pnorm(tau[j], meano[i]+gamma[2], 1, 1, 0) 
-				   -pnorm(tau[j-1], meano[i]+gamma[2], 1, 1, 0));
+		    YbarA[j-1] += (double)(unif_rand() < 
+					   (pnorm(tau[j], meano[i]+gamma[2], 1, 1, 0) 
+					    -pnorm(tau[j-1], meano[i]+gamma[2], 1, 1, 0)));		
 	      } else {
-		if (*Insample)
-		  if (R[i] == 1)
-		    YbarN[j-1] += (double)(Y[i] == j);
-		  else 
-		    if (j == (*n_cat-1))
-		      YbarN[j-1] += (double)(unif_rand() <
-					     pnorm(tau[*n_cat-2], meano[i], 1, 0, 0));
-		    else
-		      YbarN[j-1] += (double)(unif_rand() < 
-					     (pnorm(tau[j], meano[i], 1, 1, 0) 
-					      -pnorm(tau[j-1], meano[i], 1, 1, 0)));		
+		if (R[i] == 1)
+		  YbarN[j-1] += (double)(Y[i] == j);
 		else 
 		  if (j == (*n_cat-1))
-		    YbarN[j-1] += pnorm(tau[*n_cat-2], meano[i], 1, 0, 0);
+		    YbarN[j-1] += (double)(unif_rand() <
+					   pnorm(tau[*n_cat-2], meano[i], 1, 0, 0));
 		  else
-		    YbarN[j-1] += (pnorm(tau[j], meano[i], 1, 1, 0) 
-				   -pnorm(tau[j-1], meano[i], 1, 1, 0));
+		    YbarN[j-1] += (double)(unif_rand() < 
+					   (pnorm(tau[j], meano[i], 1, 1, 0) 
+					    -pnorm(tau[j-1], meano[i], 1, 1, 0)));		
 	      }
+	    }
+	  } else { /* population QoI */
+	    for (j = 1; j < *n_cat; j++) {
+	      /* compliers */
+	      if (j == (*n_cat-1)) {
+		dtemp = pnorm(tau[*n_cat-2], meano[i]+gamma[0], 1, 0, 0);
+		dtemp1 = pnorm(tau[*n_cat-2], meano[i]+gamma[1], 1, 0, 0);
+	      } else {
+		dtemp = (pnorm(tau[j], meano[i]+gamma[0], 1, 1, 0) 
+			 -pnorm(tau[j-1], meano[i]+gamma[0], 1, 1, 0));
+		dtemp1 = (pnorm(tau[j], meano[i]+gamma[1], 1, 1, 0) 
+			  -pnorm(tau[j-1], meano[i]+gamma[1], 1, 1, 0));
+	      }
+	      Y1barC[j-1] += dtemp; Y0barC[j-1] += dtemp1;
+	      ITT[j-1] += ((dtemp-dtemp1)*qC[i]);
+	      /* always-takers */
+	      if (j == (*n_cat-1))
+		YbarA[j-1] += pnorm(tau[*n_cat-2], meano[i]+gamma[2], 1, 0, 0);
+	      else
+		YbarA[j-1] += (pnorm(tau[j], meano[i]+gamma[2], 1, 1, 0) 
+			       -pnorm(tau[j-1], meano[i]+gamma[2], 1, 1, 0));
+	      /* never-takers */
+	      if (j == (*n_cat-1))
+		YbarN[j-1] += pnorm(tau[*n_cat-2], meano[i], 1, 0, 0);
+	      else
+		YbarN[j-1] += (pnorm(tau[j], meano[i], 1, 1, 0) 
+			       -pnorm(tau[j-1], meano[i], 1, 1, 0));
 	    }
 	  }
 	}
 
-	for (j = 0; j < (*n_cat-1); j++) {
-	  ITT[j] = (Y1barC[j]-Y0barC[j])/(double)n_samp;     /* ITT effect */
-	  Y1barC[j] /= (double)(n_comp[0]+n_comp[1]);  
-	  Y0barC[j] /= (double)(n_comp[0]+n_comp[1]);
-	} 
 	p_comp /= (double)n_samp;  /* ITT effect on D; Prob. of being
 				      a complier */ 
 	p_never /= (double)n_samp; /* Prob. of being a never-taker */
 	for (j = 0; j < (*n_cat-1); j++) {
+	  if (*Insample) {
+	    ITT[j] = (Y1barC[j]-Y0barC[j])/(double)n_samp;     /* ITT effect */
+	    Y1barC[j] /= (double)(n_comp[0]+n_comp[1]);  
+	    Y0barC[j] /= (double)(n_comp[0]+n_comp[1]); 
+	    YbarN[j] /= (double)(n_never[0]+n_never[1]);
+	    if (*AT)
+	      YbarA[j] /= (double)(n_always[0]+n_always[1]);
+	  } else {
+	    ITT[j] /= (double)n_samp;     /* ITT effect */
+	    Y1barC[j] /= (double)n_samp;
+	    Y0barC[j] /= (double)n_samp;
+	    YbarN[j] /= (double)n_samp;
+	    if (*AT)
+	      YbarA[j] /= (double)n_samp;
+	  }
 	  CACE[j] = Y1barC[j]-Y0barC[j];    /* CACE */
-	  YbarN[j] /= (double)(n_never[0]+n_never[1]);
-	  if (*AT)
-	    YbarA[j] /= (double)(n_always[0]+n_always[1]);
 	}
-	
+
 	for (j = 0; j < (*n_cat-1); j++) 
 	  QoI[itempQ++] = ITT[j];   
 	for (j = 0; j < (*n_cat-1); j++) 
@@ -1803,7 +1831,7 @@ void LIcount(int *Y,         /*count outcome variable */
 	  }
       } 
     }
-    
+
     /** storing the results **/
     if (main_loop > *burnin) {
       if (keep == *iKeep) {
@@ -1811,17 +1839,28 @@ void LIcount(int *Y,         /*count outcome variable */
 	n_comp[0] = 0; n_comp[1] = 0; 
 	n_never[0] = 0; n_never[1] = 0;
 	n_always[0] = 0; n_always[1] = 0;
-	p_comp = 0; p_never = 0; 
+	p_comp = 0; p_never = 0; ITT = 0;
 	Y1barC = 0; Y0barC = 0; YbarN = 0; YbarA = 0;
 	for (i = 0; i < n_samp; i++){
-	  p_comp += qC[i];
-	  p_never += qN[i];
+	  p_comp += qC[i]; p_never += qN[i];
 	  if (C[i] == 1) { /* ITT effects */
 	    if (Z[i] == 1) 
 	      n_comp[1]++;
 	    else
 	      n_comp[0]++;
-	    if (*Insample) { /* insample QoI */
+	  } else if (A[i] == 1) {
+	    if (Z[i] == 1)
+	      n_always[1]++;
+	    else
+	      n_always[0]++;
+	  } else {
+	    if (Z[i] == 1)
+		n_never[1]++;
+	      else
+		n_never[0]++;
+	  }
+	  if (*Insample) { /* insample QoI */
+	    if (C[i] == 1) {
 	      dtemp = rnegbin(exp(meano[i]+gamma[0]), *sig2);
 	      dtemp1 = rnegbin(exp(meano[i]+gamma[1]), *sig2);
 	      if (R[i] == 1)
@@ -1830,50 +1869,50 @@ void LIcount(int *Y,         /*count outcome variable */
 		else 
 		  dtemp1 = (double) Y[i];
 	      Y1barC += dtemp; Y0barC += dtemp1;
-	    } else { /* population QoI */
-	      Y1barC += exp(meano[i]+gamma[0]);
-	      Y0barC += exp(meano[i]+gamma[1]); 
-	    }
-	  } else { /* Estimates for always-takers and never-takers */
-	    if (A[i] == 1) {
-	      if (Z[i] == 1)
-		n_always[1]++;
-	      else
-		n_always[0]++;
-	      if (*Insample)
-		if (R[i] == 1)
-		  YbarA += (double)Y[i];
-		else 
-		  YbarA += rnegbin(exp(meano[i]+gamma[2]), *sig2);
+	    } else if (A[i] == 1) {
+	      if (R[i] == 1)
+		YbarA += (double)Y[i];
 	      else 
-		YbarA += exp(meano[i]+gamma[2]);
+		YbarA += rnegbin(exp(meano[i]+gamma[2]), *sig2);
 	    } else {
-	      if (Z[i] == 1)
-		n_never[1]++;
-	      else
-		n_never[0]++;
-	      if (*Insample)
-		if (R[i] == 1)
-		  YbarN += (double)Y[i];
-		else 
-		  YbarN += rnegbin(exp(meano[i]), *sig2);
+	      if (R[i] == 1)
+		YbarN += (double)Y[i];
 	      else 
-		YbarN += exp(meano[i]);
-	    }
+		YbarN += rnegbin(exp(meano[i]), *sig2);
+	    } 
+	  } else { /* population QoI */
+	    /* compliers */
+	    dtemp = exp(meano[i]+gamma[0]);
+	    dtemp1 = exp(meano[i]+gamma[1]); 
+	    Y1barC += dtemp; Y0barC += dtemp1;
+	    ITT += ((dtemp-dtemp1)*qC[i]);
+	    /* always-takers */
+	    YbarA += exp(meano[i]+gamma[2]);
+	    /* never-takers */
+	    YbarN += exp(meano[i]);
 	  }
 	}
 
-	ITT = (Y1barC-Y0barC)/(double)n_samp;     /* ITT effect */
-	Y1barC /= (double)(n_comp[0]+n_comp[1]);  
-	Y0barC /= (double)(n_comp[0]+n_comp[1]); 
 	p_comp /= (double)n_samp;  /* ITT effect on D; Prob. of being
 				      a complier */ 
 	p_never /= (double)n_samp; /* Prob. of being a never-taker */
+	if (*Insample) {
+	  ITT = (Y1barC-Y0barC)/(double)n_samp;     /* ITT effect */
+	  Y1barC /= (double)(n_comp[0]+n_comp[1]);  
+	  Y0barC /= (double)(n_comp[0]+n_comp[1]); 
+	  YbarN /= (double)(n_never[0]+n_never[1]);
+	  if (*AT)
+	    YbarA /= (double)(n_always[0]+n_always[1]);
+	} else {
+	  ITT /= (double)n_samp;     /* ITT effect */
+	  Y1barC /= (double)n_samp;
+	  Y0barC /= (double)n_samp;
+	  YbarN /= (double)n_samp;
+	  if (*AT)
+	    YbarA /= (double)n_samp;
+	}
 	CACE = Y1barC-Y0barC;    /* CACE */
-	YbarN /= (double)(n_never[0]+n_never[1]);
-	if (*AT)
-	  YbarA /= (double)(n_always[0]+n_always[1]);
-	
+    
 	QoI[itempQ++] = ITT;   
 	QoI[itempQ++] = CACE;   
 	QoI[itempQ++] = p_comp; 	  
