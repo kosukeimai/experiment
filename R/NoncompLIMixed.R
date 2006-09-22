@@ -462,7 +462,7 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
               as.double(Wr), as.double(coef.start.c),
               as.double(coef.start.c), as.double(coef.start.o),
               as.double(coef.start.r), as.double(var.start.o),
-              as.integer(N), as.integer(n.draws), as.integer(ngrp),
+              as.integer(c(N, ngrp)), as.integer(n.draws), 
               as.integer(max(table(grp))), as.integer(c(nfixedC,nfixedO,nfixedR)),
               as.integer(c(nrandomC, nrandomO, nrandomR)),
               as.double(Psi.start.c), as.double(Psi.start.c),
@@ -553,7 +553,7 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
   }
   QoI <- matrix(out$QoI, byrow = TRUE, ncol = nqoi)
   if (model.o == "oprobit") {
-    res$ITT <- QoI[,1:(ncat-1)*(ngrp+1)]
+    res$ITT <- QoI[,1:((ncat-1)*(ngrp+1))]
     res$CACE <- QoI[,((ncat-1)*(ngrp+1)+1):(2*(ngrp+1)*(ncat-1))]
     res$Y1barC <- QoI[,(2*(ngrp+1)*(ncat-1)+1):(3*(ngrp+1)*(ncat-1))]
     res$Y0barC <- QoI[,(3*(ngrp+1)*(ncat-1)+1):(4*(ngrp+1)*(ncat-1))]
