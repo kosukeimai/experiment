@@ -22,41 +22,15 @@
   Read the data etc.
 */
 
-void Prep(double *dXc,
-	  double **Xc,
-	  double *dXo,
-	  double **Xo,
-	  double *dXr,
-	  double **Xr,
-	  double **Xobs,
-	  int *R,
-	  int n_samp,
-	  int n_obs,
-	  int n_covC,
-	  int n_covO,
-	  int n_covR,
-	  int logitC,
-	  int AT,
-	  double *dA0C,
-	  double **A0C,
-	  double *dA0O,
-	  double **A0O,
-	  int priorO,
-	  double *dA0R,
-	  double **A0R,
-	  double *beta0,
-	  double *delta0,
-	  double *gamma0,
-	  double *pC,
-	  double *pN,
-	  double *pA,
-	  double *prC,
-	  double *prN,
-	  double *prA,
-	  int *acceptC,
-	  int *acceptR,
-	  int n_miss
-	  ){
+void Prep(double *dXc, double **Xc, double *dXo, double **Xo,
+	  double *dXr, double **Xr, double **Xobs, int *R,
+	  int n_samp, int n_obs, int n_covC, int n_covO,
+	  int n_covR, int logitC, int AT, double *dA0C,
+	  double **A0C, double *dA0O, double **A0O, int priorO,
+	  double *dA0R, double **A0R, double *beta0, double *delta0,
+	  double *gamma0, double *pC, double *pN, double *pA,
+	  double *prC, double *prN, double *prA, int *acceptC,
+	  int *acceptR, int n_miss){
   int i, j, k;
   int itemp;
   double **mtempC = doubleMatrix(n_covC, n_covC); 
@@ -171,24 +145,10 @@ void Prep(double *dXc,
    Response function 
 */
 
-void Response(int logitR,
-	      int *R,
-	      double **Xr,
-	      double *delta,
-	      int n_samp,
-	      int n_covR,
-	      double *delta0,
-	      double **A0R,
-	      double *VarR,
-	      int *acceptR,
-	      int mda,
-	      int AT,
-	      int *Z,
-	      int *D,
-	      double *prC,
-	      double *prN,
-	      double *prA
-	      ){
+void Response(int logitR, int *R, double **Xr, double *delta,
+	      int n_samp, int n_covR, double *delta0, double **A0R,
+	      double *VarR, int *acceptR, int mda, int AT,
+	      int *Z, int *D, double *prC, double *prN, double *prA){
   double dtemp;
   int i, j;
 
@@ -255,21 +215,10 @@ void Response(int logitR,
    Compliance prediction
 */
 
-void Compliance(int logitC,
-		int AT,
-		int *C,
-		double **Xc,
-		double *betaC,
-		int n_samp,
-		int n_covC,
-		double *beta0,
-		double **A0C,
-		double *betaA,
-		double *VarC,
-		int *acceptC,
-		int mda,
-		int *A
-		){
+void Compliance(int logitC, int AT, int *C, double **Xc,
+		double *betaC, int n_samp, int n_covC, double *beta0,
+		double **A0C, double *betaA, double *VarC, int *acceptC,
+		int mda, int *A){
   int i, j; 
   int itemp;
   /* subset of the data */
@@ -315,31 +264,12 @@ void Compliance(int logitC,
    Sampling Compliance Status 
 */
 
-void SampleComp(int n_samp,
-		int n_covC,
-		int AT,
-		double **Xc,
-		double **Xo,
-		double **Xr,
-		double **Xobs,
-		double *betaC,
-		double *betaA,
-		int logitC,
-		double *qC,
-		double *qN,
-		int *Z,
-		int *D,
-		int *R,
-		int *RD,
-		int *C,
-		int *A,
-		double *pC,
-		double *pN,
-		double *pA,
-		double *prA,
-		double *prN,
-		double *prC
-		){
+void SampleComp(int n_samp, int n_covC,	int AT,	double **Xc,
+		double **Xo, double **Xr, double **Xobs, double *betaC,
+		double *betaA, int logitC, double *qC, double *qN,
+		int *Z,	int *D,	int *R,	int *RD, int *C, int *A,
+		double *pC, double *pN,	double *pA, double *prA,
+		double *prN, double *prC){
 
   int i, j, itemp;
   double dtemp, dtemp1, dtemp2;
