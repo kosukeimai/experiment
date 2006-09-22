@@ -49,9 +49,6 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
 
   res <- list(call = call, Y = Y, Xo = Xo, Xc = Xc, Xr = Xr,
               D = D, Z = Z, n.draws = n.draws)
-  RD <- (!is.na(D))*1
-  if (sum(is.na(D)) > 0) 
-    D[is.na(D)] <- Z[is.na(D)]
   
   ## Random starting values for missing Y using Bernoulli(0.5) for
   ## binary and ordinal
@@ -279,7 +276,7 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
   ## calling C function
   if (model.o == "probit" || model.o == "logit")
     out <- .C("LIbinary",
-              as.integer(Y), as.integer(R), as.integer(RD), as.integer(Z),
+              as.integer(Y), as.integer(R), as.integer(Z),
               as.integer(D), as.integer(C), as.integer(A),
               as.integer(Ymiss), as.integer(AT), as.integer(in.sample), 
               as.double(Xc), as.double(Xo), as.double(Xr),
@@ -305,7 +302,7 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
               PACKAGE = "experiment")
   else if (model.o == "oprobit")
     out <- .C("LIordinal",
-              as.integer(Y), as.integer(R), as.integer(RD), as.integer(Z),
+              as.integer(Y), as.integer(R), as.integer(Z),
               as.integer(D), as.integer(C), as.integer(A),
               as.integer(Ymiss), as.integer(AT), as.integer(in.sample), 
               as.double(Xc), as.double(Xo), as.double(Xr),
@@ -332,7 +329,7 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
               PACKAGE = "experiment")
   else if (model.o == "gaussian")
     out <- .C("LIgaussian",
-              as.double(Y), as.integer(R), as.integer(RD), as.integer(Z),
+              as.double(Y), as.integer(R), as.integer(Z),
               as.integer(D), as.integer(C), as.integer(A),
               as.integer(Ymiss), as.integer(AT), as.integer(in.sample), 
               as.double(Xc), as.double(Xo), as.double(Xr),
@@ -360,7 +357,7 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
               PACKAGE = "experiment")
   else if (model.o == "negbin")
     out <- .C("LIcount",
-              as.integer(Y), as.integer(R), as.integer(RD), as.integer(Z),
+              as.integer(Y), as.integer(R), as.integer(Z),
               as.integer(D), as.integer(C), as.integer(A),
               as.integer(Ymiss), as.integer(AT), as.integer(in.sample), 
               as.double(Xc), as.double(Xo), as.double(Xr),
