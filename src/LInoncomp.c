@@ -1356,8 +1356,9 @@ void LIordinal(int *Y,         /* binary outcome variable */
 	n_comp[0] = 0; n_comp[1] = 0; 
 	n_never[0] = 0; n_never[1] = 0;
 	n_always[0] = 0; n_always[1] = 0;
-	p_comp = 0; p_never = 0; ITT = 0;
+	p_comp = 0; p_never = 0; 
 	for (j = 0; j < *n_cat-1; j++) {
+	  ITT[j] = 0;
 	  Y1barC[j] = 0; Y0barC[j] = 0; YbarN[j] = 0; YbarA[j] = 0;
 	}
 	for (i = 0; i < n_samp; i++){
