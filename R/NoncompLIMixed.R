@@ -32,6 +32,8 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
     stop("missing values not allowed in covariates")
   if (model.o == "gaussian")
     Y <- model.response(mf)
+  else if (model.o == "oprobit")
+    Y <- as.integer(factor(model.response(mf)))-1
   else
     Y <- as.integer(model.response(mf))
 
