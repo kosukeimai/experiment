@@ -2665,22 +2665,6 @@ void LINegBinMixed(int *Y,         /* count outcome variable */
 		       n_never, n_always, p_comp, p_never, CACE, YbarN,
 		       YbarA, *AT);
    
-	for (j = 0; j < (n_grp+1); j++) {
-	  ITT[j] = (Y1barC[j]-Y0barC[j]) /
-	    (double)(n_comp[j][0]+n_never[j][0]+n_always[j][0] + 
-		     n_comp[j][1]+n_never[j][1]+n_always[j][1]);
-	  Y1barC[j] /= (double)(n_comp[j][0]+n_comp[j][1]);  
-	  Y0barC[j] /= (double)(n_comp[j][0]+n_comp[j][1]); 
-	  p_comp[j] /= (double)(n_comp[j][0]+n_never[j][0]+n_always[j][0] + 
-				n_comp[j][1]+n_never[j][1]+n_always[j][1]);  
-	  p_never[j] /= (double)(n_comp[j][0]+n_never[j][0]+n_always[j][0] + 
-				 n_comp[j][1]+n_never[j][1]+n_always[j][1]);  
-	  CACE[j] = Y1barC[j]-Y0barC[j];    /* CACE */
-	  YbarN[j] /= (double)(n_never[j][0]+n_never[j][1]);
-	  if (*AT)
-	    YbarA[j] /= (double)(n_always[j][0]+n_always[j][1]);
-	}
-
 	for (j = 0; j < (n_grp+1); j++)
 	  QoI[itempQ++] = ITT[j];   
 	for (j = 0; j < (n_grp+1); j++)
