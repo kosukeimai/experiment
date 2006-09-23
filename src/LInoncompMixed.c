@@ -41,8 +41,7 @@ void PrepMixed(double *dXc, double *dZc, double *dXo, double *dZo,
 	       double **A0R, int logitC, double *pC, double *pN,
 	       double *pA, double *prC, double *prN, double *prA,
 	       int AT, double *beta0, double *gamma0, double *delta0,
-	       int prior
-	       ) {
+	       int prior) {
   int i, j, k;
   int itemp = 0;
   int *vitemp = intArray(n_grp);
