@@ -32,8 +32,11 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
     stop("missing values not allowed in covariates")
   if (model.o == "gaussian")
     Y <- model.response(mf)
+  else if (model.o == "oprobit")
+    Y <- as.integer(as.factor(model.response(mf))) - 1
   else
     Y <- as.integer(model.response(mf))
+
   ## compliance model
   mf <- model.frame(formulae[[2]], data=data, na.action='na.fail')
   Xc <- model.matrix(formulae[[2]], data=mf)
