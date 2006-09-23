@@ -32,8 +32,6 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
     stop("missing values not allowed in covariates")
   if (model.o == "gaussian")
     Y <- model.response(mf)
-  else if (model.o == "oprobit")
-    Y <- as.integer(as.factor(model.response(mf)))-1
   else
     Y <- as.integer(model.response(mf))
 
@@ -84,10 +82,9 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
     if (length(unique(tau.start.o)) != (ncat-1))
       stop("incorrect input for tau.start.o")
     tau.start.o <- c(tau.start.o, tau.start.o[ncat-1]+1000)
-
     if (length(tune.tau) != ncat-2)
       if (length(tune.tau) == 1)
-        tune.o <- rep(tune.tau, ncat-2)
+        tune.tau <- rep(tune.tau, ncat-2)
       else
         stop(paste("the length of tune.tau should be", ncat-2))
   }

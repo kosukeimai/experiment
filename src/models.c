@@ -1002,6 +1002,10 @@ void boprobitMixedMCMC(int *Y,          /* binary outcome variable */
       for (j = 1; j < (n_cat-1); j++) 
 	dvtemp[j] = TruncNorm(dvtemp[j-1], tau[j+1], tau[j], prop[j-1], 1);
       dtemp = 0; dvtemp[n_cat-1] = dvtemp[n_cat-2] + 1000;
+      /* for (j = 0; j < n_cat; j++) 
+	 Rprintf("tau %5d;%14g%14g%14g\n", j, tau[j], dvtemp[j], prop[j]);
+	 Rprintf("\n");
+      */
       for (j = 1; j < (n_cat-1); j++) 
 	dtemp = dtemp + log(pnorm(tau[j+1]-tau[j], 0, sqrt(prop[j-1]), 1, 0) -
 			    pnorm(dvtemp[j-1]-tau[j], 0, sqrt(prop[j-1]), 1, 0)) -
@@ -1020,7 +1024,7 @@ void boprobitMixedMCMC(int *Y,          /* binary outcome variable */
       /* Rprintf("%14g\n", exp(dtemp)); */
       if (unif_rand() < exp(dtemp)) {
 	accept[0]++;
-	for (j = 1; j < n_cat; j++)
+	for (j = 1; j < n_cat; j++) 
 	  tau[j] = dvtemp[j];
       }
     } 
