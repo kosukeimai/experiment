@@ -38,11 +38,9 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
     Y <- as.integer(model.response(mf))
 
   ## compliance model
-  mf <- model.frame(formulae[[2]], data=data, na.action='na.fail')
-  Xc <- model.matrix(formulae[[2]], data=mf)
+  Xc <- model.matrix(formulae[[2]], data=data)
   ## response model
-  mf <- model.frame(formulae[[3]], data=data, na.action='na.pass')
-  Xr <- model.matrix(formulae[[3]], data=mf)
+  Xr <- model.matrix(formulae[[3]], data=data)
 
   N <- length(Y)
   Z <- eval(call$Z, envir = data)

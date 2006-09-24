@@ -41,13 +41,11 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
   Wo <- model.matrix(formulae[[2]], data=data)
 
   ## compliance model
-  mf <- model.frame(formulae[[3]], data=data, na.action='na.fail')
-  Xc <- model.matrix(formulae[[3]], data=mf)
+  Xc <- model.matrix(formulae[[3]], data=data)
   Wc <- model.matrix(formulae[[4]], data=data)
   
   ## response model
-  mf <- model.frame(formulae[[5]], data=data, na.action='na.pass')
-  Xr <- model.matrix(formulae[[5]], data=mf)
+  Xr <- model.matrix(formulae[[5]], data=data)
   Wr <- model.matrix(formulae[[6]], data=data)
 
   ## other variables 
