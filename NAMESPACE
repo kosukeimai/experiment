@@ -6,6 +6,7 @@ export(Noncomp.bayes,
        Noncomp.bayesMixed,
        NIbprobit,
        NInocov,
+       ITTnocov,
        MARnocov,
        bNormalMixed)
 
