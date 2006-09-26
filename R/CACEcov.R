@@ -4,7 +4,7 @@
 ###
 
 CACEcov <- function(Y, D, Z, X, grp = NULL, data = parent.frame(),
-                    robust = FALSE){ 
+                    robust = FALSE, fast = TRUE){ 
 
   call <- match.call()
   Y <- matrix(eval(call$Y, data), ncol = 1)
@@ -22,26 +22,35 @@ CACEcov <- function(Y, D, Z, X, grp = NULL, data = parent.frame(),
     D <- D[sgrp$ix,]
     Y <- Y[sgrp$ix,]
   }
-  
-  Pz <- Z %*% solve(t(Z) %*% Z) %*% t(Z) 
-  beta <- solve(t(X) %*% Pz %*% X) %*% t(X) %*% Pz %*% Y
+
+  dhat <- fitted(tmp <- lm(D ~ -1 + Z))
+  beta <- coef(lm(Y ~ -1 + X[,-ncol(X)] + dhat))
+  ZZinv <- (vcov(tmp)/(summary(tmp)$sigma^2))
+  XZ <- t(X) %*% Z
+  XPzXinv <- solve(XZ %*% ZZinv %*% t(XZ))
+
   epsilon <- c(Y - X %*% beta)
   est <- beta[length(beta)]
 
   if (is.null(grp)) {
-    if (robust) { 
-      tmp <- solve(t(X) %*% Pz %*% X)
-      var <- tmp %*% (t(X) %*% Z %*% solve(t(Z) %*% Z)
-                      %*% (t(Z) %*% diag(epsilon^2) %*% Z)
-                      %*% solve(t(Z) %*% Z) %*% t(Z) %*% X) %*% tmp
+    if (robust) {
+      if (fast)
+        ZOmegaZ <- t(Z) %*% diag(epsilon^2) %*% Z
+      else {
+        ZOmegaZ <- matrix(0, ncol = ncol(Z), nrow = ncol(Z))
+        for (i in 1:nrow(Z))
+          ZOmegaZ <- ZOmegaZ + crossprod(matrix(Z[i,], nrow = 1)) * epsilon[i]^2
+      }
+      var <- XPzXinv %*% XZ %*% ZZinv 
+      var <- var %*% ZOmegaZ %*% t(var)
     } else {
-      sig2 <- c(t(epsilon) %*% epsilon / N)
-      var <- sig2 * solve(t(X) %*% Pz %*% X)
+      sig2 <- c(crossprod(epsilon))/ N
+      var <- sig2 * XPzXinv
     }
   } else {
-      tmp <- solve(t(X) %*% Pz %*% X)
+    n.grp <- length(unique(grp))
+    if (fast) {
       Omega <- matrix(0, ncol = N, nrow = N)
-      n.grp <- length(unique(grp))
       counter <- 1
       for (i in 1:n.grp) {
         n.grp.obs <- sum(grp == unique(grp)[i])
@@ -49,10 +58,20 @@ CACEcov <- function(Y, D, Z, X, grp = NULL, data = parent.frame(),
           epsilon[grp == unique(grp)[i]] %*% t(epsilon[grp == unique(grp)[i]])
         counter <- counter + n.grp.obs
       }
-      var <- tmp %*% (t(X) %*% Z %*% solve(t(Z) %*% Z)
-                      %*% (t(Z) %*% Omega %*% Z)
-                      %*% solve(t(Z) %*% Z) %*% t(Z) %*% X) %*% tmp
-    }
+      ZOmegaZ <- t(Z) %*% Omega %*% Z
+    } else {
+      ZOmegaZ <- matrix(0, ncol = ncol(Z), nrow = ncol(Z))
+      for (i in 1:n.grp) {
+        ZOmegaZ <- ZOmegaZ + t(Z[grp == unique(grp)[i],]) %*%
+          (epsilon[grp == unique(grp)[i]] %*% t(epsilon[grp == unique(grp)[i]])) %*%
+          Z[grp == unique(grp)[i],]
+      }
 
+    }
+    var <- XPzXinv %*% XZ %*% ZZinv
+    var <- var %*% ZOmegaZ %*% t(var)
+  }
+  names(est) <- "CACE"
+  
   return(list(est = est, var = var[nrow(var),ncol(var)]))
 }
