@@ -14,3 +14,4 @@ ITTnocov <- function(Y, Z, grp = NULL){
 
   return(list(est = ITT, var = ITT.var))
 }
+
