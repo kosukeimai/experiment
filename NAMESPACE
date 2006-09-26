@@ -8,6 +8,7 @@ export(Noncomp.bayes,
        NInocov,
        ITTnocov,
        CACEnocov,
+       CACEcov,
        MARnocov,
        bNormalMixed)
 
