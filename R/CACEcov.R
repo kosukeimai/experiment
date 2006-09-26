@@ -10,8 +10,10 @@ CACEcov <- function(Y, D, Z, X, grp = NULL, data = parent.frame(),
   Y <- matrix(eval(call$Y, data), ncol = 1)
   N <- nrow(Y)
   D <- matrix(eval(call$D, data), ncol = 1)
-  Z <- matrix(eval(call$Z, data), nrow = N)
-  X <- cbind(model.matrix(X, data = data), D)
+  X <- model.matrix(X, data = data)
+  Z <- cbind(X, matrix(eval(call$Z, data), nrow = N))
+  X <- cbind(X, D)
+  grp <- eval(call$grp, data)
   if (!is.null(grp)) {
     sgrp <- sort(grp, index.return = TRUE)
     grp <- grp[sgrp$ix]
@@ -23,17 +25,17 @@ CACEcov <- function(Y, D, Z, X, grp = NULL, data = parent.frame(),
   
   Pz <- Z %*% solve(t(Z) %*% Z) %*% t(Z) 
   beta <- solve(t(X) %*% Pz %*% X) %*% t(X) %*% Pz %*% Y
-  epsilon <- Y - X %*% beta
+  epsilon <- c(Y - X %*% beta)
   est <- beta[length(beta)]
-  
-  if (is.na(grp)) {
+
+  if (is.null(grp)) {
     if (robust) { 
       tmp <- solve(t(X) %*% Pz %*% X)
       var <- tmp %*% (t(X) %*% Z %*% solve(t(Z) %*% Z)
                       %*% (t(Z) %*% diag(epsilon^2) %*% Z)
                       %*% solve(t(Z) %*% Z) %*% t(Z) %*% X) %*% tmp
     } else {
-      sig2 <- t(epsilon) %*% epsilon / N
+      sig2 <- c(t(epsilon) %*% epsilon / N)
       var <- sig2 * solve(t(X) %*% Pz %*% X)
     }
   } else {
