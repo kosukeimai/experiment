@@ -261,12 +261,12 @@ void Compliance(int logitC, int AT, int *C, double **Xc,
 void SampleComp(int n_samp, int n_covC,	int AT,	double **Xc,
 		double **Xo, double **Xr, double **Xobs, double *betaC,
 		double *betaA, int logitC, double *qC, double *qN,
-		int *Z,	int *D,	int *R,	int *C, int *A,
+		int *Z,	int *D,	int *R,	int *RD, int *C, int *A,
 		double *pC, double *pN,	double *pA, double *prA,
 		double *prN, double *prC){
 
   int i, j, itemp;
-  double dtemp;
+  double dtemp, dtemp1 , dtemp2;
   /* mean vector for the compliance model */
   double *meanc = doubleArray(n_samp);
   double *meana = doubleArray(n_samp);
@@ -289,7 +289,40 @@ void SampleComp(int n_samp, int n_covC,	int AT,	double **Xc,
 	qC[i] = pnorm(meanc[i], 0, 1, 1, 0);
 	qN[i] = (1-qC[i])*pnorm(meana[i], 0, 1, 0, 0);
       }
-      if ((Z[i] == 0) && (D[i] == 0)){
+      if (RD[i] == 0) {
+	if (R[i] == 1) {
+	  dtemp = qC[i]*pC[i]*prC[i] / 
+	    (qC[i]*pC[i]*prC[i]+qN[i]*pN[i]*prN[i]+(1-qC[i]-qN[i])*pA[i]*prA[i]);
+	  dtemp1 = (qC[i]*pC[i]*prC[i]+qN[i]*pN[i]*prN[i]) / 
+	    (qC[i]*pC[i]*prC[i]+qN[i]*pN[i]*prN[i]+(1-qC[i]-qN[i])*pA[i]*prA[i]);
+	} else { 
+	  dtemp = qC[i]*prC[i] / 
+	    (qC[i]*prC[i]+qN[i]*prN[i]+(1-qC[i]-qN[i])*prA[i]);
+	  dtemp1 = (qC[i]*prC[i]+qN[i]*prN[i]) / 
+	    (qC[i]*prC[i]+qN[i]*prN[i]+(1-qC[i]-qN[i])*prA[i]);
+	}
+	dtemp2 = unif_rand();
+	if (dtemp2 < dtemp) {
+	  C[i] = 1; A[i] = 0; D[i] = Z[i];
+	  Xo[i][1-Z[i]] = 1; Xr[i][1-Z[i]] = 1;
+	  Xo[i][Z[i]] = 0; Xr[i][Z[i]] = 0;
+	  Xo[i][2] = 0; Xr[i][2] = 0;
+	} else if (dtemp2 < dtemp1) {
+	  C[i] = 0; A[i] = 0; D[i] = 0; 
+	  Xo[i][0] = 0; Xr[i][0] = 0;
+	  Xo[i][1] = 0; Xr[i][1] = 0;
+	  Xo[i][2] = 0; Xr[i][2] = 0;
+	}  else {
+	  if (logitC)
+	    C[i] = 2; 
+	  else
+	    C[i] = 0;
+	  A[i] = 1; D[i] = 1; 
+	  Xo[i][0] = 0; Xr[i][0] = 0;
+	  Xo[i][1] = 0; Xr[i][1] = 0;
+	  Xo[i][2] = 1; Xr[i][2] = 1;
+	}
+      } else if ((Z[i] == 0) && (D[i] == 0)){
 	if (R[i] == 1)
 	  dtemp = qC[i]*pC[i]*prC[i] / 
 	    (qC[i]*pC[i]*prC[i]+qN[i]*pN[i]*prN[i]);
@@ -300,8 +333,7 @@ void SampleComp(int n_samp, int n_covC,	int AT,	double **Xc,
 	} else {
 	  C[i] = 0; Xo[i][1] = 0; Xr[i][1] = 0;
 	}  
-      }
-      if ((Z[i] == 1) && (D[i] == 1)){
+      } else if ((Z[i] == 1) && (D[i] == 1)){
 	if (R[i] == 1)
 	  dtemp = qC[i]*pC[i]*prC[i] / 
 	    (qC[i]*pC[i]*prC[i]+(1-qC[i]-qN[i])*pA[i]*prA[i]);
@@ -324,7 +356,7 @@ void SampleComp(int n_samp, int n_covC,	int AT,	double **Xc,
 	Xobs[itemp][2] = Xo[i][2];
       }
     } else { /* no always-takers */
-      if (Z[i] == 0){
+      if ((Z[i] == 0) || (RD[i] == 0)) {
 	if (logitC)
 	  qC[i] = 1/(1+exp(-meanc[i]));
 	else
@@ -335,10 +367,9 @@ void SampleComp(int n_samp, int n_covC,	int AT,	double **Xc,
 	else
 	  dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+(1-qC[i])*prN[i]);
 	if (unif_rand() < dtemp) {
-	  C[i] = 1;
-	  D[i] = 0;
-	  Xo[i][0] = 0; Xo[i][1] = 1; 
-	  Xr[i][0] = 0; Xr[i][1] = 1;
+	  C[i] = 1; D[i] = Z[i];
+	  Xo[i][1-Z[i]] = 1; Xr[i][1-Z[i]] = 1; 
+	  Xo[i][Z[i]] = 0; Xr[i][Z[i]] = 0; 
 	} else {
 	  C[i] = 0; D[i] = 0;
 	  Xo[i][0] = 0; Xr[i][0] = 0;
@@ -366,6 +397,7 @@ void LIbinary(int *Y,         /* binary outcome variable */
 	      int *R,         /* recording indicator for Y */
 	      int *Z,         /* treatment assignment */
 	      int *D,         /* treatment status */ 
+	      int *RD,        /* recording indicator for D */
 	      int *C,         /* compliance status; 
 				 for probit, complier = 1,
 				 noncomplier = 0
@@ -513,7 +545,7 @@ void LIbinary(int *Y,         /* binary outcome variable */
 
     /* Step 3: SAMPLE COMPLIANCE COVARITE */
     SampleComp(n_samp, n_covC, *AT, Xc, Xo, Xr, Xobs, betaC, betaA,
-	       *logitC, qC, qN, Z, D, R, C, A, pC, pN, pA, prA, prN, prC);
+	       *logitC, qC, qN, Z, D, R, RD, C, A, pC, pN, pA, prA, prN, prC);
 
     /** Step 4: OUTCOME MODEL **/
     if (*logitO)
@@ -522,47 +554,39 @@ void LIbinary(int *Y,         /* binary outcome variable */
     else
       bprobitGibbs(Yobs, Xobs, gamma, n_obs, n_covO, 0, gamma0, A0O, *mda, 1);
 
-    /** Compute probabilities of Y = 1 **/
+    /** Compute probabilities of Y = Yobs **/
     for (i = 0; i < n_samp; i++) {
       meano[i] = 0;
       if (*AT) { /* always-takers */
 	for (j = 3; j < n_covO; j++)
 	  meano[i] += Xo[i][j]*gamma[j];
 	if (R[i] == 1) {
-	  if ((Z[i] == 0) && (D[i] == 0)) {
+	  if ((RD[i] == 0) || (Z[i] == D[i])) {
 	    if (*logitO) {
-	      pC[i] = Y[i]/(1+exp(-meano[i]-gamma[1])) + (1-Y[i])/(1+exp(meano[i]+gamma[1]));
+	      pC[i] = Y[i]/(1+exp(-meano[i]-gamma[1-Z[i]])) + (1-Y[i])/(1+exp(meano[i]+gamma[1-Z[i]]));
+	      pA[i] = Y[i]/(1+exp(-meano[i]-gamma[2])) + (1-Y[i])/(1+exp(meano[i]+gamma[2]));
 	      pN[i] = Y[i]/(1+exp(-meano[i])) + (1-Y[i])/(1+exp(meano[i]));
 	    } else {
-	      pC[i] = Y[i]*pnorm(meano[i]+gamma[1], 0, 1, 1, 0) +
-		(1-Y[i])*pnorm(meano[i]+gamma[1], 0, 1, 0, 0);
+	      pC[i] = Y[i]*pnorm(meano[i]+gamma[1-Z[i]], 0, 1, 1, 0) +
+		(1-Y[i])*pnorm(meano[i]+gamma[1-Z[i]], 0, 1, 0, 0);
+	      pA[i] = Y[i]*pnorm(meano[i]+gamma[2], 0, 1, 1, 0) +
+		(1-Y[i])*pnorm(meano[i]+gamma[2], 0, 1, 0, 0);
 	      pN[i] = Y[i]*pnorm(meano[i], 0, 1, 1, 0) +
 		(1-Y[i])*pnorm(meano[i], 0, 1, 0, 0);
 	    }
 	  } 
-	  if ((Z[i] == 1) && (D[i] == 1)) {
-	    if (*logitO) {
-	      pC[i] = Y[i]/(1+exp(-meano[i]-gamma[0])) + (1-Y[i])/(1+exp(meano[i]+gamma[0]));
-	      pA[i] = Y[i]/(1+exp(-meano[i]-gamma[2])) + (1-Y[i])/(1+exp(meano[i]+gamma[2]));
-	    } else {
-	      pC[i] = Y[i]*pnorm(meano[i]+gamma[0], 0, 1, 1, 0) +
-		(1-Y[i])*pnorm(meano[i]+gamma[0], 0, 1, 0, 0);
-	      pA[i] = Y[i]*pnorm(meano[i]+gamma[2], 0, 1, 1, 0) +
-		(1-Y[i])*pnorm(meano[i]+gamma[2], 0, 1, 0, 0);
-	    }
-	  }
 	}
       } else { /* no always-takers */
 	for (j = 2; j < n_covO; j++)
 	  meano[i] += Xo[i][j]*gamma[j];
 	if (R[i] == 1)
-	  if (Z[i] == 0) {
+	  if ((Z[i] == 0) || (RD[i] == 0)) {
 	    if (*logitO) {
-	      pC[i] = Y[i]/(1+exp(-meano[i]-gamma[1])) + (1-Y[i])/(1+exp(meano[i]+gamma[1]));
+	      pC[i] = Y[i]/(1+exp(-meano[i]-gamma[1-Z[i]])) + (1-Y[i])/(1+exp(meano[i]+gamma[1-Z[i]]));
 	      pN[i] = Y[i]/(1+exp(-meano[i])) + (1-Y[i])/(1+exp(meano[i]));
 	    } else {
-	      pC[i] = Y[i]*pnorm(meano[i]+gamma[1], 0, 1, 1, 0) + 
-		(1-Y[i])*pnorm(meano[i]+gamma[1], 0, 1, 0, 0);
+	      pC[i] = Y[i]*pnorm(meano[i]+gamma[1-Z[i]], 0, 1, 1, 0) + 
+		(1-Y[i])*pnorm(meano[i]+gamma[1-Z[i]], 0, 1, 0, 0);
 	      pN[i] = Y[i]*pnorm(meano[i], 0, 1, 1, 0) +
 		(1-Y[i])*pnorm(meano[i], 0, 1, 0, 0);
 	    }
@@ -780,6 +804,7 @@ void LIgaussian(double *Y,      /* gaussian outcome variable */
 		int *R,         /* recording indicator for Y */
 		int *Z,         /* treatment assignment */
 		int *D,         /* treatment status */ 
+		int *RD,        /* recording indicator for D */
 		int *C,         /* compliance status; 
 				   for probit, complier = 1,
 				 noncomplier = 0
@@ -922,7 +947,7 @@ void LIgaussian(double *Y,      /* gaussian outcome variable */
 
     /* Step 3: SAMPLE COMPLIANCE COVARITE */
     SampleComp(n_samp, n_covC, *AT, Xc, Xo, Xr, Xobs, betaC, betaA,
-	       *logitC, qC, qN, Z, D, R, C, A, pC, pN, pA, prA, prN, prC);
+	       *logitC, qC, qN, Z, D, R, RD, C, A, pC, pN, pA, prA, prN, prC);
 
     /** Step 4: OUTCOME MODEL **/
     bNormalReg(Xobs, gamma, sig2, n_obs, n_covO, 0, 1, gamma0, A0O, 1,
@@ -935,21 +960,18 @@ void LIgaussian(double *Y,      /* gaussian outcome variable */
 	for (j = 3; j < n_covO; j++)
 	  meano[i] += Xo[i][j]*gamma[j];
 	if (R[i] == 1) {
-	  if ((Z[i] == 0) && (D[i] == 0)) {
-	    pC[i] = dnorm(Y[i], meano[i]+gamma[1], sqrt(*sig2), 0);
+	  if ((RD[i] == 0) || (Z[i] == D[i])) {
+	    pC[i] = dnorm(Y[i], meano[i]+gamma[1-Z[i]], sqrt(*sig2), 0);
 	    pN[i] = dnorm(Y[i], meano[i], sqrt(*sig2), 0);
-	  } 
-	  if ((Z[i] == 1) && (D[i] == 1)) {
-	    pC[i] = dnorm(Y[i], meano[i]+gamma[0], sqrt(*sig2), 0);
 	    pA[i] = dnorm(Y[i], meano[i]+gamma[2], sqrt(*sig2), 0);
-	  }
+	  } 
 	}
       } else { /* no always-takers */
 	for (j = 2; j < n_covO; j++)
 	  meano[i] += Xo[i][j]*gamma[j];
 	if (R[i] == 1)
-	  if (Z[i] == 0) {
-	    pC[i] = dnorm(Y[i], meano[i]+gamma[1], sqrt(*sig2), 0);
+	  if ((Z[i] == 0) || (RD[i] == 0)){
+	    pC[i] = dnorm(Y[i], meano[i]+gamma[1-Z[i]], sqrt(*sig2), 0);
 	    pN[i] = dnorm(Y[i], meano[i], sqrt(*sig2), 0);
 	  }
       } 
@@ -1135,6 +1157,7 @@ void LIordinal(int *Y,         /* binary outcome variable */
 	       int *R,         /* recording indicator for Y */
 	       int *Z,         /* treatment assignment */
 	       int *D,         /* treatment status */ 
+	       int *RD,        /* recording indicator for D */
 	       int *C,         /* compliance status; 
 				  for probit, complier = 1,
 				  noncomplier = 0
@@ -1286,7 +1309,7 @@ void LIordinal(int *Y,         /* binary outcome variable */
 
     /* Step 3: SAMPLE COMPLIANCE COVARITE */
     SampleComp(n_samp, n_covC, *AT, Xc, Xo, Xr, Xobs, betaC, betaA,
-	       *logitC, qC, qN, Z, D, R, C, A, pC, pN, pA, prA, prN, prC);
+	       *logitC, qC, qN, Z, D, R, RD, C, A, pC, pN, pA, prA, prN, prC);
 
     /** Step 4: OUTCOME MODEL **/
     boprobitMCMC(Yobs, Xobs, gamma, tau, n_obs, n_covO, *n_cat,
@@ -1299,32 +1322,22 @@ void LIordinal(int *Y,         /* binary outcome variable */
 	for (j = 3; j < n_covO; j++)
 	  meano[i] += Xo[i][j]*gamma[j];
 	if (R[i] == 1) {
-	  if ((Z[i] == 0) && (D[i] == 0)) {
+	  if ((RD[i] == 0) || (Z[i] == D[i])) {
 	    if (Y[i] == 0) {
-	      pC[i] = pnorm(tau[0],meano[i]+gamma[1], 1, 1, 0);
+	      pC[i] = pnorm(tau[0],meano[i]+gamma[1-Z[i]], 1, 1, 0);
+	      pA[i] = pnorm(tau[0],meano[i]+gamma[2], 1, 1, 0);
 	      pN[i] = pnorm(tau[0],meano[i], 1, 1, 0);
 	    } else if (Y[i] == (*n_cat-1)) {
-	      pC[i] = pnorm(tau[*n_cat-2],meano[i]+gamma[1], 1, 0, 0);
+	      pC[i] = pnorm(tau[*n_cat-2],meano[i]+gamma[1-Z[i]], 1, 0, 0);
+	      pA[i] = pnorm(tau[*n_cat-2],meano[i]+gamma[2], 1, 0, 0);
 	      pN[i] = pnorm(tau[*n_cat-2],meano[i], 1, 0, 0);
 	    } else {
-	      pC[i] = pnorm(tau[Y[i]],meano[i]+gamma[1], 1, 1, 0) - 
-		pnorm(tau[Y[i]-1],meano[i]+gamma[1], 1, 1, 0);
-	      pN[i] = pnorm(tau[Y[i]],meano[i], 1, 1, 0) - 
-		pnorm(tau[Y[i]-1],meano[i], 1, 1, 0);
-	    }
-	  }
-	  if ((Z[i] == 1) && (D[i] == 1)) {
-	    if (Y[i] == 0) {
-	      pC[i] = pnorm(tau[0],meano[i]+gamma[0], 1, 1, 0);
-	      pA[i] = pnorm(tau[0],meano[i]+gamma[2], 1, 1, 0);
-	    } else if (Y[i] == (*n_cat-1)) {
-	      pC[i] = pnorm(tau[*n_cat-2],meano[i]+gamma[0], 1, 0, 0);
-	      pA[i] = pnorm(tau[*n_cat-2],meano[i]+gamma[2], 1, 0, 0);
-	    } else {
-	      pC[i] = pnorm(tau[Y[i]],meano[i]+gamma[0], 1, 1, 0) - 
-		pnorm(tau[Y[i]-1],meano[i]+gamma[0], 1, 1, 0);
+	      pC[i] = pnorm(tau[Y[i]],meano[i]+gamma[1-Z[i]], 1, 1, 0) - 
+		pnorm(tau[Y[i]-1],meano[i]+gamma[1-Z[i]], 1, 1, 0);
 	      pA[i] = pnorm(tau[Y[i]],meano[i]+gamma[2], 1, 1, 0) - 
 		pnorm(tau[Y[i]-1],meano[i]+gamma[2], 1, 1, 0);
+	      pN[i] = pnorm(tau[Y[i]],meano[i], 1, 1, 0) - 
+		pnorm(tau[Y[i]-1],meano[i], 1, 1, 0);
 	    }
 	  }
 	}
@@ -1332,16 +1345,16 @@ void LIordinal(int *Y,         /* binary outcome variable */
 	for (j = 2; j < n_covO; j++)
 	  meano[i] += Xo[i][j]*gamma[j];
 	if (R[i] == 1) 
-	  if (Z[i] == 0) {
+	  if ((Z[i] == 0) || (RD[i] == 0)) {
 	    if (Y[i] == 0) {
-	      pC[i] = pnorm(tau[0],meano[i]+gamma[1], 1, 1, 0);
+	      pC[i] = pnorm(tau[0],meano[i]+gamma[1-Z[i]], 1, 1, 0);
 	      pN[i] = pnorm(tau[0],meano[i], 1, 1, 0);
 	    } else if (Y[i] == (*n_cat-1)) {
-	      pC[i] = pnorm(tau[*n_cat-2],meano[i]+gamma[1], 1, 0, 0);
+	      pC[i] = pnorm(tau[*n_cat-2],meano[i]+gamma[1-Z[i]], 1, 0, 0);
 	      pN[i] = pnorm(tau[*n_cat-2],meano[i], 1, 0, 0);
 	    } else {
-	      pC[i] = pnorm(tau[Y[i]],meano[i]+gamma[1], 1, 1, 0) - 
-		pnorm(tau[Y[i]-1],meano[i], 1, 1, 0);
+	      pC[i] = pnorm(tau[Y[i]],meano[i]+gamma[1-Z[i]], 1, 1, 0) - 
+		pnorm(tau[Y[i]-1],meano[i]+gamma[1-Z[i]], 1, 1, 0);
 	      pN[i] = pnorm(tau[Y[i]],meano[i]+gamma[1], 1, 1, 0) - 
 		pnorm(tau[Y[i]-1],meano[i], 1, 1, 0);
 	    }
@@ -1594,6 +1607,7 @@ void LIcount(int *Y,         /*count outcome variable */
 	     int *R,         /* recording indicator for Y */
 	     int *Z,         /* treatment assignment */
 	     int *D,         /* treatment status */ 
+	     int *RD,        /* recording indicator for D */
 	     int *C,         /* compliance status; 
 				for probit, complier = 1,
 				noncomplier = 0
@@ -1746,7 +1760,7 @@ void LIcount(int *Y,         /*count outcome variable */
 
     /* Step 3: SAMPLE COMPLIANCE COVARITE */
     SampleComp(n_samp, n_covC, *AT, Xc, Xo, Xr, Xobs, betaC, betaA,
-	       *logitC, qC, qN, Z, D, R, C, A, pC, pN, pA, prA, prN, prC);
+	       *logitC, qC, qN, Z, D, R, RD, C, A, pC, pN, pA, prA, prN, prC);
 
     /** Step 4: OUTCOME MODEL **/
     negbinMetro(Yobs, Xobs, gamma, sig2, n_obs, n_covO, gamma0, A0O,
@@ -1759,21 +1773,18 @@ void LIcount(int *Y,         /*count outcome variable */
 	for (j = 3; j < n_covO; j++)
 	  meano[i] += Xo[i][j]*gamma[j];
 	if (R[i] == 1) {
-	  if ((Z[i] == 0) && (D[i] == 0)) {
-	    pC[i] = dnegbin(Y[i], exp(meano[i]+gamma[1]), *sig2, 0);
+	  if ((RD[i] == 0) || (Z[i] == D[i])) {
+	    pC[i] = dnegbin(Y[i], exp(meano[i]+gamma[1-Z[i]]), *sig2, 0);
+	    pA[i] = dnegbin(Y[i], exp(meano[i]+gamma[2]), *sig2, 0);
 	    pN[i] = dnegbin(Y[i], exp(meano[i]), *sig2, 0);
 	  } 
-	  if ((Z[i] == 1) && (D[i] == 1)) {
-	    pC[i] = dnegbin(Y[i], exp(meano[i]+gamma[0]), *sig2, 0);
-	    pA[i] = dnegbin(Y[i], exp(meano[i]+gamma[2]), *sig2, 0);
-	  }
 	}
       } else { /* no always-takers */
 	for (j = 2; j < n_covO; j++)
 	  meano[i] += Xo[i][j]*gamma[j];
 	if (R[i] == 1)
-	  if (Z[i] == 0) {
-	    pC[i] = dnegbin(Y[i], exp(meano[i]+gamma[1]), *sig2, 0);
+	  if ((Z[i] == 0) || (RD[i] == 0)) {
+	    pC[i] = dnegbin(Y[i], exp(meano[i]+gamma[1-Z[i]]), *sig2, 0);
 	    pN[i] = dnegbin(Y[i], exp(meano[i]), *sig2, 0);
 	  }
       } 
