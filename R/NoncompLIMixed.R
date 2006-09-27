@@ -61,6 +61,11 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
   res <- list(call = call, Y = Y, Xo = Xo, Xc = Xc, Xr = Xr,
               Zo = Wo, Zc = Wc, Zr = Wr, D = D, Z = Z,
               grp = grp, n.draws = n.draws)
+  ## Random starting values for missing D
+  RD <- (!is.na(D))*1
+  NRD <- is.na(D)
+  if (sum(NRD) > 0)
+    D[NRD] <- (runif(sum(NRD)) > 0.5)*1
   
   ## Random starting values for missing Y using Bernoulli(0.5)
   R <- (!is.na(Y))*1
@@ -381,7 +386,7 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
   if (model.o == "probit") 
     out <- .C("LIbprobitMixed",
               as.integer(Y), as.integer(R), as.integer(Z),
-              as.integer(D), as.integer(C), as.integer(A),
+              as.integer(D), as.integer(RD), as.integer(C), as.integer(A),
               as.integer(grp), as.integer(Ymiss), as.integer(AT),
               as.integer(in.sample), as.integer(random),
               as.double(Xc), as.double(Wc), as.double(Xo),
@@ -412,10 +417,10 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
               sPsiR = double(nrandomR*(nrandomR+1)*(ceiling((n.draws-burnin)/keep))/2),
               QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
               PACKAGE = "experiment")
-  else if (model.o == "oprobit")
+  if (model.o == "oprobit")
     out <- .C("LIboprobitMixed",
               as.integer(Y), as.integer(R), as.integer(Z),
-              as.integer(D), as.integer(C), as.integer(A),
+              as.integer(D), as.integer(RD), as.integer(C), as.integer(A),
               as.integer(grp), as.integer(Ymiss), as.integer(AT),
               as.integer(in.sample), as.integer(random), as.double(Xc), as.double(Wc),
               as.double(Xo), as.double(Wo), as.double(Xr),
@@ -448,10 +453,10 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
               sPsiR = double(nrandomR*(nrandomR+1)*(ceiling((n.draws-burnin)/keep))/2),
               QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
               PACKAGE = "experiment")
-  else if (model.o == "negbin")
+  if (model.o == "negbin")
     out <- .C("LINegBinMixed",
               as.integer(Y), as.integer(R), as.integer(Z),
-              as.integer(D), as.integer(C), as.integer(A),
+              as.integer(D), as.integer(RD), as.integer(C), as.integer(A),
               as.integer(grp), as.integer(Ymiss), as.integer(AT),
               as.integer(in.sample), as.integer(random), as.double(Xc),
               as.double(Wc), as.double(Xo), as.double(Wo), as.double(Xr),
@@ -485,10 +490,10 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
               sPsiR = double(nrandomR*(nrandomR+1)*(ceiling((n.draws-burnin)/keep))/2),
               QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
               PACKAGE = "experiment")
-  else
+  if (model.o == "gaussian")
     out <- .C("LINormalMixed",
               as.double(Y), as.integer(R), as.integer(Z),
-              as.integer(D), as.integer(C), as.integer(A),
+              as.integer(D), as.integer(RD), as.integer(C), as.integer(A),
               as.integer(grp), as.integer(Ymiss), as.integer(AT),
               as.integer(in.sample), as.integer(random), as.double(Xc),
               as.double(Wc),

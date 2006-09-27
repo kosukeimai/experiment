@@ -414,7 +414,7 @@ void SampCompMixed(int n_grp, int n_samp, int n_fixedC, double **Xc,
 		   double *betaC, double ***Zc, int *grp, 
 		   double ***xiC, int n_randomC, int AT, int logitC,
 		   double *qC, double *qN, int *Z, int *D, int *R, 
-		   double *prC, double *prN, double ***Zo, 
+		   int *RD, double *prC, double *prN, double ***Zo, 
 		   double ***Zr, int *C, double **Xo, double **Xr,
 		   int random, double **Xobs, double ***Zobs, 
 		   double *prA, double *pA, int *A, double *betaA, 
@@ -423,7 +423,7 @@ void SampCompMixed(int n_grp, int n_samp, int n_fixedC, double **Xc,
 
   int i, j;
   int itemp;
-  double dtemp;
+  double dtemp, dtemp1, dtemp2;
   int *vitemp = intArray(n_grp);
   int *vitemp1 = intArray(n_grp);
 
@@ -456,7 +456,57 @@ void SampCompMixed(int n_grp, int n_samp, int n_fixedC, double **Xc,
 	qC[i] = pnorm(meanc[i], 0, 1, 1, 0);
 	qN[i] = (1-qC[i])*pnorm(meana[i], 0, 1, 0, 0);
       }
-      if ((Z[i] == 0) && (D[i] == 0)) {
+      if (RD[i] == 0) { /* units with missing treatment status */
+	if (R[i] == 1) {
+	  dtemp = qC[i]*pC[i]*prC[i] / 
+	    (qC[i]*pC[i]*prC[i]+qN[i]*pN[i]*prN[i]+(1-qC[i]-qN[i])*pA[i]*prA[i]);
+	  dtemp1 = (qC[i]*pC[i]*prC[i] + qN[i]*pN[i]*prN[i]) /
+	    (qC[i]*pC[i]*prC[i]+qN[i]*pN[i]*prN[i]+(1-qC[i]-qN[i])*pA[i]*prA[i]);
+	} else {
+	  dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+qN[i]*prN[i]+(1-qC[i]-qN[i])*prA[i]);
+	  dtemp1 = (qC[i]*prC[i] + qN[i]*prN[i]) / 
+		   (qC[i]*prC[i]+qN[i]*prN[i]+(1-qC[i]-qN[i])*prA[i]);
+	}
+	dtemp2 = unif_rand();
+	if (dtemp2 < dtemp) { /* compliers */
+	  C[i] = 1; A[i] = 0; D[i] = Z[i];
+	  Xo[i][1-Z[i]] = 1; Xr[i][1-Z[i]] = 1;
+	  Xo[i][Z[i]] = 0; Xr[i][Z[i]] = 0;
+	  Xo[i][2] = 0; Xr[i][2] = 0;
+	  if (random) {
+	    Zo[grp[i]][vitemp[grp[i]]][0] = 1;
+	    Zr[grp[i]][vitemp[grp[i]]][0] = 1;
+	    Zo[grp[i]][vitemp[grp[i]]][1] = 0;
+	    Zr[grp[i]][vitemp[grp[i]]][1] = 0;
+	  }
+	} else if (dtemp2 < dtemp1) { /* never-takers */
+	  C[i] = 0; A[i] = 0; D[i] = 0;
+	  Xo[i][0] = 0; Xr[i][0] = 0;
+	  Xo[i][1] = 0; Xr[i][1] = 0;
+	  Xo[i][2] = 0; Xr[i][2] = 0;
+	  if (random) {
+	    Zo[grp[i]][vitemp[grp[i]]][0] = 0;
+	    Zr[grp[i]][vitemp[grp[i]]][0] = 0;
+	    Zo[grp[i]][vitemp[grp[i]]][1] = 0;
+	    Zr[grp[i]][vitemp[grp[i]]][1] = 0;
+	  }
+	} else { /* always-takers */
+	  if (logitC)
+	    C[i] = 2;
+	  else
+	    C[i] = 0; 
+	  A[i] = 1; D[i] = 1;
+	  Xo[i][0] = 0; Xr[i][0] = 0; 
+	  Xo[i][1] = 0; Xr[i][1] = 0; 
+	  Xo[i][2] = 1; Xr[i][2] = 1;
+	  if (random) {
+	    Zo[grp[i]][vitemp[grp[i]]][0] = 0; 
+	    Zr[grp[i]][vitemp[grp[i]]][0] = 0; 
+	    Zo[grp[i]][vitemp[grp[i]]][1] = 1;
+	    Zr[grp[i]][vitemp[grp[i]]][1] = 1;
+	  }
+	} 	
+      } else if ((Z[i] == 0) && (D[i] == 0)) {
 	if (R[i] == 1)
 	  dtemp = qC[i]*pC[i]*prC[i]/(qC[i]*pC[i]*prC[i]+qN[i]*pN[i]*prN[i]);
 	else
@@ -474,8 +524,7 @@ void SampCompMixed(int n_grp, int n_samp, int n_fixedC, double **Xc,
 	    Zr[grp[i]][vitemp[grp[i]]][0] = 0;
 	  }
 	}  
-      } 
-      if ((Z[i] == 1) && (D[i] == 1)){
+      } else if ((Z[i] == 1) && (D[i] == 1)){
 	if (R[i] == 1)
 	  dtemp = qC[i]*pC[i]*prC[i]/(qC[i]*pC[i]*prC[i]+(1-qC[i]-qN[i])*pA[i]*prA[i]);
 	else
@@ -514,7 +563,7 @@ void SampCompMixed(int n_grp, int n_samp, int n_fixedC, double **Xc,
 	}
       }
     } else { /* no always-takers */
-      if (Z[i] == 0){
+      if ((Z[i] == 0) || (RD[i] == 0)){
 	if (logitC)
 	  qC[i] = 1/(1+exp(-meanc[i]));
 	else
@@ -524,15 +573,15 @@ void SampCompMixed(int n_grp, int n_samp, int n_fixedC, double **Xc,
 	else
 	  dtemp = qC[i]*prC[i]/(qC[i]*prC[i]+(1-qC[i])*prN[i]);
 	if (unif_rand() < dtemp) {
-	  C[i] = 1;
-	  Xo[i][0] = 0; Xo[i][1] = 1; 
-	  Xr[i][0] = 0; Xr[i][1] = 1;
+	  C[i] = 1; D[i] = Z[i];
+	  Xo[i][1-Z[i]] = 1; Xo[i][Z[i]] = 0; 
+	  Xr[i][1-Z[i]] = 1; Xr[i][Z[i]] = 0;
 	  if (random) {
 	    Zo[grp[i]][vitemp[grp[i]]][0] = 1;
 	    Zr[grp[i]][vitemp[grp[i]]][0] = 1;
 	  }
 	} else {
-	  C[i] = 0;  
+	  C[i] = 0;  D[i] = 0;
 	  Xo[i][0] = 0; Xr[i][0] = 0;
 	  Xo[i][1] = 0; Xr[i][1] = 0;
 	  if (random) {
@@ -542,9 +591,12 @@ void SampCompMixed(int n_grp, int n_samp, int n_fixedC, double **Xc,
 	}
       }
       if (R[i] == 1) {
+	Xobs[itemp][0] = Xo[i][0];
 	Xobs[itemp][1] = Xo[i][1];
-	if (random)
+	if (random) {
 	  Zobs[grp[i]][vitemp1[grp[i]]][0] = Zo[grp[i]][vitemp[grp[i]]][0];
+	  Zobs[grp[i]][vitemp1[grp[i]]][1] = Zo[grp[i]][vitemp[grp[i]]][1];
+	}
       } 
     }
     if (R[i] == 1) {
@@ -607,6 +659,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 		    int *R,         /* recording indicator for Y */
 		    int *Z,         /* treatment assignment */
 		    int *D,         /* treatment status */ 
+		    int *RD,        /* recording indicator for D */
 		    int *C,         /* compliance status; 
 				       for probit, complier = 1,
 				       noncomplier = 0
@@ -822,7 +875,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 
     /** Step 3: SAMPLE COMPLIANCE COVARIATE **/
     SampCompMixed(n_grp, n_samp, n_fixedC, Xc, betaC, Zc, grp, 
-		  xiC, n_randomC, *AT, *logitC, qC, qN, Z, D, R, 
+		  xiC, n_randomC, *AT, *logitC, qC, qN, Z, D, R, RD, 
 		  prC, prN, Zo, Zr, C, Xo, Xr, *random, Xobs, Zobs, 
 		  prA, pA, A, betaA, pC, pN);
 
@@ -846,7 +899,22 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	  for (j = 0; j < n_randomO; j++)
 	    meano[i] += Zo[grp[i]][vitemp[grp[i]]][j]*xiO[grp[i]][j];
 	if (R[i] == 1) {
-	  if ((Z[i] == 0) && (D[i] == 0)) {
+	  if (RD[i] == 0) {
+	    if (*random) {
+	      pC[i] = Y[i]*pnorm(meano[i]+gamma[1-Z[i]]+xiO[grp[i]][0], 0, 1, 1, 0) +
+		(1-Y[i])*pnorm(meano[i]+gamma[1-Z[i]]+xiO[grp[i]][0], 0, 1, 0, 0);
+	      pA[i] = Y[i]*pnorm(meano[i]+gamma[2]+xiO[grp[i]][1], 0, 1, 1, 0) +
+		(1-Y[i])*pnorm(meano[i]+gamma[2]+xiO[grp[i]][1], 0, 1, 0, 0);
+	    } else {
+	      pC[i] = Y[i]*pnorm(meano[i]+gamma[1-Z[i]], 0, 1, 1, 0) +
+		(1-Y[i])*pnorm(meano[i]+gamma[1-Z[i]], 0, 1, 0, 0);
+	      pA[i] = Y[i]*pnorm(meano[i]+gamma[2], 0, 1, 1, 0) +
+		(1-Y[i])*pnorm(meano[i]+gamma[2], 0, 1, 0, 0);
+	    }
+	    pN[i] = Y[i]*pnorm(meano[i], 0, 1, 1, 0) +
+	      (1-Y[i])*pnorm(meano[i], 0, 1, 0, 0);
+
+	  } else if ((Z[i] == 0) && (D[i] == 0)) {
 	    if (*random)
 	      pC[i] = Y[i]*pnorm(meano[i]+gamma[1]+xiO[grp[i]][0], 0, 1, 1, 0) +
 		(1-Y[i])*pnorm(meano[i]+gamma[1]+xiO[grp[i]][0], 0, 1, 0, 0);
@@ -855,8 +923,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 		(1-Y[i])*pnorm(meano[i]+gamma[1], 0, 1, 0, 0);
 	    pN[i] = Y[i]*pnorm(meano[i], 0, 1, 1, 0) +
 	      (1-Y[i])*pnorm(meano[i], 0, 1, 0, 0);
-	  } 
-	  if ((Z[i] == 1) && (D[i] == 1)) {
+	  } else if ((Z[i] == 1) && (D[i] == 1)) {
 	    if (*random) {
 	      pC[i] = Y[i]*pnorm(meano[i]+gamma[0]+xiO[grp[i]][0], 0, 1, 1, 0) +
 		(1-Y[i])*pnorm(meano[i]+gamma[0]+xiO[grp[i]][0], 0, 1, 0, 0);
@@ -880,13 +947,13 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	  for (j = 0; j < n_randomO; j++)
 	    meano[i] += Zo[grp[i]][vitemp[grp[i]]][j]*xiO[grp[i]][j];
 	if (R[i] == 1)
-	  if (Z[i] == 0) {
+	  if ((Z[i] == 0) || (RD[i] == 0)) {
 	    if (*random)
-	      pC[i] = Y[i]*pnorm(meano[i]+gamma[1]+xiO[grp[i]][0], 0, 1, 1, 0) + 
-		(1-Y[i])*pnorm(meano[i]+gamma[1]+xiO[grp[i]][0], 0, 1, 0, 0);
+	      pC[i] = Y[i]*pnorm(meano[i]+gamma[1-Z[i]]+xiO[grp[i]][0], 0, 1, 1, 0) + 
+		(1-Y[i])*pnorm(meano[i]+gamma[1-Z[i]]+xiO[grp[i]][0], 0, 1, 0, 0);
 	    else 
-	      pC[i] = Y[i]*pnorm(meano[i]+gamma[1], 0, 1, 1, 0) + 
-		(1-Y[i])*pnorm(meano[i]+gamma[1], 0, 1, 0, 0);
+	      pC[i] = Y[i]*pnorm(meano[i]+gamma[1-Z[i]], 0, 1, 1, 0) + 
+		(1-Y[i])*pnorm(meano[i]+gamma[1-Z[i]], 0, 1, 0, 0);
 	    pN[i] = Y[i]*pnorm(meano[i], 0, 1, 1, 0) +
 	      (1-Y[i])*pnorm(meano[i], 0, 1, 0, 0);
 	  }
@@ -1123,6 +1190,7 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
 		   int *R,         /* recording indicator for Y */
 		   int *Z,         /* treatment assignment */
 		   int *D,         /* treatment status */ 
+		   int *RD,        /* recording indicator for D */
 		   int *C,         /* compliance status; 
 				      for probit, complier = 1,
 				      noncomplier = 0
@@ -1344,7 +1412,7 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
 
     /** Step 3: SAMPLE COMPLIANCE COVARIATE **/
     SampCompMixed(n_grp, n_samp, n_fixedC, Xc, betaC, Zc, grp, 
-		  xiC, n_randomC, *AT, *logitC, qC, qN, Z, D, R, 
+		  xiC, n_randomC, *AT, *logitC, qC, qN, Z, D, R, RD, 
 		  prC, prN, Zo, Zr, C, Xo, Xr, *random, Xobs, Zobs, 
 		  prA, pA, A, betaA, pC, pN);
 
@@ -1369,14 +1437,22 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
 	  for (j = 0; j < n_randomO; j++)
 	    meano[i] += Zo[grp[i]][vitemp[grp[i]]][j]*xiO[grp[i]][j];
 	if (R[i] == 1) {
-	  if ((Z[i] == 0) && (D[i] == 0)) {
+	  if (RD[i] == 0) {
+	    if (*random) {
+	      pC[i] = dnorm(Y[i], meano[i]+gamma[1-Z[i]]+xiO[grp[i]][0], sqrt(*sig2), 0);
+	      pA[i] = dnorm(Y[i], meano[i]+gamma[2]+xiO[grp[i]][1], sqrt(*sig2), 0);
+	    } else {
+	      pC[i] = dnorm(Y[i], meano[i]+gamma[1-Z[i]], sqrt(*sig2), 0);
+	      pA[i] = dnorm(Y[i], meano[i]+gamma[2], sqrt(*sig2), 0);
+	    }
+	    pN[i] = dnorm(Y[i], meano[i], sqrt(*sig2), 0);
+	  } else if ((Z[i] == 0) && (D[i] == 0)) {
 	    if (*random)
 	      pC[i] = dnorm(Y[i], meano[i]+gamma[1]+xiO[grp[i]][0], sqrt(*sig2), 0);
 	    else
 	      pC[i] = dnorm(Y[i], meano[i]+gamma[1], sqrt(*sig2), 0);
 	    pN[i] = dnorm(Y[i], meano[i], sqrt(*sig2), 0);
-	  } 
-	  if ((Z[i] == 1) && (D[i] == 1)) {
+	  } else if ((Z[i] == 1) && (D[i] == 1)) {
 	    if (*random) {
 	      pC[i] = dnorm(Y[i], meano[i]+gamma[0]+xiO[grp[i]][0], sqrt(*sig2), 0);
 	      pA[i] = dnorm(Y[i], meano[i]+gamma[2]+xiO[grp[i]][1], sqrt(*sig2), 0);
@@ -1396,11 +1472,11 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
 	  for (j = 0; j < n_randomO; j++)
 	    meano[i] += Zo[grp[i]][vitemp[grp[i]]][j]*xiO[grp[i]][j];
 	if (R[i] == 1)
-	  if (Z[i] == 0) {
+	  if ((Z[i] == 0) || (RD[i] == 0)) {
 	    if (*random) 
-	      pC[i] = dnorm(Y[i], meano[i]+gamma[1]+xiO[grp[i]][0], sqrt(*sig2), 0);
+	      pC[i] = dnorm(Y[i], meano[i]+gamma[1-Z[i]]+xiO[grp[i]][0], sqrt(*sig2), 0);
 	    else 
-	      pC[i] = dnorm(Y[i], meano[i]+gamma[1], sqrt(*sig2), 0);
+	      pC[i] = dnorm(Y[i], meano[i]+gamma[1-Z[i]], sqrt(*sig2), 0);
 	    pN[i] = dnorm(Y[i], meano[i], sqrt(*sig2), 0);
 	  } 
       }
@@ -1637,6 +1713,7 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 		     int *R,         /* recording indicator for Y */
 		     int *Z,         /* treatment assignment */
 		     int *D,         /* treatment status */ 
+		     int *RD,        /* recording indicator for D */
 		     int *C,         /* compliance status; 
 					for probit, complier = 1,
 					noncomplier = 0
@@ -1859,7 +1936,7 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 
     /** Step 3: SAMPLE COMPLIANCE COVARIATE **/
     SampCompMixed(n_grp, n_samp, n_fixedC, Xc, betaC, Zc, grp, 
-		  xiC, n_randomC, *AT, *logitC, qC, qN, Z, D, R, 
+		  xiC, n_randomC, *AT, *logitC, qC, qN, Z, D, R, RD, 
 		  prC, prN, Zo, Zr, C, Xo, Xr, *random, Xobs, Zobs, 
 		  prA, pA, A, betaA, pC, pN);
 
@@ -1907,9 +1984,36 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 	  for (j = 0; j < n_randomO; j++)
 	    meano[i] += Zo[grp[i]][vitemp[grp[i]]][j]*xiO[grp[i]][j];
 	if (R[i] == 1) {
-	  if ((Z[i] == 0) && (D[i] == 0)) {
+	  if (RD[i] == 0) {
+	    if (*random) {
+	      if (Y[i] == 0) {
+		pC[i] = pnorm(tau[0], meano[i]+gamma[1-Z[i]]+xiO[grp[i]][0], 1, 1, 0);
+		pA[i] = pnorm(tau[0], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 1, 0);
+	      } else {
+		pC[i] = pnorm(tau[Y[i]], meano[i]+gamma[1-Z[i]]+xiO[grp[i]][0], 1, 1, 0)
+		  - pnorm(tau[Y[i]-1], meano[i]+gamma[1-Z[i]]+xiO[grp[i]][0], 1, 1, 0);
+		pA[i] = pnorm(tau[Y[i]], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 1, 0)
+		  - pnorm(tau[Y[i]-1], meano[i]+gamma[2]+xiO[grp[i]][1], 1, 1, 0);
+	      }
+	    } else {
+	      if (Y[i] == 0) {
+		pC[i] = pnorm(tau[0], meano[i]+gamma[1-Z[i]], 1, 1, 0);
+		pA[i] = pnorm(tau[0], meano[i]+gamma[2], 1, 1, 0);
+	      } else {
+		pC[i] = pnorm(tau[Y[i]], meano[i]+gamma[1], 1, 1, 0)
+		  - pnorm(tau[Y[i]-1], meano[i]+gamma[1], 1, 1, 0);
+		pA[i] = pnorm(tau[Y[i]], meano[i]+gamma[2], 1, 1, 0)
+		  - pnorm(tau[Y[i]-1], meano[i]+gamma[2], 1, 1, 0);
+	      }
+	    }
+	    if (Y[i] == 0)
+	      pN[i] = pnorm(tau[0], meano[i], 1, 1, 0);
+	    else
+	      pN[i] = pnorm(tau[Y[i]], meano[i], 1, 1, 0) -
+		pnorm(tau[Y[i]-1], meano[i], 1, 1, 0);
+	  } else if ((Z[i] == 0) && (D[i] == 0)) {
 	    if (*random)
-	      if (Y[i] == 0)
+	      if (Y[i] == 0) 
 		pC[i] = pnorm(tau[0], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0);
 	      else
 		pC[i] = pnorm(tau[Y[i]], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0)
@@ -1925,8 +2029,7 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 	    else
 	      pN[i] = pnorm(tau[Y[i]], meano[i], 1, 1, 0) -
 		pnorm(tau[Y[i]-1], meano[i], 1, 1, 0);
-	  } 
-	  if ((Z[i] == 1) && (D[i] == 1)) {
+	  } else if ((Z[i] == 1) && (D[i] == 1)) {
 	    if (*random) {
 	      if (Y[i] == 0) {
 		pC[i] = pnorm(tau[0], meano[i]+gamma[0]+xiO[grp[i]][0], 1, 1, 0); 
@@ -1960,19 +2063,19 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 	  for (j = 0; j < n_randomO; j++)
 	    meano[i] += Zo[grp[i]][vitemp[grp[i]]][j]*xiO[grp[i]][j];
 	if (R[i] == 1)
-	  if (Z[i] == 0) {
+	  if ((Z[i] == 0) || (RD[i] == 0)) {
 	    if (*random)
 	      if (Y[i] == 0)
-		pC[i] = pnorm(tau[0], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0);
+		pC[i] = pnorm(tau[0], meano[i]+gamma[1-Z[i]]+xiO[grp[i]][0], 1, 1, 0);
 	      else
-		pC[i] = pnorm(tau[Y[i]], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0)
-		  - pnorm(tau[Y[i]-1], meano[i]+gamma[1]+xiO[grp[i]][0], 1, 1, 0);
+		pC[i] = pnorm(tau[Y[i]], meano[i]+gamma[1-Z[i]]+xiO[grp[i]][0], 1, 1, 0)
+		  - pnorm(tau[Y[i]-1], meano[i]+gamma[1-Z[i]]+xiO[grp[i]][0], 1, 1, 0);
 	    else
 	      if (Y[i] == 0)
-		pC[i] = pnorm(tau[0], meano[i]+gamma[1], 1, 1, 0);
+		pC[i] = pnorm(tau[0], meano[i]+gamma[1-Z[i]], 1, 1, 0);
 	      else
-		pC[i] = pnorm(tau[Y[i]], meano[i]+gamma[1], 1, 1, 0)
-		  - pnorm(tau[Y[i]-1], meano[i]+gamma[1], 1, 1, 0);
+		pC[i] = pnorm(tau[Y[i]], meano[i]+gamma[1-Z[i]], 1, 1, 0)
+		  - pnorm(tau[Y[i]-1], meano[i]+gamma[1-Z[i]], 1, 1, 0);
 	    if (Y[i] == 0)
 	      pN[i] = pnorm(tau[0], meano[i], 1, 1, 0);
 	    else
@@ -2278,6 +2381,7 @@ void LINegBinMixed(int *Y,         /* count outcome variable */
 		   int *R,         /* recording indicator for Y */
 		   int *Z,         /* treatment assignment */
 		   int *D,         /* treatment status */ 
+		   int *RD,        /* recording indicator for D */
 		   int *C,         /* compliance status; 
 				      for probit, complier = 1,
 				      noncomplier = 0
@@ -2507,7 +2611,7 @@ void LINegBinMixed(int *Y,         /* count outcome variable */
 
     /** Step 3: SAMPLE COMPLIANCE COVARIATE **/
     SampCompMixed(n_grp, n_samp, n_fixedC, Xc, betaC, Zc, grp, 
-		  xiC, n_randomC, *AT, *logitC, qC, qN, Z, D, R, 
+		  xiC, n_randomC, *AT, *logitC, qC, qN, Z, D, R, RD,
 		  prC, prN, Zo, Zr, C, Xo, Xr, *random, Xobs, Zobs, 
 		  prA, pA, A, betaA, pC, pN);
 
@@ -2533,14 +2637,22 @@ void LINegBinMixed(int *Y,         /* count outcome variable */
 	  for (j = 0; j < n_randomO; j++)
 	    meano[i] += Zo[grp[i]][vitemp[grp[i]]][j]*xiO[grp[i]][j];
 	if (R[i] == 1) {
-	  if ((Z[i] == 0) && (D[i] == 0)) {
+	  if (RD[i] == 0) {
+	    if (*random) {
+	      pC[i] = dnegbin(Y[i], exp(meano[i]+gamma[1-Z[i]]+xiO[grp[i]][0]), *sig2, 0);
+	      pA[i] = dnegbin(Y[i], exp(meano[i]+gamma[2]+xiO[grp[i]][1]), *sig2, 0);
+	    } else {
+	      pC[i] = dnegbin(Y[i], exp(meano[i]+gamma[1]), *sig2, 0);
+	      pA[i] = dnegbin(Y[i], exp(meano[i]+gamma[2]), *sig2, 0);
+	    }
+	    pN[i] = dnegbin(Y[i], exp(meano[i]), *sig2, 0);
+	  } else if ((Z[i] == 0) && (D[i] == 0)) {
 	    if (*random)
 	      pC[i] = dnegbin(Y[i], exp(meano[i]+gamma[1]+xiO[grp[i]][0]), *sig2, 0);
 	    else
 	      pC[i] = dnegbin(Y[i], exp(meano[i]+gamma[1]), *sig2, 0);
 	    pN[i] = dnegbin(Y[i], exp(meano[i]), *sig2, 0);
-	  } 
-	  if ((Z[i] == 1) && (D[i] == 1)) {
+	  } else if ((Z[i] == 1) && (D[i] == 1)) {
 	    if (*random) {
 	      pC[i] = dnegbin(Y[i], exp(meano[i]+gamma[0]+xiO[grp[i]][0]), *sig2, 0);
 	      pA[i] = dnegbin(Y[i], exp(meano[i]+gamma[2]+xiO[grp[i]][1]), *sig2, 0);
@@ -2560,11 +2672,11 @@ void LINegBinMixed(int *Y,         /* count outcome variable */
 	  for (j = 0; j < n_randomO; j++)
 	    meano[i] += Zo[grp[i]][vitemp[grp[i]]][j]*xiO[grp[i]][j];
 	if (R[i] == 1)
-	  if (Z[i] == 0) {
+	  if ((Z[i] == 0) || (RD[i] == 0)) {
 	    if (*random) 
-	      pC[i] = dnegbin(Y[i], exp(meano[i]+gamma[1]+xiO[grp[i]][0]), *sig2, 0);
+	      pC[i] = dnegbin(Y[i], exp(meano[i]+gamma[1-Z[i]]+xiO[grp[i]][0]), *sig2, 0);
 	    else 
-	      pC[i] = dnegbin(Y[i], exp(meano[i]+gamma[1]), *sig2, 0);
+	      pC[i] = dnegbin(Y[i], exp(meano[i]+gamma[1-Z[i]]), *sig2, 0);
 	    pN[i] = dnegbin(Y[i], exp(meano[i]), *sig2, 0);
 	  } 
       }
