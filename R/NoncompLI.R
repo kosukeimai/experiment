@@ -51,6 +51,12 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
   res <- list(call = call, Y = Y, Xo = Xo, Xc = Xc, Xr = Xr,
               D = D, Z = Z, n.draws = n.draws)
   
+  ## Starting values for missing D
+  RD <- (!is.na(D))*1
+  NRD <- is.na(D)
+  if (sum(NRD) > 0)
+    D[NRD] <- Z[NRD]
+
   ## Random starting values for missing Y using Bernoulli(0.5) for
   ## binary and ordinal
   R <- (!is.na(Y))*1

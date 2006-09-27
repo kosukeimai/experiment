@@ -61,11 +61,11 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
   res <- list(call = call, Y = Y, Xo = Xo, Xc = Xc, Xr = Xr,
               Zo = Wo, Zc = Wc, Zr = Wr, D = D, Z = Z,
               grp = grp, n.draws = n.draws)
-  ## Random starting values for missing D
+  ## Starting values for missing D
   RD <- (!is.na(D))*1
   NRD <- is.na(D)
   if (sum(NRD) > 0)
-    D[NRD] <- (runif(sum(NRD)) > 0.5)*1
+    D[NRD] <- Z[NRD]
   
   ## Random starting values for missing Y using Bernoulli(0.5)
   R <- (!is.na(Y))*1
