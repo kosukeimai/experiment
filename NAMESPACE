@@ -11,6 +11,7 @@ export(Noncomp.bayes,
        CACEcov,
        MARnocov,
        bNormalMixed,
-       bprobitMixed)
+       bprobitMixed,
+       boprobitMixed)
 
 
