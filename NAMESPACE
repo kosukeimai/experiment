@@ -12,6 +12,7 @@ export(Noncomp.bayes,
        MARnocov,
        bNormalMixed,
        bprobitMixed,
-       boprobitMixed)
+       boprobitMixed,
+       bNegBinMixed)
 
 
