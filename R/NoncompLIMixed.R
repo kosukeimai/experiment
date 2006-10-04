@@ -53,6 +53,7 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
   Z <- eval(call$Z, envir = data)
   D <- eval(call$D, envir = data)
   grp <- eval(call$grp, envir = data)
+  grp <- as.integer(factor(grp))-1
   ngrp <- length(table(grp))
   if (sum(is.na(Z)) > 0)
     stop("missing values not allowed in the encouragement variable")

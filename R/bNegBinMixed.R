@@ -10,7 +10,7 @@ bNegBinMixed <- function(formula, formulaR, grp, data =
   mf <- model.frame(formula, data = data)
   X <- model.matrix(formula, data = mf)
   Y <- model.response(mf)
-  grp <- eval(call$grp, data)
+  grp <- as.integer(factor(eval(call$grp, data)))-1
   n.beta <- ncol(X)
   n.gamma <- ncol(Z)
 
