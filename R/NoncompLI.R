@@ -19,7 +19,8 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
   if (!(model.c %in% c("logit", "probit"))) 
     stop("no such model is supported for the compliance model.")
   
-  if (!(model.o %in% c("logit", "probit", "oprobit", "gaussian", "negbin"))) 
+  if (!(model.o %in% c("logit", "probit", "oprobit", "gaussian",
+                       "negbin", "twopart"))) 
     stop("no such model is supported for the outcome model.")
   
   if (!(model.r %in% c("logit", "probit"))) 
@@ -30,9 +31,13 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
   Xo <- model.matrix(formulae[[1]], data=mf)
   if (sum(is.na(Xo)) > 0)
     stop("missing values not allowed in covariates")
-  if (model.o == "gaussian")
+  if (model.o %in% c("gaussian", "twopart")) {
     Y <- model.response(mf)
-  else if (model.o == "oprobit")
+    if (model.o == "twopart") {
+      Y1 <- Y
+      Y[!is.na(Y)] <- (Y[!is.na(Y)] > 0)*1
+    }
+  } else if (model.o == "oprobit")
     Y <- as.integer(factor(model.response(mf)))
   else
     Y <- as.integer(model.response(mf))
@@ -50,6 +55,11 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
 
   res <- list(call = call, Y = Y, Xo = Xo, Xc = Xc, Xr = Xr,
               D = D, Z = Z, n.draws = n.draws)
+  if (model.o == "twopart") {
+    res$Y1 <- Y1
+    nsamp1 <- sum(Y1[!is.na(Y1)] > 0)
+    Y1[is.na(Y1)] <- 0
+  }
   
   ## Starting values for missing D
   RD <- (!is.na(D))*1
@@ -390,7 +400,36 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
               var = double(ceiling((n.draws-burnin)/keep)),
               QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
               PACKAGE = "experiment")
-
+  else if (model.o == "twopart")
+    out <- .C("LItwopart",
+              as.integer(Y), as.double(Y1), as.integer(R), as.integer(Z),
+              as.integer(D), as.integer(RD), as.integer(C), as.integer(A),
+              as.integer(Ymiss), as.integer(AT), as.integer(in.sample), 
+              as.double(Xc), as.double(Xo), as.double(Xr),
+              as.double(coef.start.c), as.double(coef.start.c),
+              as.double(coef.start.o), as.double(coef.start.o),
+              as.double(var.start.o), as.double(coef.start.r),
+              as.integer(c(N, nsamp1)), as.integer(n.draws),
+              as.integer(ncovC), as.integer(ncovO), as.integer(ncovR),
+              as.double(p.mean.c), as.double(p.mean.o),
+              as.double(p.mean.r), 
+              as.double(p.prec.c), as.double(p.prec.o),
+              as.double(p.prec.r), as.integer(p.df.o),
+              as.double(p.scale.o),
+              as.double(tune.c), as.double(tune.r),
+              as.integer(model.c == "logit"),
+              as.integer(model.r == "logit"),
+              as.integer(param), as.integer(mda.probit), as.integer(burnin),
+              as.integer(keep), as.integer(verbose),
+              coefC = double(ncovC*(ceiling((n.draws-burnin)/keep))),
+              coefA = double(ncovC*(ceiling((n.draws-burnin)/keep))),
+              coefO = double(ncovO*(ceiling((n.draws-burnin)/keep))),
+              coefO1 = double(ncovO*(ceiling((n.draws-burnin)/keep))),
+              coefR = double(ncovR*(ceiling((n.draws-burnin)/keep))),
+              var = double(ceiling((n.draws-burnin)/keep)),
+              QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
+              PACKAGE = "experiment")
+  
   if (param) {
     res$coefC <- matrix(out$coefC, byrow = TRUE, ncol = ncovC)
     colnames(res$coefC) <- colnames(Xc)
@@ -400,13 +439,17 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
     }
     res$coefO <- matrix(out$coefO, byrow = TRUE, ncol = ncovO)
     colnames(res$coefO) <- colnames(Xo)
+    if (model.o == "twopart") {
+      res$coefO1 <- matrix(out$coefO1, byrow = TRUE, ncol = ncovO)
+      colnames(res$coefO1) <- colnames(Xo)
+    }
     if (model.o == "oprobit")
       res$tau <- matrix(out$tauO, byrow = TRUE, ncol = ncat - 1)
     if (Ymiss > 0) {
       res$coefR <- matrix(out$coefR, byrow = TRUE, ncol = ncovR)
       colnames(res$coefR) <- colnames(Xr)
     }
-    if (model.o == "gaussian" || model.o == "negbin")
+    if (model.o %in% c("gaussian", "negbin", "twopart"))
       res$sig2 <- out$var
   }
 
