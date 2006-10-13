@@ -18,7 +18,7 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
                                verbose = TRUE) {   
   
   ## models
-  if (!(model.o %in% c("probit", "oprobit", "gaussian", "negbin")))
+  if (!(model.o %in% c("probit", "oprobit", "gaussian", "negbin", "twopart")))
     stop("no such model is supported as the outcome model")
   if (!(model.c %in% c("probit", "logit")))
     stop("no such model is supported as the compliance model")
@@ -30,9 +30,13 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
   Xo <- model.matrix(formulae[[1]], data=mf)
   if (sum(is.na(Xo)) > 0)
     stop("missing values not allowed in covariates")
-  if (model.o == "gaussian")
+  if (model.o %in% c("gaussian", "twopart")) {
     Y <- model.response(mf)
-  else if (model.o == "oprobit")
+    if (model.o == "twopart") {
+      Y1 <- Y
+      Y[!is.na(Y)] <- (Y[!is.na(Y)] > 0)*1
+    }
+  } else if (model.o == "oprobit")
     Y <- as.integer(factor(model.response(mf)))-1
   else
     Y <- as.integer(model.response(mf))
@@ -59,9 +63,16 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
     stop("missing values not allowed in the encouragement variable")
   if (sum(is.na(grp)) > 0)
     stop("missing values not allowed in the group variable")
+
   res <- list(call = call, Y = Y, Xo = Xo, Xc = Xc, Xr = Xr,
               Zo = Wo, Zc = Wc, Zr = Wr, D = D, Z = Z,
               grp = grp, n.draws = n.draws)
+  if (model.o == "twopart") {
+    res$Y1 <- Y1
+    nsamp1 <- sum(Y1[!is.na(Y1)] > 0)
+    Y1[is.na(Y1)] <- 0
+  }
+  
   ## Starting values for missing D
   RD <- (!is.na(D))*1
   NRD <- is.na(D)
@@ -530,6 +541,47 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
               sPsiR = double(nrandomR*(nrandomR+1)*(ceiling((n.draws-burnin)/keep))/2),
               QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
               PACKAGE = "experiment")
+  if (model.o == "twopart")
+    out <- .C("LItwopartMixed",
+              as.integer(Y), as.double(Y1), as.integer(R), as.integer(Z),
+              as.integer(D), as.integer(RD), as.integer(C), as.integer(A),
+              as.integer(grp), as.integer(c(Ymiss,AT)),
+              as.integer(in.sample), as.integer(random), as.double(Xc),
+              as.double(Wc), as.double(Xo), as.double(Wo), as.double(Xr),
+              as.double(Wr), as.double(coef.start.c),
+              as.double(coef.start.c), as.double(coef.start.o), 
+              as.double(coef.start.r), as.double(var.start.o),
+              as.integer(c(N, nsamp1)), as.integer(n.draws), as.integer(ngrp),
+              as.integer(max(table(grp))),
+              as.integer(c(nfixedC,nfixedO,nfixedR)),
+              as.integer(c(nrandomC, nrandomO, nrandomR)),
+              as.double(Psi.start.c), as.double(Psi.start.c),
+              as.double(Psi.start.o), as.double(Psi.start.r),
+              as.double(p.mean.c), as.double(p.mean.o), as.double(p.mean.r),
+              as.double(p.prec.c), as.double(p.prec.o),
+              as.double(p.prec.r),
+              as.integer(p.df.var), as.double(p.scale.var),
+              as.integer(c(p.df.c,p.df.c,p.df.o,p.df.r)),
+              as.double(p.scale.c), as.double(p.scale.c),
+              as.double(p.scale.o), as.double(p.scale.r),
+              as.double(tune.fixed.c), as.double(tune.random.c),
+              as.integer(model.c == "logit.c"),
+              as.integer(param), as.integer(burnin),
+              as.integer(keep), as.integer(verbose),
+              coefC = double(nfixedC*(ceiling((n.draws-burnin)/keep))),
+              coefA = double(nfixedC*(ceiling((n.draws-burnin)/keep))),
+              coefO = double(nfixedO*(ceiling((n.draws-burnin)/keep))),
+              coefO1 = double(nfixedO*(ceiling((n.draws-burnin)/keep))),
+              coefR = double(nfixedR*(ceiling((n.draws-burnin)/keep))),
+              ssig2 = double(ceiling((n.draws-burnin)/keep)),
+              sPsiC = double(nrandomC*(nrandomC+1)*(ceiling((n.draws-burnin)/keep))/2),
+              sPsiA = double(nrandomC*(nrandomC+1)*(ceiling((n.draws-burnin)/keep))/2),
+              sPsiO = double(nrandomO*(nrandomO+1)*(ceiling((n.draws-burnin)/keep))/2),
+              sPsiO1 = double(nrandomO*(nrandomO+1)*(ceiling((n.draws-burnin)/keep))/2),
+              sPsiR = double(nrandomR*(nrandomR+1)*(ceiling((n.draws-burnin)/keep))/2),
+              QoI = double(nqoi*(ceiling((n.draws-burnin)/keep))),
+              PACKAGE = "experiment")
+
   
   if (param) {
     res$coefC <- matrix(out$coefC, byrow = TRUE, ncol = nfixedC)
@@ -543,6 +595,11 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
     res$coefO <- matrix(out$coefO, byrow = TRUE, ncol = nfixedO)
     res$PsiO <- matrix(out$sPsiO, byrow = TRUE, ncol = nrandomO*(nrandomO+1)/2)
     colnames(res$coefO) <- colnames(Xo)
+    if (model.o == "twopart") {
+      res$coefO1 <- matrix(out$coefO1, byrow = TRUE, ncol = nfixedO)
+      res$PsiO1 <- matrix(out$sPsiO1, byrow = TRUE, ncol = nrandomO*(nrandomO+1)/2)
+      colnames(res$coefO1) <- colnames(Xo)
+    }
     if (model.o == "oprobit")
       res$tau <- matrix(out$tauO, byrow = TRUE, ncol = ncat - 1)
     if (Ymiss > 0) {
