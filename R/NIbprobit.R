@@ -1,49 +1,70 @@
 ###
-### Bayesian probit with nonignorable missing outcomes
+### Bayesian probit with nonignorable missing outcomes and
+### multi-valued treatments
 ###
 
-NIbprobit <- function(Y, D, X, data = parent.frame(),
-                      n.draws = 5000, param = TRUE, mda = TRUE,
+NIbprobit <- function(formula, Xo, Xr, data = parent.frame(),
+                      n.draws = 5000, insample = FALSE,
+                      param = TRUE, mda = TRUE,
                       p.mean.o = 0, p.var.o = 1000,
                       p.mean.r = 0, p.var.r = 1000,
                       coef.start.o = 0, coef.start.r = 0,
                       burnin = 0, thin = 0, verbose = TRUE) {  
 
-  ## getting the data
+  ## getting Y and D
   call <- match.call()
-  Y <- eval(call$Y, envir = data)
-  D <- eval(call$D, envir = data)
-  tm <- terms(X)
+  tm <- terms(formula)
   attr(tm, "intercept") <- 0
-  X <- model.matrix(tm, data = data, na.action = 'na.pass')
-  ind <- complete.cases(cbind(D, X))
+  mf <- model.frame(tm, data = data, na.action = 'na.pass')
+  D <- model.matrix(tm, data = mf)
+  if (max(D) > 1 || min(D) < 0)
+    stop("the treatment variable should be a factor variable.")
+  Y <- model.response(mf)
+  m <- ncol(D) # number of treatment levels including control
+  ## getting Xo and Xr
+  tm <- terms(Xo)
+  attr(tm, "intercept") <- 1
+  Xo <- model.matrix(tm, data = data, na.action = 'na.pass')
+  Xo <- Xo[,(colnames(Xo) != "(Intercept)")]
+  tm <- terms(Xr)
+  attr(tm, "intercept") <- 1
+  Xr <- model.matrix(tm, data = data, na.action = 'na.pass')
+  Xr <- Xr[,(colnames(Xr) != "(Intercept)")]
+  ## taking care of NA's in D and X
+  ind <- complete.cases(cbind(D, Xo, Xr))
   Y <- Y[ind]
-  D <- D[ind]
-  X <- X[ind,]
+  D <- D[ind,]
+  Xo <- Xo[ind,]
+  Xr <- Xr[ind,]
   R <- (!is.na(Y))*1
   Y[is.na(Y)] <- rbinom(sum(is.na(Y)), size = 1, prob = 0.5)
-  Xo <- cbind(1-D, D, X)
-  Xr <- cbind(1-Y, Y, X)
+  cnameso <- c(colnames(D), colnames(Xo))
+  cnamesr <- c("1-Y", "Y", colnames(Xr))
+  Xo <- cbind(D, Xo)
+  colnames(Xo) <- cnameso
+  Xr <- cbind(1-Y, Y, Xr)
+  colnames(Xr) <- cnamesr
   
-  res <- list(call = call, Y = Y, X = X, D = D, n.draws = n.draws)
+  res <- list(call = call, Y = Y, Xo = Xo, Xr = Xr, n.draws = n.draws)
 
   n <- length(Y)
-  k <- ncol(Xo)
+  ncovo <- ncol(Xo)
+  ncovr <- ncol(Xr)
   ## starting values
-  if(length(coef.start.o) != k)
-    coef.start.o <- rep(coef.start.o, k)
-  if(length(coef.start.r) != k)
-    coef.start.r <- rep(coef.start.r, k)
+  if(length(coef.start.o) != ncovo)
+    coef.start.o <- rep(coef.start.o, ncovo)
+  if(length(coef.start.r) != ncovr)
+    coef.start.r <- rep(coef.start.r, ncovr)
  
   ## prior
-  if(length(p.mean.o) != k)
-    p.mean.o <- rep(p.mean.o, k)
-  if(length(p.mean.r) != k)
-    p.mean.r <- rep(p.mean.r, k)
+  if(length(p.mean.o) != ncovo)
+    p.mean.o <- rep(p.mean.o, ncovo)
+  if(length(p.mean.r) != ncovr)
+    p.mean.r <- rep(p.mean.r, ncovr)
   if(!is.matrix(p.var.o))
-    p.var.o <- diag(p.var.o, k)
+    p.var.o <- diag(p.var.o, ncovo)
   if(!is.matrix(p.var.r))
-    p.var.r <- diag(p.var.r, k)
+    p.var.r <- diag(p.var.r, ncovr)
   
   ## checking thinnig and burnin intervals
   if (n.draws <= 0)
@@ -56,25 +77,29 @@ NIbprobit <- function(Y, D, X, data = parent.frame(),
 
   ## calling C function to do MCMC
   par <- .C("NIbprobit",
-            as.integer(Y), as.integer(R), as.integer(D), 
+            as.integer(Y), as.integer(R), 
             as.double(Xo), as.double(Xr),
             as.double(coef.start.o), as.double(coef.start.r),
-            as.integer(n), as.integer(k), 
-            as.double(p.mean.o), as.double(p.mean.r),
+            as.integer(n), as.integer(ncovo), as.integer(ncovr),
+            as.integer(m), as.double(p.mean.o), as.double(p.mean.r),
             as.double(solve(p.var.o)), as.double(solve(p.var.r)), 
-            as.integer(param), as.integer(mda),
+            as.integer(insample), as.integer(param), as.integer(mda),
             as.integer(n.draws), as.integer(burnin),
             as.integer(keep), as.integer(verbose),
-            coef.o = double(k*(ceiling((n.draws-burnin)/keep))),
-            coef.r = double(k*(ceiling((n.draws-burnin)/keep))),
-            ATE = double(3*(ceiling((n.draws-burnin)/keep))),
+            coef.o = double(ncovo*(ceiling((n.draws-burnin)/keep))),
+            coef.r = double(ncovr*(ceiling((n.draws-burnin)/keep))),
+            ATE = double((m-1)*(ceiling((n.draws-burnin)/keep))),
+            BASE = double(m*(ceiling((n.draws-burnin)/keep))),
             PACKAGE="experiment")
   if (param) {
-    res$coef.o <- matrix(par$coef.o, byrow = TRUE, ncol = k)
-    res$coef.r <- matrix(par$coef.r, byrow = TRUE, ncol = k)
+    res$coef.o <- matrix(par$coef.o, byrow = TRUE, ncol = ncovo)
+    colnames(res$coef.o) <- colnames(Xo)
+    res$coef.r <- matrix(par$coef.r, byrow = TRUE, ncol = ncovr)
+    colnames(res$coef.r) <- colnames(Xr)
   }
-  res$ATE <- matrix(par$ATE, byrow = TRUE, ncol = 3)
+  res$ATE <- matrix(par$ATE, byrow = TRUE, ncol = m-1)
+  res$base <- matrix(par$BASE, byrow = TRUE, ncol = m)
   
-  class(res) <- "Classical.bprobit"
+  class(res) <- "NIbprobit"
   return(res)
 }
