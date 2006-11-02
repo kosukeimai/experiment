@@ -6,8 +6,8 @@
 NIbprobit <- function(formula, Xo, Xr, data = parent.frame(),
                       n.draws = 5000, insample = FALSE,
                       param = TRUE, mda = TRUE,
-                      p.mean.o = 0, p.var.o = 1000,
-                      p.mean.r = 0, p.var.r = 1000,
+                      p.mean.o = 0, p.prec.o = 0.01,
+                      p.mean.r = 0, p.prec.r = 0.01,
                       coef.start.o = 0, coef.start.r = 0,
                       burnin = 0, thin = 0, verbose = TRUE) {  
 
@@ -61,10 +61,10 @@ NIbprobit <- function(formula, Xo, Xr, data = parent.frame(),
     p.mean.o <- rep(p.mean.o, ncovo)
   if(length(p.mean.r) != ncovr)
     p.mean.r <- rep(p.mean.r, ncovr)
-  if(!is.matrix(p.var.o))
-    p.var.o <- diag(p.var.o, ncovo)
-  if(!is.matrix(p.var.r))
-    p.var.r <- diag(p.var.r, ncovr)
+  if(!is.matrix(p.prec.o))
+    p.prec.o <- diag(p.prec.o, ncovo)
+  if(!is.matrix(p.prec.r))
+    p.prec.r <- diag(p.prec.r, ncovr)
   
   ## checking thinnig and burnin intervals
   if (n.draws <= 0)
@@ -82,7 +82,7 @@ NIbprobit <- function(formula, Xo, Xr, data = parent.frame(),
             as.double(coef.start.o), as.double(coef.start.r),
             as.integer(n), as.integer(ncovo), as.integer(ncovr),
             as.integer(m), as.double(p.mean.o), as.double(p.mean.r),
-            as.double(solve(p.var.o)), as.double(solve(p.var.r)), 
+            as.double(p.prec.o), as.double(p.prec.r), 
             as.integer(insample), as.integer(param), as.integer(mda),
             as.integer(n.draws), as.integer(burnin),
             as.integer(keep), as.integer(verbose),
