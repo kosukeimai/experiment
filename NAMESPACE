@@ -5,6 +5,7 @@ importFrom(MASS, mvrnorm)
 export(Noncomp.bayes, 
        Noncomp.bayesMixed,
        NIbprobit,
+       NIbprobitMixed,
        NInocov,
        ITTnocov,
        CACEnocov,
