@@ -935,7 +935,8 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	    pN[i] = Y[i]*pnorm(meano[i], 0, 1, 1, 0) +
 	      (1-Y[i])*pnorm(meano[i], 0, 1, 0, 0);
 	  }
-      } 
+      }
+      vitemp[grp[i]]++;
     }
     
     /** storing the results **/
@@ -1444,6 +1445,7 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
 	    pN[i] = dnorm(Y[i], meano[i], sqrt(*sig2), 0);
 	  } 
       }
+      vitemp[grp[i]]++;
     }
     
      /** storing the results **/
@@ -2006,7 +2008,8 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 	      pN[i] = pnorm(tau[Y[i]], meano[i], 1, 1, 0)
 		- pnorm(tau[Y[i]-1], meano[i], 1, 1, 0); 
 	  }
-      } 
+      }
+      vitemp[grp[i]]++;
     }
     
    /** storing the results **/
@@ -2590,6 +2593,7 @@ void LINegBinMixed(int *Y,         /* count outcome variable */
 	    pN[i] = dnegbin(Y[i], exp(meano[i]), *sig2, 0);
 	  } 
       }
+      vitemp[grp[i]++];
     }
  
     /** storing the results **/
@@ -3206,6 +3210,7 @@ void LItwopartMixed(int *Y,         /* indicator for Y > 0 */
 	    } 
 	  }
       }
+      vitemp[grp[i]]++;
     }
     
     /** storing the results **/
