@@ -258,6 +258,8 @@ void NIbprobitMixed(int *Y,         /* binary outcome variable */
 		    int *verbose,  
 		    double *coefo,  /* storage for coefficients */ 
 		    double *coefr,  /* storage for coefficients */ 
+		    double *sPsiO,   /* storage for variance */
+		    double *sPsiR,   /* storage for variance */
 		    double *ATE,     /* storage for ATE */
 		    double *BASE    /* storage for baseline */
 		    ) {
@@ -486,6 +488,12 @@ void NIbprobitMixed(int *Y,         /* binary outcome variable */
 	    coefo[itemp1++] = beta[i];
 	  for (i = 0; i < n_covr; i++) 
 	    coefr[itemp2++] = delta[i];
+	  for (i = 0; i < n_covoR; i++)
+	    for (j = i; j < n_covoR; j++)
+	      sPsiO[itemp3++] = PsiO[i][j];
+	  for (i = 0; i < n_covrR; i++)
+	    for (j = i; j < n_covrR; j++)
+	      sPsiR[itemp3++] = PsiR[i][j];
 	}
 	keep = 1;
       }
@@ -516,15 +524,15 @@ void NIbprobitMixed(int *Y,         /* binary outcome variable */
   FreeMatrix(PsiR, n_covrR);
   FreeMatrix(xiO, n_grp);
   FreeMatrix(xiR, n_grp);
-  FreeMatrix(Ao, n_covo);
-  FreeMatrix(Ar, n_covr);
   FreeMatrix(S0o, n_covoR);
   FreeMatrix(S0r, n_covrR);
+  FreeMatrix(Ao, n_covo);
+  FreeMatrix(Ar, n_covr);
   FreeMatrix(mtemp1, n_covo);
   FreeMatrix(mtemp2, n_covr);
-  free(vitemp);
   free(base);
   free(cATE);
+  free(vitemp);
 } /* NIbprobitMixed */
 
 

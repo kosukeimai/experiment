@@ -835,7 +835,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
   int i, j, main_loop;
   int itempP = ftrunc((double) *n_gen/10);
   int itemp, itempA, itempC, itempO, itempQ, itempR;
-  int itempAv, itempCv, itempOv, itempRv;
+  int itempAv, itempCv, itempOv, itempRv, itempPO, itempPC, itempPA, itempPR;
 
   /*** get random seed **/
   GetRNGstate();
@@ -857,6 +857,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
   /*** Gibbs Sampler! ***/
   itempA = 0; itempC = 0; itempO = 0; itempQ = 0; itempR = 0;   
   itempAv = 0; itempCv = 0; itempOv = 0; itempRv = 0;   
+  itempPO = 0; itempPA = 0; itempPC = 0; itempPR = 0;
   for (j = 0; j < n_fixedC*2; j++)
     acc_fixed[j] = 0;
   acc_random[0] = 0; acc_random[1] = 0;
@@ -1055,6 +1056,9 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	if (*param) {
 	  for (j = 0; j < n_fixedC; j++)
 	    coefC[itempC++] = betaC[j];
+	  for (i = 0; i < n_randomC; i++)
+	    for (j = i; j < n_randomC; j++)
+	      sPsiC[itempPC++] = Psi[0][i][j];
 	  if (*AT) {
 	    if (*logitC) {
 	      for (j = 0; j < n_fixedC; j++)
@@ -1063,12 +1067,22 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 	      for (j = 0; j < n_fixedC; j++)
 		coefA[itempA++] = betaA[j];
 	    }
+	    for (i = 0; i < n_randomC; i++)
+	      for (j = i; j < n_randomC; j++)
+		sPsiA[itempPA++] = Psi[1][i][j];
 	  }
 	  for (j = 0; j < n_fixedO; j++)
 	    coefO[itempO++] = gamma[j];
-	  if (n_miss > 0) 
+	  for (i = 0; i < n_randomO; i++)
+	    for (j = i; j < n_randomO; j++)
+	      sPsiO[itempPO++] = PsiO[i][j];
+	  if (n_miss > 0) {
 	    for (j = 0; j < n_fixedR; j++)
 	      coefR[itempR++] = delta[j];
+	    for (i = 0; i < n_randomR; i++)
+	      for (j = i; j < n_randomR; j++)
+		sPsiR[itempPR++] = PsiR[i][j];
+	  }
 	}
 	keep = 1;
       } else
