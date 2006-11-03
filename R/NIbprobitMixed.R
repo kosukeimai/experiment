@@ -11,7 +11,7 @@ NIbprobitMixed <- function(formula, formulae.o, formulae.r, grp,
                            p.df.o = 1, p.df.r = 1,
                            p.scale.o = 1, p.scale.r = 1,
                            coef.start.o = 0, coef.start.r = 0,
-                           sig2.start.o = 1, sig2.start.r = 1,
+                           Psi.start.o = 1, Psi.start.r = 1,
                            burnin = 0, thin = 0, verbose = TRUE) {
 
   ## getting Y and D
@@ -80,6 +80,22 @@ NIbprobitMixed <- function(formula, formulae.o, formulae.r, grp,
     coef.start.o <- rep(coef.start.o, ncovo)
   if(length(coef.start.r) != ncovr)
     coef.start.r <- rep(coef.start.r, ncovr)
+  if(is.matrix(Psi.start.o)) {
+    if (dim(Psi.start.o) != ncovo1)
+      stop(paste("the dimension of Psi.start.o should be", ncovo1))    
+  } else if (length(Psi.start.o) == 1)
+    Psi.start.o <- diag(Psi.start.o, ncovo1)
+  else 
+    stop("Incorrect input for Psi.start.o")
+
+  if(is.matrix(Psi.start.r)) {
+    if (dim(Psi.start.r) != ncovo1)
+      stop(paste("the dimension of Psi.start.r should be", ncovo1))    
+  } else if (length(Psi.start.r) == 1)
+    Psi.start.r <- diag(Psi.start.r, ncovo1)
+  else 
+    stop("Incorrect input for Psi.start.r")
+ 
  
   ## prior
   if(length(p.mean.o) != ncovo)
@@ -123,6 +139,7 @@ NIbprobitMixed <- function(formula, formulae.o, formulae.r, grp,
             as.integer(max(table(grp))), as.double(Xo),
             as.double(Xr), as.double(Zo), as.double(Zr), 
             as.double(coef.start.o), as.double(coef.start.r),
+            as.double(Psi.start.o), as.double(Psi.start.r),
             as.integer(n), as.integer(ncovo), as.integer(ncovr),
             as.integer(ncovo1), as.integer(ncovr1), as.integer(m), 
             as.double(p.mean.o), as.double(p.mean.r),

@@ -446,15 +446,20 @@ void NIbprobitMixed(int *Y,         /* binary outcome variable */
 	  Xr[i][1] = 0;
 	} 
       }
+      vitemp[grp[i]]++;
     }
     
     /** Compute quantities of interest **/
+    for (j = 0; j < n_grp; j++)
+      vitemp[j] = 0;
     for (j = 0; j < n_treat; j++) 
       base[j] = 0;
     for (i = 0; i < n_samp; i++) {
       dtemp = 0; 
       for (j = n_treat; j < n_covo; j++) 
 	dtemp += Xo[i][j]*beta[j];
+      for (j = 0; j < n_covoR; j++)
+	dtemp += Zo[grp[i]][vitemp[grp[i]]][j]*xiO[grp[i]][j];
       for (j = 0; j < n_treat; j++) {
 	if (*Insample) {
 	  if (Xo[i][j] == 1)
@@ -464,6 +469,7 @@ void NIbprobitMixed(int *Y,         /* binary outcome variable */
 	} else
 	  base[j] += pnorm(0, dtemp+beta[j], 1, 0, 0);
       }
+      vitemp[grp[i]]++;
     }
     for (j = 0; j < n_treat; j++) 
       base[j] /= (double)n_samp;
