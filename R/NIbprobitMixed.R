@@ -18,7 +18,8 @@ NIbprobitMixed <- function(formula, formulae.o, formulae.r, grp,
   call <- match.call()
   tm <- terms(formula)
   attr(tm, "intercept") <- 0
-  D <- model.frame(tm, data = data, na.action = 'na.pass')
+  mf <- model.frame(tm, data = data, na.action = 'na.pass')
+  D <- model.matrix(tm, data = mf)
   if (max(D) > 1 || min(D) < 0)
     stop("the treatment variable should be a factor variable.")
   Y <- model.response(mf)
@@ -89,10 +90,10 @@ NIbprobitMixed <- function(formula, formulae.o, formulae.r, grp,
     stop("Incorrect input for Psi.start.o")
 
   if(is.matrix(Psi.start.r)) {
-    if (dim(Psi.start.r) != ncovo1)
-      stop(paste("the dimension of Psi.start.r should be", ncovo1))    
+    if (dim(Psi.start.r) != ncovr1)
+      stop(paste("the dimension of Psi.start.r should be", ncovr1))    
   } else if (length(Psi.start.r) == 1)
-    Psi.start.r <- diag(Psi.start.r, ncovo1)
+    Psi.start.r <- diag(Psi.start.r, ncovr1)
   else 
     stop("Incorrect input for Psi.start.r")
  
@@ -116,10 +117,10 @@ NIbprobitMixed <- function(formula, formulae.o, formulae.r, grp,
     stop("Incorrect input for p.scale.o")
 
   if(is.matrix(p.scale.r)) {
-    if (dim(p.scale.r) != ncovo1)
-      stop(paste("the dimension of p.scale.r should be", ncovo1))    
+    if (dim(p.scale.r) != ncovr1)
+      stop(paste("the dimension of p.scale.r should be", ncovr1))    
   } else if (length(p.scale.r) == 1)
-    p.scale.r <- diag(p.scale.r, ncovo1)
+    p.scale.r <- diag(p.scale.r, ncovr1)
   else 
     stop("Incorrect input for p.scale.r")
   
@@ -151,6 +152,8 @@ NIbprobitMixed <- function(formula, formulae.o, formulae.r, grp,
             as.integer(keep), as.integer(verbose),
             coef.o = double(ncovo*(ceiling((n.draws-burnin)/keep))),
             coef.r = double(ncovr*(ceiling((n.draws-burnin)/keep))),
+            sPsiO = double(ncovo1*(ncovo1+1)*(ceiling((n.draws-burnin)/keep))/2),
+            sPsiR = double(ncovr1*(ncovr1+1)*(ceiling((n.draws-burnin)/keep))/2),
             ATE = double((m-1)*(ceiling((n.draws-burnin)/keep))),
             BASE = double(m*(ceiling((n.draws-burnin)/keep))),
             PACKAGE="experiment")
