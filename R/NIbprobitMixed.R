@@ -86,7 +86,9 @@ NIbprobitMixed <- function(formula, formulae.o, formulae.r, grp,
       stop(paste("the dimension of Psi.start.o should be", ncovo1))    
   } else if (length(Psi.start.o) == 1)
     Psi.start.o <- diag(Psi.start.o, ncovo1)
-  else 
+  else if (length(Psi.start.o) == ncovo1)
+    Psi.start.o <- diag(Psi.start.o)
+  else
     stop("Incorrect input for Psi.start.o")
 
   if(is.matrix(Psi.start.r)) {
@@ -94,10 +96,11 @@ NIbprobitMixed <- function(formula, formulae.o, formulae.r, grp,
       stop(paste("the dimension of Psi.start.r should be", ncovr1))    
   } else if (length(Psi.start.r) == 1)
     Psi.start.r <- diag(Psi.start.r, ncovr1)
-  else 
+  else if (length(Psi.start.r) == ncovr1)
+    Psi.start.r <- diag(Psi.start.r)
+  else
     stop("Incorrect input for Psi.start.r")
- 
- 
+  
   ## prior
   if(length(p.mean.o) != ncovo)
     p.mean.o <- rep(p.mean.o, ncovo)
@@ -113,7 +116,9 @@ NIbprobitMixed <- function(formula, formulae.o, formulae.r, grp,
       stop(paste("the dimension of p.scale.o should be", ncovo1))    
   } else if (length(p.scale.o) == 1)
     p.scale.o <- diag(p.scale.o, ncovo1)
-  else 
+  else if (length(p.scale.o) == ncovo1)
+    p.scale.o <- diag(p.scale.o)
+  else
     stop("Incorrect input for p.scale.o")
 
   if(is.matrix(p.scale.r)) {
@@ -121,7 +126,9 @@ NIbprobitMixed <- function(formula, formulae.o, formulae.r, grp,
       stop(paste("the dimension of p.scale.r should be", ncovr1))    
   } else if (length(p.scale.r) == 1)
     p.scale.r <- diag(p.scale.r, ncovr1)
-  else 
+  else if (length(p.scale.r) == ncovr1)
+    p.scale.r <- diag(p.scale.r)
+  else
     stop("Incorrect input for p.scale.r")
   
   ## checking thinnig and burnin intervals
@@ -136,9 +143,8 @@ NIbprobitMixed <- function(formula, formulae.o, formulae.r, grp,
   ## calling C function to do MCMC
   par <- .C("NIbprobitMixed",
             as.integer(Y), as.integer(R), as.integer(grp),
-            as.integer(length(table(grp))),
-            as.integer(max(table(grp))), as.double(Xo),
-            as.double(Xr), as.double(Zo), as.double(Zr), 
+            as.integer(max(grp)+1), as.integer(max(table(grp))),
+            as.double(Xo), as.double(Xr), as.double(Zo), as.double(Zr), 
             as.double(coef.start.o), as.double(coef.start.r),
             as.double(Psi.start.o), as.double(Psi.start.r),
             as.integer(n), as.integer(ncovo), as.integer(ncovr),
