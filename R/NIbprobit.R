@@ -99,6 +99,7 @@ NIbprobit <- function(formula, Xo, Xr, data = parent.frame(),
   }
   res$ATE <- matrix(par$ATE, byrow = TRUE, ncol = m-1)
   res$base <- matrix(par$BASE, byrow = TRUE, ncol = m)
+  colnames(res$base) <- colnames(D)
   
   class(res) <- "NIbprobit"
   return(res)
