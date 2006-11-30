@@ -24,7 +24,7 @@ varCluster <- function(Y, grp) {
   n0 <- (N - sum(n^2)/N)/(k-1)
   rho <- (MSb - MSw)/(MSb + (n0-1)*MSw)
   ## cluster-adjusted variance
-  res <- var(Y)*(1+(k-1)*rho)/N
+  res <- var(Y)*(1+(mean(n)-1)*rho)/N
   return(list(var = res, MSb = MSb, MSw = MSw, rho = rho))
 }
 
@@ -57,6 +57,6 @@ covCluster <- function(Y1, Y2, grp) {
   n0 <- (N - sum(n^2)/N)/(k-1)
   rho <- (MSb - MSw)/(MSb + (n0-1)*MSw)
   ## cluster-adjusted covariance
-  res <- var(Y1, Y2)*(1+(k-1)*rho)/N
+  res <- var(Y1, Y2)*(1+(mean(n)-1)*rho)/N
   return(list(cov = res, MSb = MSb, MSw = MSw, rho = rho))
 }
