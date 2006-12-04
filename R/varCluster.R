@@ -1,18 +1,29 @@
 ###
-### Calculate the cluster adjusted variance for the sample mean
-### the calculation is based on the standard ANOVA formula
+### Calculate the cluster adjusted variance for the sample mean based
+### on the average method of Donner (Statistics in Medicine, 1992)
+###
+### the estimation of intraclass coefficient is based on the standard
+### ANOVA formula. see Donner (International Statistical Review, 1986)
+###
 ###
 
 varCluster <- function(Y, grp) {
 
+  ## number of obs within each group
   n <- c(table(grp))
+  ## groups
   ugrp <- unique(grp)
+  ## number of groups
   k <- length(ugrp)
+  ## total number of obs
   N <- length(Y)
+
+  ## total mean
   Ybar <- mean(Y)
+  ## group mean
   Ygbar <- rep(NA, k)
-  MSw <- 0
   ## within-group mean squares
+  MSw <- 0
   for (i in 1:k) {
     Ygbar[i] <- mean(Y[grp == ugrp[i]])
     MSw <- MSw + sum((Y[grp == ugrp[i]]-Ygbar[i])^2)
@@ -20,10 +31,10 @@ varCluster <- function(Y, grp) {
   MSw <- MSw / (N-k)
   ## between-group mean squares
   MSb <- sum(n*(Ygbar-Ybar)^2)/(k-1)
-  ## intraclass correlation coefficient
-  n0 <- (N - sum(n^2)/N)/(k-1)
+  ## intraclass correlation coefficient estimate based on ANOVA
+  n0 <- mean(n)-sum((n-mean(n))^2)/((k-1)*N)
   rho <- (MSb - MSw)/(MSb + (n0-1)*MSw)
-  ## cluster-adjusted variance
+  ## cluster-adjusted variance based on the average method
   res <- var(Y)*(1+(mean(n)-1)*rho)/N
   return(list(var = res, MSb = MSb, MSw = MSw, rho = rho))
 }
@@ -54,7 +65,7 @@ covCluster <- function(Y1, Y2, grp) {
   ## between-group mean squares
   MSb <- sum(n*(Y1gbar-Y1bar)*(Y2gbar-Y2bar))/(k-1)
   ## intraclass correlation coefficient
-  n0 <- (N - sum(n^2)/N)/(k-1)
+  n0 <- mean(n)-sum((n-mean(n))^2)/((k-1)*N)
   rho <- (MSb - MSw)/(MSb + (n0-1)*MSw)
   ## cluster-adjusted covariance
   res <- var(Y1, Y2)*(1+(mean(n)-1)*rho)/N
