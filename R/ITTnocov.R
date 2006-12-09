@@ -1,13 +1,15 @@
 ###
 ### Calculate the ITT estimate with optional clustering or matching
 ###
+### For matching with cluster randomization, we use Donner and Klar
+###(Statistics in Medicine, 1987; Journal of Clinical Epidemiology, 1993)
+### A simple weight in Donner and Klar (1993) is used.
+###
 
 ITTnocov <- function(Y, Z, grp = NULL, match = NULL, size = NULL){
 
-  weighted.var <- function(x, w) {
-    w <- w/sum(w)*length(w)
-    sum(w * (x - weighted.mean(x,w))^2)/(sum(w) - 1)
-  }
+  weighted.var <- function(x, w) 
+    return(sum(w * (x - weighted.mean(x,w))^2)/((length(x)-1)*mean(w)))
   
   Y1 <- Y[Z==1]
   Y0 <- Y[Z==0]
@@ -34,8 +36,8 @@ ITTnocov <- function(Y, Z, grp = NULL, match = NULL, size = NULL){
       if (sum(ind0$x == ind1$x) != sum(Z==1))
         stop("invalid input for `match'.")
       D <- Y1[ind1$ix] - Y0[ind0$ix]
-      w <- w1[ind1$ix] + w0[ind0$ix]
-      ITT.var <- weighted.var(D, w)/length(D)
+      w <- w1[ind1$ix] * w0[ind0$ix]/(w1[ind1$ix] + w0[ind0$ix])
+      ITT.var <- weighted.var(D, w)*sum(w^2)/(sum(w)^2)
     } else {
       stop("invalid input for `match'.")
     }
