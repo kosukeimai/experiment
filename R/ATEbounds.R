@@ -1,6 +1,8 @@
-ATEbounds <- function(Y, D, alpha = 0.95) {
-
+ATEbounds <- function(Y, D, data = parent.frame(), alpha = 0.95) {
+  
   ## prep
+  Y <- eval(Y, data)
+  D <- eval(D, data)
   Y1 <- Y[D==1]
   Y0 <- Y[D==0]
   n1 <- length(Y1)
