@@ -21,9 +21,11 @@ boundsCI <- function(lb.rep, ub.rep, lb.est, ub.est, alpha) {
     b.sup[i]<-max(sum(bmin.dif<=bmin.max.dif[i])/reps, #emp. dis func
                     sum(bmax.dif<=bmin.max.dif[i])/reps)
   }
-  beta <- quantile(b.sup, 0.95)
+  beta <- quantile(b.sup, 1-alpha)
   b.lower <- lb.est-quantile(bmin.dif, beta)
   b.upper <- ub.est+quantile(bmax.dif, beta)
+  names(b.lower) <- names(bon.lower)
+  names(b.upper) <- names(bon.upper)
   
   ##output
   return(list(bonferroni = c(bon.lower, bon.upper),

@@ -4,7 +4,7 @@ Date: 2006-09-18
 Title: experiment: statistical analysis of randomized experiments
 Author: Kosuke Imai <kimai@princeton.edu>
 Maintainer: Kosuke Imai <kimai@princeton.edu>
-Depends: MASS, R (>= 2.3.0)
+Depends: boot, MASS, R (>= 2.3.0)
 Description: This package provides various methods for analyzing 
              randomized experiments with possible noncompliance
              and missing outcomes. This version is very preliminary. 

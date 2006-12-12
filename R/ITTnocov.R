@@ -8,9 +8,6 @@
 
 ITTnocov <- function(Y, Z, grp = NULL, match = NULL, size = NULL){
 
-  weighted.var <- function(x, w) 
-    return(sum(w * (x - weighted.mean(x,w))^2)/((length(x)-1)*mean(w)))
-  
   Y1 <- Y[Z==1]
   Y0 <- Y[Z==0]
   if (is.null(size))
