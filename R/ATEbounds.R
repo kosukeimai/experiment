@@ -31,7 +31,7 @@ ATEbounds <- function(formula, data = parent.frame(), maxY = NULL,
     res$bmethod.ci.Y <- matrix(NA, ncol = 2, nrow = M)
     res$bmethod.ci <- matrix(NA, ncol = 2, nrow = choose(M, 2))
     for (i in 1:M) { 
-      tmp <- boundsCI(breps[,(i-1)*M+1], breps[,i*M],
+      tmp <- boundsCI(breps[,(i-1)*2+1], breps[,i*2],
                       res$bounds.Y[i,1],
                       res$bounds.Y[i,2], alpha)
       res$bmethod.ci.Y[i,] <- tmp$bmethod
@@ -50,19 +50,23 @@ ATEbounds <- function(formula, data = parent.frame(), maxY = NULL,
   }
   
   ## dimnames
-  rownames(res$bounds.Y) <- rownames(res$bonf.ci.Y) <-
-    rownames(res$bmethod.ci.Y) <- colnames(D)
+  rownames(res$bounds.Y) <- rownames(res$bonf.ci.Y) <- colnames(D)
   tmp <- NULL
   for (i in 1:(M-1)) 
     for (j in (i+1):M) 
       tmp <- c(tmp, paste(colnames(D)[i], "-", colnames(D)[j]))
-  rownames(res$bounds) <- rownames(res$bonf.ci) <-
-    rownames(res$bmethod.ci) <- tmp
+  rownames(res$bounds) <- rownames(res$bonf.ci) <- tmp
   colnames(res$bounds) <- colnames(res$bounds.Y) <- c("lower", "upper")
   colnames(res$bonf.ci) <- colnames(res$bonf.ci.Y) <-
+    c(paste("lower ", alpha/2, "%CI", sep=""),
+      paste("upper ", 1-alpha/2, "%CI", sep=""))
+  if (n.reps > 0) {
+    rownames(res$bmethod.ci.Y) <- colnames(D)
+      rownames(res$bmethod.ci) <- tmp
     colnames(res$bmethod.ci) <- colnames(res$bmethod.ci.Y) <-
       c(paste("lower ", alpha/2, "%CI", sep=""),
         paste("upper ", 1-alpha/2, "%CI", sep=""))
+  }
   
   return(res)
 }
@@ -92,8 +96,8 @@ boundsComp <- function(data, weights, maxY, minY, alpha = NULL) {
       vars.Y[i,] <- c(weighted.var(Ymin, w)*sum(w^2)/(sum(w)^2),
                       weighted.var(Ymax, w)*sum(w^2)/(sum(w)^2))
       ## Bonferroni bounds
-      ci.Y[i,] <- c(mean(Ymin) - qnorm(1-alpha/2)*sqrt(vars.Y[i,1]),
-                    mean(Ymax) + qnorm(1-alpha/2)*sqrt(vars.Y[i,2]))
+      ci.Y[i,] <- c(bounds.Y[i,1] - qnorm(1-alpha/2)*sqrt(vars.Y[i,1]),
+                    bounds.Y[i,2] + qnorm(1-alpha/2)*sqrt(vars.Y[i,2]))
     }
   }
   
@@ -111,9 +115,9 @@ boundsComp <- function(data, weights, maxY, minY, alpha = NULL) {
                           bounds[counter,2] +
                           qnorm(1-alpha/2)*sqrt(vars.Y[i,2]+vars.Y[j,1]))
       counter <- counter + 1
-      tmp <- c(tmp, paste(colnames(D)[i], "-", colnames(D)[j]))
     }
   }
+  
   if (is.null(alpha))
     return(c(t(rbind(bounds.Y, bounds))))
   else
