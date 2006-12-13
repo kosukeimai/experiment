@@ -2,7 +2,7 @@
 ### Assumption of nonignorability
 ###
 
-NInocov <- function(Y, D, Z = NULL, CI = 0.9) {
+NInocov <- function(Y, D, Z = NULL, CI = 0.95) {
   
   if (is.null(Z)) {
     ## Without noncompliance
