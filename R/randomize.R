@@ -20,9 +20,9 @@ randomize <- function(data, group = c("Treat", "Control"), ratio =
     stop("invalid input for `ratio'.")
   
   ## blocking and matching variable
-  if (is.null(block) & is.null(match)) {
-    block <- rep(1, n)
+  if (is.null(block) & is.null(match)) { ## complete randomization
     ttt <- sample(group, n, replace = TRUE, prob = ratio)
+    names(ttt) <- indx
   } else if (!is.null(block) && !is.null(match)) {
     stop("invalid inputs for `block' and `match'.")
   } else if (is.null(match)) { ## blocking
@@ -45,6 +45,8 @@ randomize <- function(data, group = c("Treat", "Control"), ratio =
       tmp <- quantile(block, (0:(n.block-1))/n.block)
       for (i in 1:n.block)
         block.id[block >= tmp[i]] <- block.id[block >= tmp[i]] + 1
+      if (sum(table(block.id) < length(group)) > 0)
+        stop("some blocks have too few observations.")
     }
     ttt <- rep(NA, n)
     names(ttt) <- names(block.id) <- indx
@@ -79,6 +81,10 @@ randomize <- function(data, group = c("Treat", "Control"), ratio =
   }
 
   ## return the results
-  return(list(treatment = ttt, data = data, block = block, match =
-              match, block.id = block.id, match.id = match.id))
+  res <- list(call = match.call(), treatment = ttt, data = data,
+              block = block, match = match, block.id = block.id,
+              match.id = match.id)
+  class(res) <- "randomize"
+  
+  return(res)
 }
