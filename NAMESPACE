@@ -15,6 +15,7 @@ export(Noncomp.bayes,
        bNormalMixed,
        bprobitMixed,
        boprobitMixed,
-       bNegBinMixed)
+       bNegBinMixed,
+       randomize)
 
 
