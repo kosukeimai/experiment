@@ -18,4 +18,5 @@ export(Noncomp.bayes,
        bNegBinMixed,
        randomize)
 
+S3method(print, randomize)
 
