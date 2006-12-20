@@ -5,6 +5,7 @@ randomize <- function(data, group = c("Treat", "Control"), ratio =
   ## call
   call <- match.call()
   ## data 
+  m <- length(group)
   if ((!is.null(call$block)) && (!is.null(call$match))) {
     stop("invalid inputs for `block' and `match'.")
   } else if (!is.null(call$block)) { ## blocking
@@ -17,9 +18,8 @@ randomize <- function(data, group = c("Treat", "Control"), ratio =
     } else {
       block <- eval(call$block, envir = data)
     }
-    print(block)
   } else { ## matching
-    if (length(group) != 2)
+    if (m != 2)
       stop("2 groups are required for matching.")
     if (!is.null(ratio))
       warning("`ratio' will be ignored.")
@@ -48,7 +48,6 @@ randomize <- function(data, group = c("Treat", "Control"), ratio =
     indx <- rownames(data)
   
   ## groups
-  m <- length(group)
   if (is.null(ratio))
     ratio <- rep(1/m, m)
   ratio <- ratio/sum(ratio)
@@ -71,22 +70,20 @@ randomize <- function(data, group = c("Treat", "Control"), ratio =
     block.id <- rep(NA, n)
     if (is.null(n.block)) {
       tmp <- unique(block)
-      n.block <- length(n.block)
+      n.block <- length(tmp)
       for (i in 1:n.block)
         block.id[block == tmp[i]] <- i 
     } else {
       tmp <- quantile(block, (0:(n.block-1))/n.block)
       for (i in 1:n.block)
         block.id[block >= tmp[i]] <- block.id[block >= tmp[i]] + 1
-      if (sum(table(block.id) < length(group)) > 0)
+      if (sum(table(block.id) < m) > 0)
         stop("some blocks have too few observations.")
     }
     ttt <- rep(NA, n)
     names(ttt) <- names(block.id) <- indx
     for (i in 1:n.block) {
       howmany <- sum(block.id == i)
-      if (howmany < m)
-        stop("too few observations in a block.")
       if (complete) { # comlete randomization
         tmp <- ratio2size(howmany, ratio, group)
         ttt[block.id == i] <- sample(tmp$vector, howmany, replace = FALSE)
