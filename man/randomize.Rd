@@ -13,7 +13,8 @@
 
 \usage{
    randomize(data, group = c("Treat", "Control"), ratio = NULL,
-             indx = NULL, block = NULL, n.block = NULL, match = NULL)
+             indx = NULL, block = NULL, n.block = NULL, match = NULL,
+             complete = TRUE)
 }
 
 \arguments{
@@ -63,6 +64,13 @@
     observations will be formed based on the similar values of the
     matching variable. If a formula is specified, the \code{mahalanobis}
     distance of the resulting model matrix will be used. 
+  }
+  \item{complete}{
+    logical. If it equals \code{TRUE} (default), then complete
+    randomization will be performed (within each block if randomized
+    block designs are used). Otherwise, simple randomization will be
+    implemented. For matched-pair designs, \code{complete} has to equal
+    \code{TRUE}. 
   }
 }
 
