@@ -8,6 +8,6 @@ print.randomize <- function(x, digits = getOption("digits"), ...) {
     print(table(x$treatment, exclude = NULL, ...), digits = digits)
 
   cat("\nTotal number of observations:",
-      length(na.rm(x$treatment)), "\n\n")
+      length(na.omit(x$treatment)), "\n\n")
   invisible(x)
 }
