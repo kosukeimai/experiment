@@ -3,6 +3,7 @@ useDynLib(experiment)
 importFrom(MASS, mvrnorm)
 
 export(NoncompLI, 
+       NoncompMAR,
        NoncompLIMixed,
        NIbprobit,
        NIbprobitMixed,
