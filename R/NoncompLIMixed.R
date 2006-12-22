@@ -1,21 +1,21 @@
-Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
-                               n.draws = 5000, param = TRUE, in.sample = FALSE,
-                               model.c = "probit", model.o = "probit",
-                               random = FALSE, tune.tau = 0.01,
-                               tune.var = 0.01, tune.fixed.c = 0.01,
-                               tune.random.c = 0.01, tune.fixed.o = 0.01,
-                               tune.random.o = 0.01,
-                               p.mean.c = 0, p.prec.c = 0.01, p.mean.o = 0,
-                               p.prec.o = 0.01, p.mean.r = 0, p.prec.r = 0.01,
-                               p.df.var = 10, p.shape.var = 1, p.scale.var = 1,
-                               coef.start.c = 0, coef.start.o = 0,
-                               tau.start.o = NULL, coef.start.r = 0,
-                               var.start.o = 1, Psi.start.c = 1,
-                               Psi.start.o = 1, Psi.start.r = 1,
-                               p.df.c = 5, p.df.o = 5, p.df.r = 5,
-                               p.scale.c = 1, p.scale.o = 1,
-                               p.scale.r = 1, burnin = 0, thin = 0,
-                               verbose = TRUE) {   
+NoncompLIMixed <- function(formulae, Z, D, grp, data = parent.frame(),
+                           n.draws = 5000, param = TRUE, in.sample = FALSE,
+                           model.c = "probit", model.o = "probit",
+                           random = FALSE, tune.tau = 0.01,
+                           tune.var = 0.01, tune.fixed.c = 0.01,
+                           tune.random.c = 0.01, tune.fixed.o = 0.01,
+                           tune.random.o = 0.01,
+                           p.mean.c = 0, p.prec.c = 0.01, p.mean.o = 0,
+                           p.prec.o = 0.01, p.mean.r = 0, p.prec.r = 0.01,
+                           p.df.var = 10, p.shape.var = 1, p.scale.var = 1,
+                           coef.start.c = 0, coef.start.o = 0,
+                           tau.start.o = NULL, coef.start.r = 0,
+                           var.start.o = 1, Psi.start.c = 1,
+                           Psi.start.o = 1, Psi.start.r = 1,
+                           p.df.c = 5, p.df.o = 5, p.df.r = 5,
+                           p.scale.c = 1, p.scale.o = 1,
+                           p.scale.r = 1, burnin = 0, thin = 0,
+                           verbose = TRUE) {   
   
   ## models
   if (!(model.o %in% c("probit", "oprobit", "gaussian", "negbin", "twopart")))
@@ -632,6 +632,7 @@ Noncomp.bayesMixed <- function(formulae, Z, D, grp, data = parent.frame(),
    }
   if (AT) 
     res$pA <- 1-res$pC-res$pN
-  
+
+  class(res) <- "NoncompLIMixed"
   return(res)
 }

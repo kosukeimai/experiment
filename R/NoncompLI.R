@@ -1,16 +1,15 @@
-Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
-                          n.draws = 5000, param = TRUE,
-                          in.sample = FALSE, model.c = "probit", 
-                          model.o = "probit", model.r = "probit", 
-                          tune.c = 0.01, tune.o = 0.01, tune.r = 0.01,
-                          tune.v = 0.01, p.mean.c = 0, p.mean.o = 0,
-                          p.mean.r = 0, p.prec.c = 0.001,
-                          p.prec.o = 0.001, p.prec.r = 0.001,
-                          p.df.o = 10, p.scale.o = 1, p.shape.o = 1,
-                          mda.probit = TRUE, coef.start.c = 0,
-                          coef.start.o = 0, tau.start.o = NULL,
-                          coef.start.r = 0, var.start.o = 1,
-                          burnin = 0, thin = 0, verbose = TRUE) {  
+NoncompLI <- function(formulae, Z, D, data = parent.frame(), n.draws = 5000,
+                      param = TRUE, in.sample = FALSE, model.c = "probit",
+                      model.o = "probit", model.r = "probit", 
+                      tune.c = 0.01, tune.o = 0.01, tune.r = 0.01,
+                      tune.v = 0.01, p.mean.c = 0, p.mean.o = 0,
+                      p.mean.r = 0, p.prec.c = 0.001,
+                      p.prec.o = 0.001, p.prec.r = 0.001,
+                      p.df.o = 10, p.scale.o = 1, p.shape.o = 1,
+                      mda.probit = TRUE, coef.start.c = 0,
+                      coef.start.o = 0, tau.start.o = NULL,
+                      coef.start.r = 0, var.start.o = 1,
+                      burnin = 0, thin = 0, verbose = TRUE) {  
 
   ## getting the data
   call <- match.call()
@@ -477,6 +476,7 @@ Noncomp.bayes <- function(formulae, Z, D, data = parent.frame(),
   }
   if (AT) 
     res$pA <- 1-res$pC-res$pN
-  
+
+  class(res) <- "NoncompLI"
   return(res)
 }

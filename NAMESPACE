@@ -2,8 +2,8 @@ useDynLib(experiment)
 
 importFrom(MASS, mvrnorm)
 
-export(Noncomp.bayes, 
-       Noncomp.bayesMixed,
+export(NoncompLI, 
+       NoncompLIMixed,
        NIbprobit,
        NIbprobitMixed,
        NInocov,
@@ -12,10 +12,6 @@ export(Noncomp.bayes,
        CACEnocov,
        CACEcov,
        MARnocov,
-       bNormalMixed,
-       bprobitMixed,
-       boprobitMixed,
-       bNegBinMixed,
        randomize)
 
 S3method(print, randomize)
