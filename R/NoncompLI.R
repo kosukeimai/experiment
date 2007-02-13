@@ -43,9 +43,13 @@ NoncompLI <- function(formulae, Z, D, data = parent.frame(), n.draws = 5000,
 
   ## compliance model
   Xc <- model.matrix(formulae[[2]], data=data)
-  ## response model
-  Xr <- model.matrix(formulae[[3]], data=data)
 
+  ## response model
+  if (any(is.na(Y)))
+    Xr <- model.matrix(formulae[[3]], data=data)
+  else
+    Xr <- model.matrix(~ 1, data = data)
+  
   N <- length(Y)
   Z <- eval(call$Z, envir = data)
   D <- eval(call$D, envir = data)

@@ -1,51 +1,70 @@
-\name{Noncomp.bayes}
+\name{NoncompLI}
 
-\alias{Noncomp.bayes}
+\alias{NoncompLI}
 
 \title{Bayesian Analysis of Randomized Experiments with Noncompliance
-and Nonignorable Missing Outcomes}
+  and Missing Outcomes Under the Assumption of Latent Ignorability}
 
 \description{
   This function estimates the average causal effects for randomized
-  experiments with noncompliance and nonignorable missing
-  outcomes. The missing data mechanism is modeled using the latent
-  ignorability assumption of Frangakis and Rubin (1999, Biometrika). 
+  experiments with noncompliance and missing outcomes under the
+  assumption of latent ignorability (Frangakis and Rubin, 1999). The
+  models are based on Bayesian generalized linear models and are fitted
+  using the Markov chain Monte Carlo algorithms. Various types of the
+  outcome variables can be analyzed to estimate the Intention-to-Treat
+  effect and Complier Average Causal Effect.
 }
 
 \usage{
-  Noncomp.bayes(formulae, Z, D, data = parent.frame(),
-                n.draws = 5000, param = TRUE,
-                in.sample = FALSE, model.c = "probit", 
-                model.o = "probit", model.r = "probit", 
-                tune.c = 0.01, tune.o = 0.01, tune.r = 0.01,
-                tune.v = 0.01, p.mean.c = 0, p.mean.o = 0,
-                p.mean.r = 0, p.prec.c = 0.001,
-                p.prec.o = 0.001, p.prec.r = 0.001,
-                p.df.o = 10, p.scale.o = 1, p.shape.o = 1,
-                mda.probit = TRUE, coef.start.c = 0,
-                coef.start.o = 0, tau.start.o = NULL,
-                coef.start.r = 0, var.start.o = 1,
-                burnin = 0, thin = 0, verbose = TRUE)
+NoncompLI(formulae, Z, D, data = parent.frame(), n.draws = 5000,
+          param = TRUE, in.sample = FALSE, model.c = "probit",
+          model.o = "probit", model.r = "probit", 
+          tune.c = 0.01, tune.o = 0.01, tune.r = 0.01,
+          tune.v = 0.01, p.mean.c = 0, p.mean.o = 0,
+          p.mean.r = 0, p.prec.c = 0.001,
+          p.prec.o = 0.001, p.prec.r = 0.001,
+          p.df.o = 10, p.scale.o = 1, p.shape.o = 1,
+          mda.probit = TRUE, coef.start.c = 0,
+          coef.start.o = 0, tau.start.o = NULL,
+          coef.start.r = 0, var.start.o = 1,
+          burnin = 0, thin = 0, verbose = TRUE)
 }
 
 \arguments{
   \item{formulae}{
-    list of formulae.
+    A list of formulae where the first formula specifies the
+    (pre-treatment) covariates in the outcome model (the latent
+    compliance covariate will be added automatically), the second
+    formula specifies the compliance model, and the third formula
+    defines the covariate specification for the model for missing-data
+    mechanism (the latent compliance covariate will be added
+    automatically). For the outcome model, the formula should take the
+    two-sided standard R \command{formula} where the outcome variable is
+    specified in the left hand side of the formula which is then
+    separated by \code{~} from the covariate equation in the right hand
+    side, e.g., \code{y ~ x1 + x2}. For the compliance and missing-data
+    mechanism models, the one-sided \command{formula} should be used
+    where the left hand side is left unspecified, e.g., \code{~ x1 + x2}.
   }
   \item{Z}{
-    randomized binary encouragement variable.
+    A randomized encouragement variable, which should be a binary
+    variable in the specified data frame.
   }
   \item{D}{
-    binary treatment variable.
+    A treatment variable, which should be a binary variable in the
+    specified data frame.
   }
   \item{data}{
-    a data frame.
+    A data frame which contains the variables that appear in
+    the model formulae (\code{formulae}), the encouragement variable
+    (\code{Z}), and the treatment variable (\code{D}).
   }
   \item{n.draws}{
-    number of MCMC draws.
+    The number of MCMC draws. The default is \code{5000}.
   }
   \item{param}{
-    store parameters?
+    A logical variable indicating whether the Monte Carlo draws of the
+    model parameters should be saved in the output object.
   }
   \item{in.sample}{
     in sample qoi?
