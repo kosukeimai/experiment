@@ -200,7 +200,7 @@ boundsAggComp <- function(data, weights, maxY, minY, alpha = NULL,
                                0.05, survey[sub])
     if (ratio.cal)
       for (j in 1:M)
-        ratio[i,j] <- sum(weights[sub & (D[,j] == 1)]*survey[sub & (D[,j]==1)])
+        ratio[i,j] <- sum(weights[sub & (D[,j] == 1)])
   }
   if (ratio.cal)
     ratio <- ratio/sum(weights)
