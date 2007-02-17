@@ -197,7 +197,7 @@ boundsAggComp <- function(data, weights, maxY, minY, alpha = NULL,
   for (i in 1:J) {
     sub <- (S == Svalue[i])
     res.sub[[i]] <- boundsComp(data[sub,-2], weights[sub], maxY, minY,
-                          0.05, survey)
+                               0.05, survey[sub])
     if (ratio.cal)
       for (j in 1:M)
         ratio[i,j] <- sum(weights[sub & (D[,j] == 1)]*survey[sub & (D[,j]==1)])
