@@ -5,7 +5,7 @@
 
 ATEbounds <- function(formula, data = parent.frame(), maxY = NULL,
                       minY = NULL, alpha = 0.05, n.reps = 0,
-                      strata = NULL, ratio = NULL, ...) {
+                      strata = NULL, ratio = NULL, survey = NULL, ...) {
 
   ## getting Y and D
   call <- match.call()
@@ -21,20 +21,26 @@ ATEbounds <- function(formula, data = parent.frame(), maxY = NULL,
     maxY <- max(Y, na.rm = TRUE)
   if (is.null(minY))
     minY <- min(Y, na.rm = TRUE)
+  if (!is.null(call$survey))
+    survey <- eval(call$survey, data)
+  else
+    survey <- rep(1, length(Y))
   ### computing the bounds
   if (!is.null(call$strata)) {
     strata <- eval(call$strata, data)
     res <- boundsAggComp(cbind(Y, strata, D), rep(1, length(Y)), maxY,
-                         minY, alpha = alpha, ratio = ratio)
+                         minY, alpha = alpha, ratio = ratio, survey = survey)
   } else {
-    res <- boundsComp(cbind(Y, D), rep(1, length(Y)), maxY, minY, alpha = alpha)
+    res <- boundsComp(cbind(Y, D), rep(1, length(Y)), maxY, minY,
+                      alpha = alpha, survey = survey)
   }
   
   ## CI based on B-method
   if (n.reps > 0) {
     if (!is.null(call$strata)) {
       breps <- boot(data = cbind(Y, strata, D), statistic = boundsAggComp, 
-                    R = n.reps, maxY = maxY, minY = minY, alpha = NULL)$t
+                    R = n.reps, maxY = maxY, minY = minY, alpha =
+                    NULL, survey = survey)$t
       res$bmethod.ci <- res$bonf.ci <- matrix(NA, ncol = 2, nrow = choose(M, 2))
       counter <- 1
       for (i in 1:(M-1)) 
@@ -48,7 +54,8 @@ ATEbounds <- function(formula, data = parent.frame(), maxY = NULL,
         }
     } else {
       breps <- boot(data = cbind(Y, D), statistic = boundsComp,
-                    R = n.reps, maxY = maxY, minY = minY, alpha = NULL)$t
+                    R = n.reps, maxY = maxY, minY = minY, alpha = NULL,
+                    survey = survey)$t
       res$bmethod.ci.Y <- matrix(NA, ncol = 2, nrow = M)
       res$bmethod.ci <- matrix(NA, ncol = 2, nrow = choose(M, 2))
       for (i in 1:M) { 
@@ -110,15 +117,18 @@ ATEbounds <- function(formula, data = parent.frame(), maxY = NULL,
 ### of bounds; this is used for bootstrap)
 ###
 
-boundsComp <- function(data, weights, maxY, minY, alpha = NULL) {
+boundsComp <- function(data, weights, maxY, minY, alpha = NULL,
+                       survey = NULL) {
   Y <- data[,1]
   D <- data[,-1]
   M <- ncol(D)
   bounds.Y <- ci.Y <- vars.Y <- matrix(NA, ncol = 2, nrow = M)
   nobs.Y <- NULL
+  if (is.null(survey))
+    survey <- rep(1, length(Y))
   for (i in 1:M) {
     Ysub <- Y[D[,i]==1]
-    w <- weights[D[,i]==1]
+    w <- weights[D[,i]==1]*survey[D[,i]==1]
     n <- length(Ysub)
     Ymax <- Ymin <- Ysub
     Ymax[is.na(Ysub)] <- maxY
@@ -167,7 +177,7 @@ boundsComp <- function(data, weights, maxY, minY, alpha = NULL) {
 ###
 
 boundsAggComp <- function(data, weights, maxY, minY, alpha = NULL,
-                          ratio = NULL) {
+                          ratio = NULL, survey = NULL) {
   Y <- data[,1]
   S <- data[,2]
   Svalue <- unique(S)
@@ -182,12 +192,15 @@ boundsAggComp <- function(data, weights, maxY, minY, alpha = NULL,
     ratio.cal <- FALSE
   if (ratio.cal)
     ratio <- matrix(NA, nrow = J, ncol = M)
+  if (is.null(survey))
+    survey <- rep(1, length(Y))
   for (i in 1:J) {
     sub <- (S == Svalue[i])
-    res.sub[[i]] <- boundsComp(data[sub,-2], weights[sub], maxY, minY, 0.05)
+    res.sub[[i]] <- boundsComp(data[sub,-2], weights[sub], maxY, minY,
+                          0.05, survey)
     if (ratio.cal)
       for (j in 1:M)
-        ratio[i,j] <- sum(weights[sub & (D[,j] == 1)])
+        ratio[i,j] <- sum(weights[sub & (D[,j] == 1)]*survey[sub & (D[,j]==1)])
   }
   if (ratio.cal)
     ratio <- ratio/sum(weights)
