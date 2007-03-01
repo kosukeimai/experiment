@@ -78,6 +78,7 @@ ATEcluster <- function(Y, Z, data = parent.frame(), grp = NULL,
   }
 
   ## results
-  return(list(est = ATE.est, var = ATE.var))
+  return(list(est = ATE.est, var = ATE.var, Ysum = Ysum, Z = Z,
+              size = size, match = match))
 }
 
