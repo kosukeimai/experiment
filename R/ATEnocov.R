@@ -54,12 +54,13 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
 
   ## ATE for cluster randomizaion
   if (is.null(grp)) { # aggregate data input
-    if (unbiased) { 
+    if (!unbiased && !is.null(match)) { 
+      stop("the input should be individual-level data for this estimator")
+    } else {
       M <- length(Y)
       Ysum <- Y*size
-    } else if (!is.null(match))
-      stop("the input should be individual-level data for this estimator")
-  } else (unbiased || !is.null(match)) { # individual data input
+    } 
+  } else if (unbiased || !is.null(match)) { # individual data input
     ugrp <- unique(grp)
     M <- length(ugrp)
     if (is.null(size)) {
@@ -129,5 +130,6 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
       return(list(est = ATE.est, var = ATE.var, Y = Y, Z = Z, grp = grp,
                   match = match))
     }  
+  }
 }
 
