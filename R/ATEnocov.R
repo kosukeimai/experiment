@@ -2,7 +2,7 @@
 ### Calculate the ATE from cluster randomized experiments
 ###
 
-ATEcluster <- function(Y, Z, data = parent.frame(), grp = NULL,
+ATEcluster <- function(Y, Z, data = parent.frame(), grp = NULL, 
                        match = NULL, size = NULL, unbiased = TRUE){
 
   ## getting the data
@@ -55,10 +55,11 @@ ATEcluster <- function(Y, Z, data = parent.frame(), grp = NULL,
   }
 
   N <- sum(size)
-  ## this assumes prob = 1/2
+  m1 <- sum(Z)
+  m0 <- M-m1
   if (is.null(match)) { # without matching
-     ATE.est <- 2*(sum(Ysum[Z==1]) - sum(Ysum[Z==0]))/N
-     ATE.var <- 2*M*(var(Ysum[Z==1])+var(Ysum[Z==0]))/(N^2)
+     ATE.est <- M*(sum(Ysum[Z==1])/m1 - sum(Ysum[Z==0])/m0)/N
+     ATE.var <- (M^2)*(m0*var(Ysum[Z==1])+m1*var(Ysum[Z==0]))/(m1*m0*(N^2))
    } else { # with matching
     ## check match
     if (length(unique(table(match))) > 1)
