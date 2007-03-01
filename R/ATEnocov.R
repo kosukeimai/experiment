@@ -39,7 +39,7 @@ ATEcluster <- function(Y, Z, data = parent.frame(), grp = NULL,
         tmp <- match
         match <- rep(NA, M)
         umatch <- unique(match)
-        if (length(umatch) ! = M/2)
+        if (length(umatch) != M/2)
           stop("invalid input for `match'")
         match <- rep(NA, M)
         for (i in 1:M) {
