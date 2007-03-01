@@ -1,5 +1,6 @@
 ###
-### Calculate the ATE from cluster randomized experiments
+### Calculate the ATE from cluster randomized experiments using my own
+### estimator 
 ###
 
 ATEcluster <- function(Y, Z, data = parent.frame(), grp = NULL,
