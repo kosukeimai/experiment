@@ -37,7 +37,7 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
   match <- eval(call$match, envir = data)
 
   ## checking Z
-  if (sum(sort(unique(Z)) != c(0,1)) != 2)
+  if (sum(sort(unique(Z)) == c(0,1)) != 2)
     stop("`Z' should be binary taking the value of 0 or 1")
 
   ## ATE for unit randomization 
