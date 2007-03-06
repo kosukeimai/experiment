@@ -2,7 +2,7 @@
 ### Calculate the ATE 
 ###
 ### grp.method: method for group-randomized trials
-###   "neyman" = my own estimator 
+###   "neyman" = my own estimator (default)
 ###   "textbook" = the method in Chapter 7 of Donner and Klar (2000)
 ###                (see also their 1993 paper in Journal of Clinical Epidemiology)
 ###   "unpooled" = an unpooled version of the "textbook" method (this option
@@ -59,13 +59,13 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
 
   ## ATE for group-randomized trials
   if (is.null(grp)) { # aggregate data input
-    if (!(grp.method %in% c("neyman", "standard")) && !is.null(match)) { 
+    if ((grp.method %in% c("textbook", "unpooled")) && is.null(match)) { 
       stop("the input should be individual-level data for this estimator")
     } else {
       M <- length(Y)
       Ysum <- Y*grp.size
     } 
-  } else if (grp.method == "neyman" || !is.null(match)) { # individual data input
+  } else if ((grp.method == "neyman") || !is.null(match)) { # individual data input
     ugrp <- unique(grp)
     M <- length(ugrp)
     if (is.null(grp.size)) {
@@ -116,7 +116,7 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
   } else if (grp.method == "textbook") { ## textbook method
     if (is.null(match)) { # without matching
       ATE.est <- mean(Y[Z==1]) - mean(Y[Z==0])
-      ATE.var <- varCluster(Y, Z, grp)$var
+      ATE.var <- varCluster(Y = Y, Z = Z, grp = grp)$var
       return(list(est = ATE.est, var = ATE.var, Y = Y, Z = Z, grp = grp))         
     } else { # with matching
       Y <- Ysum/grp.size
@@ -124,21 +124,22 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
       Y0 <- Y[Z==0]
       w1 <- grp.size[Z==1]
       w0 <- grp.size[Z==0]
-      ATE.est <- weighted.mean(Y1, w1) - weighted.mean(Y0, w0)
       ind0 <- sort(match[Z==0], index.return = TRUE)
       ind1 <- sort(match[Z==1], index.return = TRUE)
       if (sum(ind0$x == ind1$x) != sum(Z==1))
         stop("invalid input for `match'.")
-      D <- Y1[ind1$ix] - Y0[ind0$ix]
       w <- w1[ind1$ix] * w0[ind0$ix]/(w1[ind1$ix] + w0[ind0$ix])
-      ATE.var <- weighted.var(D, w)*sum(w^2)/(sum(w)^2)
+      D <- Y1[ind1$ix] - Y0[ind0$ix]
+      ATE.est <- weighted.mean(D, w)
+      ATE.var <- sum(w*(D-ATE.est)^2)*sum(w^2)/(sum(w)^3)
       return(list(est = ATE.est, var = ATE.var, Y = Y, Z = Z, grp = grp,
                   match = match))
     }  
   } else if (grp.method == "unpooled") { # unpooled estimator
     if (is.null(match)) {
       ATE.est <- mean(Y[Z==1]) - mean(Y[Z==0])
-      ATE.var <- varCluster(Y[Z==1], grp[Z==1])$var + varCluster(Y[Z==0], grp[Z==0])$var
+      ATE.var <- varCluster(Y = Y[Z==1], grp = grp[Z==1])$var +
+        varCluster(Y = Y[Z==0], grp = grp[Z==0])$var
       return(list(est = ATE.est, var = ATE.var, Y = Y, Z = Z, grp = grp))         
     } else {
       stop("this method is not available for matched-pair designs.") 
@@ -148,7 +149,7 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
       ATE.est <- Ysum[Z==1]/sum(grp.size[Z==1]) - Ysum[Z==0]/sum(grp.size[Z==0])
       ATE.var <- m1*var(Ysum[Z==1])/(sum(grp.size[Z==1])^2) +
         m0*var(Ysum[Z==0])/(sum(grp.size[Z==0])^2)
-      return(list(est = ATE.est, var = ATE.var, Y = Y, Z = Z, grp = grp))         
+      return(list(est = ATE.est, var = ATE.var, Y = Y, Ysum = Ysum, Z = Z, grp = grp))         
     } else {
       stop("for matched-pair designs, use either `neyman' or `textbook' for `grp.method'") 
     }
