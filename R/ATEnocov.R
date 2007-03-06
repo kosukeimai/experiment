@@ -42,7 +42,7 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
   ## checking data
   if (sum(sort(unique(Z)) == c(0,1)) != 2)
     stop("`Z' should be binary taking the value of 0 or 1")
-  if (grp.method %in% c("neyman", "textbook", "unpooled", "standard"))
+  if (!(grp.method %in% c("neyman", "textbook", "unpooled", "standard")))
     stop("invalid input for `grp.method'")
   
   ## ATE for unit randomization 
