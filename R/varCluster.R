@@ -49,6 +49,8 @@ varCluster <- function(Y, Z = NULL, grp) {
     m0 <- c(table(grp0))
     ugrp1 <- unique(grp1)
     ugrp0 <- unique(grp0)
+    k1 <- length(ugrp1)
+    k0 <- length(ugrp0)
     mbar.A1 <- sum(m1^2)/length(Y1)
     mbar.A0 <- sum(m0^2)/length(Y0)
     Y1gbar <- rep(NA, k1)

@@ -65,7 +65,7 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
       M <- length(Y)
       Ysum <- Y*grp.size
     } 
-  } else if ((grp.method == "neyman") || !is.null(match)) { # individual data input
+  } else if ((grp.method %in% c("neyman", "standard")) || !is.null(match)) { # individual data input
     ugrp <- unique(grp)
     M <- length(ugrp)
     if (is.null(grp.size)) {
@@ -146,7 +146,9 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
     }
   } else { # standard estimator
     if (is.null(match)) {
-      ATE.est <- Ysum[Z==1]/sum(grp.size[Z==1]) - Ysum[Z==0]/sum(grp.size[Z==0])
+      m1 <- sum(Z)
+      m0 <- M-m1
+      ATE.est <- sum(Ysum[Z==1])/sum(grp.size[Z==1]) - sum(Ysum[Z==0])/sum(grp.size[Z==0])
       ATE.var <- m1*var(Ysum[Z==1])/(sum(grp.size[Z==1])^2) +
         m0*var(Ysum[Z==0])/(sum(grp.size[Z==0])^2)
       return(list(est = ATE.est, var = ATE.var, Y = Y, Ysum = Ysum, Z = Z, grp = grp))         
