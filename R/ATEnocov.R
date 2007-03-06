@@ -17,7 +17,7 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
   ## an internal function that checks match and returns diff
   match.check <- function(Y, Z, match) { 
     n <- length(Y)
-    if ((n %/% 2) != 0)
+    if ((n %% 2) != 0)
       stop("pair randomization requires the even number of observations")
     if (length(unique(table(match))) > 1)
       stop("invalid input for `match'")
