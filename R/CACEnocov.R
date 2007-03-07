@@ -26,23 +26,39 @@ CACEnocov <- function(Y, D, Z, data = parent.frame(), grp = NULL,
     if (is.null(match)) { # without matching
       Cov <- cov(Y[Z==0], D[Z==0])/sum(Z==0)+
         cov(Y[Z==1], D[Z==1])/sum(Z==1)
+      CACEvar <- (ITTY$var*(ITTD$est^2) + ITTD$var*(ITTY$est^2) -
+                  2*Cov*ITTY$est*ITTD$est)/(ITTD$est^4)
     } else { # with matching
-      Cov <- cov(ITTY$diff, ITTD$diff)/length(diff)
+      K <- length(ITTY$diff)
+      Cov <- cov(ITTY$diff, ITTD$diff)/K
+      CACEvar <- (var(ITTY$diff)*(ITTD$est^2)/K +
+                  var(ITTD$diff)*(ITTY$est^2)/K -
+                  2*Cov**ITTY$est*ITTD$est)/(ITTD$est^4)
     }
   } else if (grp.method %in% c("textbook", "unpooled")) {
-    if (is.null(match)) {
+    if (is.null(match)) { # without matching
       if (grp.method == "unpooled") {
         Cov <- covCluster(Y[Z==0], D[Z==0], grp[Z==0])$cov +
           covCluster(Y[Z==1], D[Z==1], grp[Z==1])$cov
       } else {
         Cov <- covCluster(Y, D, grp)$cov
       }
-    } else {
+      CACEvar <- (ITTY$var*(ITTD$est^2) + ITTD$var*(ITTY$est^2) -
+                  2*Cov*ITTY$est*ITTD$est)/(ITTD$est^4)
+    } else { # with matching
       stop("this estimator is not available for matched-pair designs.")
     }
   } else if (grp.method == "standard") {
-    Cov <- cov(ITTY$Ysum[ITTY$Z==0], ITTD$Ysum[ITTD$Z==0])/sum(ITTY$Z==0)
-    + cov(ITTY$Ysum[ITTY$Z==1], ITTD$Ysum[ITTD$Z==1])/sum(ITTY$Z==1)
+    if (is.null(match)) { # without matching
+      Cov <- cov(ITTY$Ysum[ITTY$Z==0],
+                 ITTD$Ysum[ITTD$Z==0])/sum(ITTY$Z==0) +
+                   cov(ITTY$Ysum[ITTY$Z==1],
+                       ITTD$Ysum[ITTD$Z==1])/sum(ITTY$Z==1)
+      CACEvar <- (ITTY$var*(ITTD$est^2) + ITTD$var*(ITTY$est^2) -
+                  2*Cov*ITTY$est*ITTD$est)/(ITTD$est^4)
+    } else { # with matching
+      stop("this estimator is not available for matched-pair designs.")
+    }
   } else { # my method
     if (is.null(match)) { # without matching
       if (ITTD$M == (ITTD$m1*2)) { 
@@ -65,15 +81,9 @@ CACEnocov <- function(Y, D, Z, data = parent.frame(), grp = NULL,
                   var(ITTD$diff)*(ITTY$est^2)/K -
                   2*Cov**ITTY$est*ITTD$est)/(ITTD$est^4)
     }
-    return(list(est = CACEest, var = CACEvar, ITTd = ITTD, ITTy = ITTY,
-                cov = Cov)) 
   }
-  CACEvar <- (ITTY$var*(ITTD$est^2) + ITTD$var*(ITTY$est^2) -
-              2*Cov*ITTY$est*ITTD$est)/(ITTD$est^4)
   return(list(est = CACEest, var = CACEvar, ITTd = ITTD, ITTy = ITTY,
               cov = Cov)) 
-  
-
 }
 
 ###
