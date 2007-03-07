@@ -54,7 +54,8 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
       diff <- match.check(Y, Z, match)
       ATE.var <- var(diff)/(length(Y)/2)
     }
-    return(list(est = ATE.est, var = ATE.var, Y = Y, Z = Z, match = match))
+    return(list(call = call, est = ATE.est, var = ATE.var, Y = Y,
+                Z = Z, match = match))
   }
 
   ## ATE for group-randomized trials
@@ -111,13 +112,14 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
       diff <- match.check(Ysum, Z, match)
       ATE.var <- 2*M*var(diff)/(N^2)
     }
-    return(list(est = ATE.est, var = ATE.var, Ysum = Ysum, Z = Z,
+    return(list(call = call, est = ATE.est, var = ATE.var, Ysum = Ysum, Z = Z,
                 grp.size = grp.size, match = match, grp.method = grp.method))  
   } else if (grp.method == "textbook") { ## textbook method
     if (is.null(match)) { # without matching
       ATE.est <- mean(Y[Z==1]) - mean(Y[Z==0])
       ATE.var <- varCluster(Y = Y, Z = Z, grp = grp)$var
-      return(list(est = ATE.est, var = ATE.var, Y = Y, Z = Z, grp = grp))         
+      return(list(call = call, est = ATE.est, var = ATE.var, Y = Y,
+                  Z = Z, grp = grp))          
     } else { # with matching
       Y <- Ysum/grp.size
       Y1 <- Y[Z==1]
@@ -132,15 +134,16 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
       D <- Y1[ind1$ix] - Y0[ind0$ix]
       ATE.est <- weighted.mean(D, w)
       ATE.var <- sum(w*(D-ATE.est)^2)*sum(w^2)/(sum(w)^3)
-      return(list(est = ATE.est, var = ATE.var, Y = Y, Z = Z, grp = grp,
-                  match = match))
+      return(list(call = call, est = ATE.est, var = ATE.var, Y = Y,
+                  Z = Z, grp = grp, match = match))
     }  
   } else if (grp.method == "unpooled") { # unpooled estimator
     if (is.null(match)) {
       ATE.est <- mean(Y[Z==1]) - mean(Y[Z==0])
       ATE.var <- varCluster(Y = Y[Z==1], grp = grp[Z==1])$var +
         varCluster(Y = Y[Z==0], grp = grp[Z==0])$var
-      return(list(est = ATE.est, var = ATE.var, Y = Y, Z = Z, grp = grp))         
+      return(list(call = call, est = ATE.est, var = ATE.var, Y = Y,
+                  Z = Z, grp = grp))         
     } else {
       stop("this method is not available for matched-pair designs.") 
     }
@@ -151,11 +154,94 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
       ATE.est <- sum(Ysum[Z==1])/sum(grp.size[Z==1]) - sum(Ysum[Z==0])/sum(grp.size[Z==0])
       ATE.var <- m1*var(Ysum[Z==1])/(sum(grp.size[Z==1])^2) +
         m0*var(Ysum[Z==0])/(sum(grp.size[Z==0])^2)
-      return(list(est = ATE.est, var = ATE.var, Y = Y, Ysum = Ysum, Z = Z, grp = grp))         
+      return(list(call = call, est = ATE.est, var = ATE.var, Y = Y,
+                  Ysum = Ysum, Z = Z, grp = grp))         
     } else {
       stop("for matched-pair designs, use either `neyman' or `textbook' for `grp.method'") 
     }
-    
   }
 }
 
+
+###
+### Calculate the cluster adjusted variance for the sample mean based
+### on the average method of Donner (Statistics in Medicine, 1992)
+###
+### the estimation of intraclass coefficient is based on the standard
+### ANOVA formula. see Donner (International Statistical Review, 1986)
+###
+### if Z is specified, then it will use pooled rho: see chapter 7 of
+### Donner and Klar book (page 114).
+###
+
+varCluster <- function(Y, Z = NULL, grp) {
+
+  if (is.null(Z)) { # unpooled
+    ## number of obs within each group
+    n <- c(table(grp))
+    ## groups
+    ugrp <- unique(grp)
+    ## number of groups
+    k <- length(ugrp)
+    ## total number of obs
+    N <- length(Y)
+    ## total mean
+    Ybar <- mean(Y)
+    ## group mean
+    Ygbar <- rep(NA, k)
+    ## within-group mean squares
+    MSw <- 0
+    for (i in 1:k) {
+      Ygbar[i] <- mean(Y[grp == ugrp[i]])
+      MSw <- MSw + sum((Y[grp == ugrp[i]]-Ygbar[i])^2)
+    }
+    MSw <- MSw / (N-k)
+    ## between-group mean squares
+    MSb <- sum(n*(Ygbar-Ybar)^2)/(k-1)
+    ## intraclass correlation coefficient estimate based on ANOVA
+    n0 <- mean(n)-sum((n-mean(n))^2)/((k-1)*N)
+    rho <- (MSb - MSw)/(MSb + (n0-1)*MSw)
+    ## cluster-adjusted variance based on the average method
+    res <- var(Y)*(1+(mean(n)-1)*rho)/N
+  } else { # pooled
+    ## prep
+    M <- length(Y)
+    Y1 <- Y[Z==1]
+    Y0 <- Y[Z==0]
+    grp1 <- grp[Z==1]
+    grp0 <- grp[Z==0]
+    m1 <- c(table(grp1))
+    m0 <- c(table(grp0))
+    ugrp1 <- unique(grp1)
+    ugrp0 <- unique(grp0)
+    k1 <- length(ugrp1)
+    k0 <- length(ugrp0)
+    mbar.A1 <- sum(m1^2)/length(Y1)
+    mbar.A0 <- sum(m0^2)/length(Y0)
+    Y1gbar <- rep(NA, k1)
+    Y0gbar <- rep(NA, k0)
+    ## within-group mean squares
+    MSw <- 0
+    for (i in 1:k0) {
+      Y0gbar[i] <- mean(Y0[grp0 == ugrp0[i]])
+      MSw <- MSw + sum((Y0[grp0 == ugrp0[i]]-Y0gbar[i])^2)
+    }
+    for (i in 1:k1) {
+      Y1gbar[i] <- mean(Y1[grp1 == ugrp1[i]])
+      MSw <- MSw + sum((Y1[grp1 == ugrp1[i]]-Y1gbar[i])^2)
+    }
+    MSw <- MSw / (M - k0 - k1)
+    ## between-group mean squares
+    MSb <- (sum(m0*(Y0gbar-mean(Y0))^2) +
+            sum(m1*(Y1gbar-mean(Y1))^2))/(k0 + k1 - 2)
+    ## ICC
+    m0 <- (M - mbar.A1 - mbar.A0)/(k0 + k1 - 2)
+    rho <- (MSb - MSw)/(MSb + (m0 - 1)*MSw)
+    ## variance
+    C0 <- 1 + (mbar.A0 - 1)*rho
+    C1 <- 1 + (mbar.A1 - 1)*rho
+    Sp2 <- MSw + (MSb - MSw)/m0
+    res <- Sp2*(C0/length(Y0)+C1/length(Y1))
+  }
+  return(list(var = res, MSb = MSb, MSw = MSw, rho = rho))
+}
