@@ -22,21 +22,21 @@ CACEnocov <- function(Y, D, Z, data = parent.frame(), grp = NULL,
   CACEest <- ITTY$est/ITTD$est
 
   ## covariance calculation
-  if (is.null(grp)) {
-    N0 <- sum(Z==0)
-    N1 <- sum(Z==1)
-    Cov0 <- cov(Y[Z==0], D[Z==0])/N0
-    Cov1 <- cov(Y[Z==1], D[Z==1])/N1
+  if (is.null(grp) && is.null(grp.size)) { # unit randomization
+    if (is.null(match)) { # without matching
+      Cov0 <- cov(Y[Z==0], D[Z==0])/sum(Z==0)
+      Cov1 <- cov(Y[Z==1], D[Z==1])/sum(Z==1)
+      CACEvar <- (ITTY$var*(ITTD$est^2) + ITTD$var*(ITTY$est^2) -
+                  2*(Cov0 + Cov1)*ITTY$est*ITTD$est)/(ITTD$est^4)
+    }
   } else {
     Cov0 <- covCluster(Y[Z==0], D[Z==0], grp[Z==0])$cov
     Cov1 <- covCluster(Y[Z==1], D[Z==1], grp[Z==1])$cov
   }
   
-  var <- (ITTY$var*(ITTD$est^2) + ITTD$var*(ITTY$est^2) -
-          2*(Cov0 + Cov1)*ITTY$est*ITTD$est)/(ITTD$est^4)
 
-  return(list(est = est, var = var, ITTD = ITTD, ITTY = ITTY,
-              cov = Cov0 + Cov1)) 
+  return(list(est = CACEest, var = CACEvar, ITTd = ITTD, ITTy = ITTY,
+              cov0 = Cov0, cov1 = Cov1)) 
 }
 
 ###

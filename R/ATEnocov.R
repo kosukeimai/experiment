@@ -50,12 +50,14 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
     ATE.est <- mean(Y[Z==1])-mean(Y[Z==0])
     if (is.null(match)) { # without matching
       ATE.var <- var(Y[Z==1])/sum(Z==1)+var(Y[Z==0])/sum(Z==0)
+      return(list(call = call, est = ATE.est, var = ATE.var, Y = Y,
+                  Z = Z))
     } else { # with matching
       diff <- match.check(Y, Z, match)
       ATE.var <- var(diff)/(length(Y)/2)
+      return(list(call = call, est = ATE.est, var = ATE.var, Y = Y,
+                  Z = Z, match = match, diff = diff))
     }
-    return(list(call = call, est = ATE.est, var = ATE.var, Y = Y,
-                Z = Z, match = match))
   }
 
   ## ATE for group-randomized trials
