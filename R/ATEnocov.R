@@ -107,6 +107,7 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
     m1 <- sum(Z)
     m0 <- M-m1
     if (is.null(match)) { # without matching
+      diff <- NULL
       ATE.est <- M*(sum(Ysum[Z==1])/m1 - sum(Ysum[Z==0])/m0)/N
       ATE.var <- (M^2)*(m0*var(Ysum[Z==1])+m1*var(Ysum[Z==0]))/(m1*m0*(N^2))
     } else { # with matching
@@ -114,7 +115,8 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
       diff <- match.check(Ysum, Z, match)
       ATE.var <- 2*M*var(diff)/(N^2)
     }
-    return(list(call = call, est = ATE.est, var = ATE.var, Ysum = Ysum, Z = Z,
+    return(list(call = call, est = ATE.est, var = ATE.var, Ysum = Ysum,
+                diff = diff, Z = Z, M = M, N = N, m1 = m1,
                 grp.size = grp.size, match = match, grp.method = grp.method))  
   } else if (grp.method == "textbook") { ## textbook method
     if (is.null(match)) { # without matching
