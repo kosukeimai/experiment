@@ -17,7 +17,7 @@ CACEnocov <- function(Y, D, Z, data = parent.frame(), grp = NULL,
   ## point estimates and variances
   ITTY <- ATEnocov(Y = Y, Z = Z, grp = grp, match = match,
                    grp.size = grp.size, grp.method = grp.method) 
-  ITTD <- ATEnocov(D = Y, Z = Z, grp = grp, match = match,
+  ITTD <- ATEnocov(Y = D, Z = Z, grp = grp, match = match,
                    grp.size = grp.size, grp.method = grp.method) 
   CACEest <- ITTY$est/ITTD$est
 
