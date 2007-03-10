@@ -75,11 +75,10 @@ CACEnocov <- function(Y, D, Z, data = parent.frame(), grp = NULL,
         stop("the treatment and control groups must have the same number of clusters for this estimator")
       }  
     } else { # with matching
-      K <- length(ITTY$diff)
-      Cov <- cov(ITTY$diff, ITTD$diff)/K
-      CACEvar <- (var(ITTY$diff)*(ITTD$est^2)/K +
-                  var(ITTD$diff)*(ITTY$est^2)/K -
-                  2*Cov**ITTY$est*ITTD$est)/(ITTD$est^4)
+      Cov <- cov(ITTY$diff, ITTD$diff)
+      CACEvar <- (ITTY$var*(ITTD$est^2) +
+                  ITTD$var*(ITTY$est^2) -
+                  4*ITTY$M*Cov*ITTY$est*ITTD$est/(ITTY$N^2))/(ITTD$est^4)
     }
   }
   return(list(est = CACEest, var = CACEvar, ITTd = ITTD, ITTy = ITTY,
