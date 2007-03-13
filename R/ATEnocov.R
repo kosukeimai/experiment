@@ -135,11 +135,12 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
       if (sum(ind0$x == ind1$x) != sum(Z==1))
         stop("invalid input for `match'.")
       w <- w1[ind1$ix] * w0[ind0$ix]/(w1[ind1$ix] + w0[ind0$ix])
-      D <- Y1[ind1$ix] - Y0[ind0$ix]
-      ATE.est <- weighted.mean(D, w)
-      ATE.var <- sum(w*(D-ATE.est)^2)*sum(w^2)/(sum(w)^3)
+      diff <- Y1[ind1$ix] - Y0[ind0$ix]
+      ATE.est <- weighted.mean(diff, w)
+      ATE.var <- sum(w*(diff-ATE.est)^2)*sum(w^2)/(sum(w)^3)
       return(list(call = call, est = ATE.est, var = ATE.var, Y = Y,
-                  Z = Z, grp = grp, match = match))
+                  Z = Z, grp = grp, match = match, diff = diff,
+                  weights = w))
     }  
   } else if (grp.method == "unpooled") { # unpooled estimator
     if (is.null(match)) {
