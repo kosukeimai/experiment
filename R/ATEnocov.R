@@ -226,7 +226,7 @@ varCluster <- function(Y, Z = NULL, grp) {
     n0 <- mean(n)-sum((n-mean(n))^2)/((k-1)*N)
     rho <- (MSb - MSw)/(MSb + (n0-1)*MSw)
     ## cluster-adjusted variance based on the average method
-    res <- var(Y)*(1+(mean(n)-1)*rho)/N
+    res <- var(Y)*(1+(sum(n^2)/N-1)*rho)/N
   } else { # pooled
     ## prep
     M <- length(Y)
