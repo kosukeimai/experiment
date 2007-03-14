@@ -132,9 +132,10 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
   } else if (grp.method == "textbook") { ## textbook method
     if (is.null(match)) { # without matching
       ATE.est <- mean(Y[Z==1]) - mean(Y[Z==0])
-      ATE.var <- varCluster(Y = Y, Z = Z, grp = grp)$var
-      return(list(call = call, est = ATE.est, var = ATE.var, Y = Y,
-                  Z = Z, grp = grp, grp.size = grp.size,
+      tmp <- varCluster(Y = Y, Z = Z, grp = grp)
+      return(list(call = call, est = ATE.est, var = tmp$var,
+                  rho = tmp$rho, MSw = tmp$MSw, MSb = tmp$MSb,
+                  Y = Y, Z = Z, grp = grp, grp.size = grp.size, 
                   grp.method = grp.method))          
     } else { # with matching
       Y <- Ysum/grp.size
@@ -157,10 +158,16 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
   } else if (grp.method == "unpooled") { # unpooled estimator
     if (is.null(match)) {
       ATE.est <- mean(Y[Z==1]) - mean(Y[Z==0])
-      ATE.var <- varCluster(Y = Y[Z==1], grp = grp[Z==1])$var +
-        varCluster(Y = Y[Z==0], grp = grp[Z==0])$var
-      return(list(call = call, est = ATE.est, var = ATE.var, Y = Y,
-                  Z = Z, grp = grp, grp.size = grp.size, grp.method = grp.method))         
+      tmp0 <- varCluster(Y = Y[Z==0], grp = grp[Z==0])
+      tmp1 <- varCluster(Y = Y[Z==1], grp = grp[Z==1])
+      ATE.var <- tmp1$var + tmp0$var
+      return(list(call = call, est = ATE.est, var = ATE.var,
+                  var0 = tmp0$var, var1 = tmp1$var,
+                  rho0 = tmp0$rho, rho1 = tmp1$rho,
+                  MSw0 = tmp0$MSw, MSw1 = tmp1$MSw,
+                  MSb0 = tmp0$MSb, MSb1 = tmp1$MSb,
+                  Y = Y, Z = Z, grp = grp, grp.size = grp.size,
+                  grp.method = grp.method))         
     } else {
       stop("this method is not available for matched-pair designs.") 
     }
