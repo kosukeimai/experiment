@@ -23,9 +23,9 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
       stop("invalid input for `match'")
     if (unique(table(match)) != 2)
       stop("invalid input for `match'")
-    umatch <- unique(match)
+    umatch <- sort(unique(match))
     diff <- rep(NA, n/2)
-    for (i in 1:(n/2))
+    for (i in 1:length(umatch))
       diff[i] <- Y[(Z == 1) & (match == umatch[i])] -
         Y[(Z == 0) & (match == umatch[i])] 
     return(diff)
@@ -44,7 +44,18 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
     stop("`Z' should be binary taking the value of 0 or 1")
   if (!(grp.method %in% c("neyman", "textbook", "unpooled", "standard")))
     stop("invalid input for `grp.method'")
-  
+  if (length(Y) != length(Z))
+    stop("`Y' and `Z' have different numbers of observations")
+  if (!is.null(grp))
+    if (length(grp) != length(Y))
+      stop("`grp' and `Y' have different numbers of observations")
+  if (!is.null(grp.size))
+    if (length(grp.size) != length(Y))
+      stop("`grp.size' and `Y' have different numbers of observations")
+  if (!is.null(match))
+    if (length(match) != length(Y))
+      stop("`match' and `Y' have different numbers of observations")
+    
   ## ATE for unit randomization 
   if (is.null(grp) && is.null(grp.size)) { 
     ATE.est <- mean(Y[Z==1])-mean(Y[Z==0])
@@ -54,7 +65,7 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
                   Z = Z))
     } else { # with matching
       diff <- match.check(Y, Z, match)
-      ATE.var <- var(diff)/(length(Y)/2)
+      ATE.var <- var(diff)/length(diff)
       return(list(call = call, est = ATE.est, var = ATE.var, Y = Y,
                   Z = Z, match = match, diff = diff))
     }
@@ -86,7 +97,7 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
       if (!is.null(match)) {
         tmp <- match
         umatch <- unique(match)
-        if (length(umatch) != M/2)
+        if ((length(umatch) %% 2) != 0)
           stop("invalid input for `match'")
         match <- rep(NA, M)
         for (i in 1:M) {
@@ -116,31 +127,32 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
       ATE.var <- 2*M*var(diff)/(N^2)
     }
     return(list(call = call, est = ATE.est, var = ATE.var, Ysum = Ysum,
-                diff = diff, Z = Z, M = M, N = N, m1 = m1,
+                diff = diff, Z = Z, M = M, N = N, m1 = m1, grp = grp,
                 grp.size = grp.size, match = match, grp.method = grp.method))  
   } else if (grp.method == "textbook") { ## textbook method
     if (is.null(match)) { # without matching
       ATE.est <- mean(Y[Z==1]) - mean(Y[Z==0])
       ATE.var <- varCluster(Y = Y, Z = Z, grp = grp)$var
       return(list(call = call, est = ATE.est, var = ATE.var, Y = Y,
-                  Z = Z, grp = grp))          
+                  Z = Z, grp = grp, grp.size = grp.size,
+                  grp.method = grp.method))          
     } else { # with matching
       Y <- Ysum/grp.size
       Y1 <- Y[Z==1]
       Y0 <- Y[Z==0]
-      w1 <- grp.size[Z==1]
-      w0 <- grp.size[Z==0]
+      n1 <- grp.size[Z==1]
+      n0 <- grp.size[Z==0]
       ind0 <- sort(match[Z==0], index.return = TRUE)
       ind1 <- sort(match[Z==1], index.return = TRUE)
       if (sum(ind0$x == ind1$x) != sum(Z==1))
         stop("invalid input for `match'.")
-      w <- w1[ind1$ix] * w0[ind0$ix]/(w1[ind1$ix] + w0[ind0$ix])
+      w <- n1[ind1$ix] * n0[ind0$ix]/(n1[ind1$ix] + n0[ind0$ix])
       diff <- Y1[ind1$ix] - Y0[ind0$ix]
       ATE.est <- weighted.mean(diff, w)
       ATE.var <- sum(w*(diff-ATE.est)^2)*sum(w^2)/(sum(w)^3)
       return(list(call = call, est = ATE.est, var = ATE.var, Y = Y,
-                  Z = Z, grp = grp, match = match, diff = diff,
-                  weights = w))
+                  Z = Z, grp = grp, grp.size = grp.size, match = match,
+                  diff = diff, weights = w, grp.method = grp.method))
     }  
   } else if (grp.method == "unpooled") { # unpooled estimator
     if (is.null(match)) {
@@ -148,7 +160,7 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
       ATE.var <- varCluster(Y = Y[Z==1], grp = grp[Z==1])$var +
         varCluster(Y = Y[Z==0], grp = grp[Z==0])$var
       return(list(call = call, est = ATE.est, var = ATE.var, Y = Y,
-                  Z = Z, grp = grp))         
+                  Z = Z, grp = grp, grp.size = grp.size, grp.method = grp.method))         
     } else {
       stop("this method is not available for matched-pair designs.") 
     }
