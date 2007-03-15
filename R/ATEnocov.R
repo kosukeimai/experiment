@@ -97,8 +97,6 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
       if (!is.null(match)) {
         tmp <- match
         umatch <- unique(match)
-        if ((length(umatch) %% 2) != 0)
-          stop("invalid input for `match'")
         match <- rep(NA, M)
         for (i in 1:M) {
           Mvalue <- unique(tmp[grp == ugrp[i]])
