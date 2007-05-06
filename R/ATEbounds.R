@@ -220,14 +220,16 @@ boundsAggComp <- function(data, weights, maxY, minY, alpha = NULL,
   
   ## aggregate the results
   bounds <- matrix(0, ncol = 2, nrow = choose(M, 2))
-  for (i in 1:J) {
-    tmp <- res.sub[[i]]$bounds
-    counter <- 1
-    for (j in 1:(M-1))
-      for (k in (i+1):M)
-        bounds[counter,] <- bounds[counter,] + tmp[counter,]*omega[counter,i]
+  counter <- 1
+  for (j in 1:(M-1)) {
+    for (k in (j+1):M) {
+      for (i in 1:J) {
+        bounds[counter,] <- bounds[counter,] +
+          (res.sub[[i]]$bounds)[counter,]*omega[counter,i]
+      }
+      counter <- counter + 1
+    }
   }
-  
   if (is.null(alpha))
     return(c(t(bounds)))
   else
