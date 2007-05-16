@@ -122,7 +122,7 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
     } else { # with matching
       ATE.est <- 2*(sum(Ysum[Z==1]) - sum(Ysum[Z==0]))/N
       diff <- match.check(Ysum, Z, match)
-      ATE.var <- 2*M*var(diff)/(N^2)
+      ATE.var <- 4*M*var(diff)/(N^2)
     }
     return(list(call = call, est = ATE.est, var = ATE.var, Ysum = Ysum,
                 diff = diff, Z = Z, M = M, N = N, m1 = m1, grp = grp,
@@ -145,10 +145,14 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
       ind1 <- sort(match[Z==1], index.return = TRUE)
       if (sum(ind0$x == ind1$x) != sum(Z==1))
         stop("invalid input for `match'.")
-      w <- n1[ind1$ix] * n0[ind0$ix]/(n1[ind1$ix] + n0[ind0$ix])
+      # this is the textbook weights
+      ##w <- n1[ind1$ix] * n0[ind0$ix]/(n1[ind1$ix] + n0[ind0$ix])
+      w <- n1[ind1$ix] + n0[ind0$ix]
       diff <- Y1[ind1$ix] - Y0[ind0$ix]
-      ATE.est <- weighted.mean(diff, w)
-      ATE.var <- sum(w*(diff-ATE.est)^2)*sum(w^2)/(sum(w)^3)
+      ATE.est <- mean(diff*w)/N
+      ## this is in the textbook
+      # ATE.var <- sum(w*(diff-ATE.est)^2)*sum(w^2)/(sum(w)^3)
+      ATE.var <- M*var(w*diff)/(N^2)
       return(list(call = call, est = ATE.est, var = ATE.var, Y = Y,
                   Z = Z, grp = grp, grp.size = grp.size, match = match,
                   diff = diff, weights = w, grp.method = grp.method))
