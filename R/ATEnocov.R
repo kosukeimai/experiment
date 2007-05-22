@@ -2,8 +2,10 @@
 ### Calculate the ATE 
 ###
 ### grp.method: method for group-randomized trials
-###   "neyman" = my own estimator (default)
-###   "textbook" = the method in Chapter 7 of Donner and Klar (2000)
+###   "unbiased" = unbiased estimator 
+###   "weighted" = the weighted diff estimator (default) 
+###                also includes the variance based on
+###                the method in Chapter 7 of Donner and Klar (2000)
 ###                (see also their 1993 paper in Journal of Clinical Epidemiology)
 ###   "unpooled" = an unpooled version of the "textbook" method (this option
 ###                is not available for matched-pair designs)
@@ -12,7 +14,7 @@
 ###
 
 ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
-                     match = NULL, grp.size = NULL, grp.method = "neyman"){
+                     match = NULL, grp.size = NULL, grp.method = "unbiased"){
 
   ## an internal function that checks match and returns diff
   match.check <- function(Y, Z, match) { 
@@ -42,7 +44,7 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
   ## checking data
   if (sum(sort(unique(Z)) == c(0,1)) != 2)
     stop("`Z' should be binary taking the value of 0 or 1")
-  if (!(grp.method %in% c("neyman", "textbook", "unpooled", "standard")))
+  if (!(grp.method %in% c("unbiased", "weighted", "unpooled", "standard")))
     stop("invalid input for `grp.method'")
   if (length(Y) != length(Z))
     stop("`Y' and `Z' have different numbers of observations")
@@ -73,13 +75,13 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
 
   ## ATE for group-randomized trials
   if (is.null(grp)) { # aggregate data input
-    if ((grp.method %in% c("textbook", "unpooled")) && is.null(match)) { 
+    if ((grp.method %in% c("weighted", "unpooled")) && is.null(match)) { 
       stop("the input should be individual-level data for this estimator")
     } else {
       M <- length(Y)
       Ysum <- Y*grp.size
     } 
-  } else if ((grp.method %in% c("neyman", "standard")) || !is.null(match)) { # individual data input
+  } else if ((grp.method %in% c("unbiased", "standard")) || !is.null(match)) { # individual data input
     ugrp <- unique(grp)
     M <- length(ugrp)
     if (is.null(grp.size)) {
@@ -111,7 +113,7 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
     }
   }
   
-  if (grp.method == "neyman") { ## my method
+  if (grp.method == "unbiased") { ## my method
     N <- sum(grp.size)
     m1 <- sum(Z)
     m0 <- M-m1
@@ -127,7 +129,7 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
     return(list(call = call, est = ATE.est, var = ATE.var, Ysum = Ysum,
                 diff = diff, Z = Z, M = M, N = N, m1 = m1, grp = grp,
                 grp.size = grp.size, match = match, grp.method = grp.method))  
-  } else if (grp.method == "textbook") { ## textbook method
+  } else if (grp.method == "weighted") { ## weighted method
     if (is.null(match)) { # without matching
       ATE.est <- mean(Y[Z==1]) - mean(Y[Z==0])
       tmp <- varCluster(Y = Y, Z = Z, grp = grp)
@@ -145,17 +147,23 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
       ind1 <- sort(match[Z==1], index.return = TRUE)
       if (sum(ind0$x == ind1$x) != sum(Z==1))
         stop("invalid input for `match'.")
-      # this is the textbook weights
-      ##w <- n1[ind1$ix] * n0[ind0$ix]/(n1[ind1$ix] + n0[ind0$ix])
       w <- n1[ind1$ix] + n0[ind0$ix]
+      N <- sum(n1) + sum(n0)
+      w <- N*w/sum(w)
       diff <- Y1[ind1$ix] - Y0[ind0$ix]
       ATE.est <- mean(diff*w)/N
-      ## this is in the textbook
-      # ATE.var <- sum(w*(diff-ATE.est)^2)*sum(w^2)/(sum(w)^3)
       ATE.var <- M*var(w*diff)/(N^2)
-      return(list(call = call, est = ATE.est, var = ATE.var, Y = Y,
-                  Z = Z, grp = grp, grp.size = grp.size, match = match,
-                  diff = diff, weights = w, grp.method = grp.method))
+      ATE.var1 <- sum(w^2)*sum(w*(diff-ATE.est)^2)/N^3
+      ## this formula is used in the textbook
+      ##ATE.var2 <- sum(wT*(diff-ATE.est)^2)*sum(wT^2)/(sum(wT)^3)
+      wT <- n1[ind1$ix] * n0[ind0$ix]/(n1[ind1$ix] + n0[ind0$ix])
+      wT <- N*wT/sum(wT)
+      ATE.var2 <- sum(wT^2)*sum(wT*(diff-ATE.est)^2)/N^3
+      return(list(call = call, est = ATE.est, var = ATE.var, varT =
+                  ATE.var1, varTw = ATE.var2, N = N,
+                  Y = Y, Z = Z, grp = grp, grp.size = grp.size,
+                  match = match, diff = diff, weights = w, weightsT = wT,
+                  grp.method = grp.method))
     }  
   } else if (grp.method == "unpooled") { # unpooled estimator
     if (is.null(match)) {
@@ -183,7 +191,7 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
       return(list(call = call, est = ATE.est, var = ATE.var, Y = Y,
                   Ysum = Ysum, Z = Z, grp = grp))         
     } else {
-      stop("for matched-pair designs, use either `neyman' or `textbook' for `grp.method'") 
+      stop("for matched-pair designs, use either `unbiased' or `weighted' for `grp.method'") 
     }
   }
 }
