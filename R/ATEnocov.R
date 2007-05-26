@@ -1,20 +1,22 @@
 ###
 ### Calculate the ATE 
 ###
-### grp.method: method for group-randomized trials
+### method: method of calculations
 ###   "unbiased" = unbiased estimator 
-###   "weighted" = the weighted diff estimator (default) 
-###                also includes the variance based on
+###   "weighted" = the weighted diff estimator
+###                also includes the point estimates (estT) and
+###                variance (varT and varTw) based on
 ###                the method in Chapter 7 of Donner and Klar (2000)
 ###                (see also their 1993 paper in Journal of Clinical Epidemiology)
 ###   "unpooled" = an unpooled version of the "textbook" method (this option
 ###                is not available for matched-pair designs)
 ###   "standard" = the "standard" method conditioning on the number of
-###                units in the treatment and control groups
+###                units in the treatment and control groups (default)
 ###
 
 ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
-                     match = NULL, grp.size = NULL, grp.method = "unbiased"){
+                     match = NULL, grp.size = NULL,
+                     method = "standard"){
 
   ## an internal function that checks match and returns diff
   match.check <- function(Y, Z, match) { 
@@ -44,8 +46,8 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
   ## checking data
   if (sum(sort(unique(Z)) == c(0,1)) != 2)
     stop("`Z' should be binary taking the value of 0 or 1")
-  if (!(grp.method %in% c("unbiased", "weighted", "unpooled", "standard")))
-    stop("invalid input for `grp.method'")
+  if (!(method %in% c("unbiased", "weighted", "unpooled", "standard")))
+    stop("invalid input for `method'")
   if (length(Y) != length(Z))
     stop("`Y' and `Z' have different numbers of observations")
   if (!is.null(grp))
@@ -75,13 +77,13 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
 
   ## ATE for group-randomized trials
   if (is.null(grp)) { # aggregate data input
-    if ((grp.method %in% c("weighted", "unpooled")) && is.null(match)) { 
+    if ((method %in% c("weighted", "unpooled")) && is.null(match)) { 
       stop("the input should be individual-level data for this estimator")
     } else {
       M <- length(Y)
       Ysum <- Y*grp.size
     } 
-  } else if ((grp.method %in% c("unbiased", "standard")) || !is.null(match)) { # individual data input
+  } else if ((method %in% c("unbiased", "standard")) || !is.null(match)) { # individual data input
     ugrp <- unique(grp)
     M <- length(ugrp)
     if (is.null(grp.size)) {
@@ -113,7 +115,7 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
     }
   }
   
-  if (grp.method == "unbiased") { ## my method
+  if (method == "unbiased") { ## unbiased method
     N <- sum(grp.size)
     m1 <- sum(Z)
     m0 <- M-m1
@@ -128,15 +130,15 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
     }
     return(list(call = call, est = ATE.est, var = ATE.var, Ysum = Ysum,
                 diff = diff, Z = Z, M = M, N = N, m1 = m1, grp = grp,
-                grp.size = grp.size, match = match, grp.method = grp.method))  
-  } else if (grp.method == "weighted") { ## weighted method
+                grp.size = grp.size, match = match, method = method))  
+  } else if (method == "weighted") { ## weighted method
     if (is.null(match)) { # without matching
       ATE.est <- mean(Y[Z==1]) - mean(Y[Z==0])
       tmp <- varCluster(Y = Y, Z = Z, grp = grp)
       return(list(call = call, est = ATE.est, var = tmp$var,
                   rho = tmp$rho, MSw = tmp$MSw, MSb = tmp$MSb,
                   Y = Y, Z = Z, grp = grp, grp.size = grp.size, 
-                  grp.method = grp.method))          
+                  method = method))          
     } else { # with matching
       Y <- Ysum/grp.size
       Y1 <- Y[Z==1]
@@ -166,9 +168,9 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
                   varT = ATE.var2, N = N, Y = Y, Z = Z,
                   grp = grp, grp.size = grp.size, match = match,
                   diff = diff, weights = w, weightsT = wT,
-                  grp.method = grp.method))
+                  method = method))
     }  
-  } else if (grp.method == "unpooled") { # unpooled estimator
+  } else if (method == "unpooled") { # unpooled estimator
     if (is.null(match)) {
       ATE.est <- mean(Y[Z==1]) - mean(Y[Z==0])
       tmp0 <- varCluster(Y = Y[Z==0], grp = grp[Z==0])
@@ -180,7 +182,7 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
                   MSw0 = tmp0$MSw, MSw1 = tmp1$MSw,
                   MSb0 = tmp0$MSb, MSb1 = tmp1$MSb,
                   Y = Y, Z = Z, grp = grp, grp.size = grp.size,
-                  grp.method = grp.method))         
+                  method = method))         
     } else {
       stop("this method is not available for matched-pair designs.") 
     }
@@ -194,7 +196,7 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
       return(list(call = call, est = ATE.est, var = ATE.var, Y = Y,
                   Ysum = Ysum, Z = Z, grp = grp))         
     } else {
-      stop("for matched-pair designs, use either `unbiased' or `weighted' for `grp.method'") 
+      stop("for matched-pair designs, use either `unbiased' or `weighted' for `method'") 
     }
   }
 }

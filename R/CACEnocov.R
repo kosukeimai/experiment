@@ -3,7 +3,8 @@
 ###
 
 CACEnocov <- function(Y, D, Z, data = parent.frame(), grp = NULL,
-                      match = NULL, grp.size = NULL, grp.method = "neyman"){
+                      match = NULL, grp.size = NULL,
+                      method = "standard"){
 
   ## get the data
   call <- match.call()
@@ -16,9 +17,9 @@ CACEnocov <- function(Y, D, Z, data = parent.frame(), grp = NULL,
   
   ## point estimates and variances
   ITTY <- ATEnocov(Y = Y, Z = Z, grp = grp, match = match,
-                   grp.size = grp.size, grp.method = grp.method) 
+                   grp.size = grp.size, method = method) 
   ITTD <- ATEnocov(Y = D, Z = Z, grp = grp, match = match,
-                   grp.size = grp.size, grp.method = grp.method) 
+                   grp.size = grp.size, method = method) 
   CACEest <- ITTY$est/ITTD$est
 
   ## covariance calculation
@@ -35,20 +36,30 @@ CACEnocov <- function(Y, D, Z, data = parent.frame(), grp = NULL,
                   var(ITTD$diff)*(ITTY$est^2)/K -
                   2*Cov**ITTY$est*ITTD$est)/(ITTD$est^4)
     }
-  } else if (grp.method %in% c("textbook", "unpooled")) {
+  } else if (method %in% c("weighted", "unpooled")) {
     if (is.null(match)) { # without matching
-      if (grp.method == "unpooled") {
+      if (method == "unpooled") {
         Cov <- covCluster(Y[Z==0], D[Z==0], grp[Z==0])$cov +
           covCluster(Y[Z==1], D[Z==1], grp[Z==1])$cov
+        CACEvar <- (ITTY$var*(ITTD$est^2) + ITTD$var*(ITTY$est^2) -
+                    2*Cov*ITTY$est*ITTD$est)/(ITTD$est^4)
       } else {
-        Cov <- covCluster(Y, D, grp)$cov
+        Cov <- cov(ITTY$diff*ITTY$weights, ITTD$diff*ITTD$weights)/K
+        CACEvar <- (ITTY$var*(ITTD$est^2) + ITTD$var*(ITTY$est^2) -
+                    2*Cov*ITTY$est*ITTD$est)/(ITTD$est^4)
+        CovT <- cov(ITTY$diff*ITTY$weightsT, ITTD$diff*ITTD$weightsT)/K
+        ##Cov2 <- covCluster(Y, D, grp)$cov
+        CACEvarT <- (ITTY$varTw*(ITTD$estT^2) + ITTD$varTw*(ITTY$estT^2) -
+                     2*CovT*ITTY$estT*ITTD$estT)/(ITTD$estT^4)
+        return(list(est = CACEest, estT = ITTY$estT/ITTD$estT,
+                    var = CACEvar, varT = CACEvarT,
+                    ITTd = ITTD, ITTy = ITTY,
+                    cov = Cov, covT = CovT)) 
       }
-      CACEvar <- (ITTY$var*(ITTD$est^2) + ITTD$var*(ITTY$est^2) -
-                  2*Cov*ITTY$est*ITTD$est)/(ITTD$est^4)
     } else { # with matching
       stop("this estimator is not available for matched-pair designs.")
     }
-  } else if (grp.method == "standard") {
+  } else if (method == "standard") {
     if (is.null(match)) { # without matching
       Cov <- cov(ITTY$Ysum[ITTY$Z==0],
                  ITTD$Ysum[ITTD$Z==0])/sum(ITTY$Z==0) +
@@ -59,7 +70,7 @@ CACEnocov <- function(Y, D, Z, data = parent.frame(), grp = NULL,
     } else { # with matching
       stop("this estimator is not available for matched-pair designs.")
     }
-  } else { # my method
+  } else { # unbiased
     if (is.null(match)) { # without matching
       if (ITTD$M == (ITTD$m1*2)) { 
         Cov <- cov(ITTY$Ysum[ITTY$Z==0],
