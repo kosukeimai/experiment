@@ -151,7 +151,7 @@ NoncompLI(formulae, Z, D, data = parent.frame(), n.draws = 5000,
   n <- 5
   Y <- rep(c(0,1), n)
   X <- rnorm(n*2)
-  res <- Noncomp.bayes(list(Y ~ X, ~ X, ~ X), D = 1-Y, Z = Y)
+  #res <- Noncomp.bayes(list(Y ~ X, ~ X, ~ X), D = 1-Y, Z = Y)
 }
 
 \author{
