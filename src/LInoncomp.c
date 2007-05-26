@@ -11,7 +11,6 @@
 #include <string.h>
 #include <math.h>
 #include <Rmath.h>
-#include <R_ext/Utils.h>
 #include <R.h>
 #include "vector.h"
 #include "subroutines.h"
@@ -630,11 +629,13 @@ void LIbinary(int *Y,         /* binary outcome variable */
 		dtemp = (double)((meano[i]+gamma[0]+norm_rand()) > 0);
 		dtemp1 = (double)((meano[i]+gamma[1]+norm_rand()) > 0);
 	      }
-	      if (R[i] == 1)
-		if (Z[i] == 1) 
+	      if (R[i] == 1) {
+		if (Z[i] == 1) {
 		  dtemp = (double)Y[i];
-		else 
+		} else { 
 		  dtemp1 = (double)Y[i];
+		}
+	      }
 	      Y1barC += dtemp; Y0barC += dtemp1;
 	    } else if (A[i] == 1) {
 	      if (R[i] == 1)
@@ -1008,11 +1009,13 @@ void LIgaussian(double *Y,      /* gaussian outcome variable */
 	    if (C[i] == 1) {
 	      dtemp = rnorm(meano[i]+gamma[0], sqrt(*sig2));
 	      dtemp1 = rnorm(meano[i]+gamma[1], sqrt(*sig2));
-	      if (R[i] == 1) 
-		if (Z[i] == 1)
+	      if (R[i] == 1) {
+		if (Z[i] == 1) {
 		  dtemp = Y[i];
-		else 
+		} else { 
 		  dtemp1 = Y[i];
+		}
+	      }
 	      Y1barC += dtemp; Y0barC += dtemp1;
 	    } else if (A[i] == 1) {
 	      if (R[i] == 1)
@@ -1409,11 +1412,13 @@ void LIordinal(int *Y,         /* binary outcome variable */
 				    (pnorm(tau[j], meano[i]+gamma[1], 1, 1, 0) 
 				     -pnorm(tau[j-1], meano[i]+gamma[1], 1, 1, 0)));		
 		}
-		if (R[i] == 1)
-		  if (Z[i] == 1) 
+		if (R[i] == 1) {
+		  if (Z[i] == 1) {
 		    dtemp = (double)(Y[i] == j);
-		  else 
+		  } else { 
 		    dtemp1 = (double)(Y[i] == j);
+		  }
+		}
 		Y1barC[j-1] += dtemp; Y0barC[j-1] += dtemp1;
 	      } else if (A[i] == 1) {
 		if (R[i] == 1)
@@ -1821,11 +1826,13 @@ void LIcount(int *Y,         /*count outcome variable */
 	    if (C[i] == 1) {
 	      dtemp = rnegbin(exp(meano[i]+gamma[0]), *sig2);
 	      dtemp1 = rnegbin(exp(meano[i]+gamma[1]), *sig2);
-	      if (R[i] == 1)
-		if (Z[i] == 1) 
+	      if (R[i] == 1) {
+		if (Z[i] == 1) {
 		  dtemp = (double)Y[i];
-		else 
+		} else { 
 		  dtemp1 = (double) Y[i];
+		}
+	      }
 	      Y1barC += dtemp; Y0barC += dtemp1;
 	    } else if (A[i] == 1) {
 	      if (R[i] == 1)
@@ -2185,9 +2192,9 @@ void LItwopart(int *Y,      /* indicator variable; Y > 0 */
 	  meano[i] += Xo[i][j]*gamma[j];
 	  meano1[i] += Xo[i][j]*gamma1[j];
 	}
-	if (R[i] == 1)
+	if (R[i] == 1) {
 	  if ((Z[i] == 0) || (RD[i] == 0)){
-	    if (Y[i] = 1) {
+	    if (Y[i] == 1) {
 	      pC[i] = dlnorm(Y1[i], meano1[i]+gamma1[1-Z[i]], sqrt(*sig2), 0) * 
 		pnorm(meano[i]+gamma[1-Z[i]], 0, 1, 1, 0);
 	      pN[i] = dlnorm(Y1[i], meano1[i], sqrt(*sig2), 0) *
@@ -2197,7 +2204,8 @@ void LItwopart(int *Y,      /* indicator variable; Y > 0 */
 	      pN[i] = pnorm(meano[i], 0, 1, 0, 0);
 	    }
 	  }
-      } 
+	} 
+      }
     }
     
     /** storing the results **/
@@ -2233,11 +2241,13 @@ void LItwopart(int *Y,      /* indicator variable; Y > 0 */
 		((meano[i]+gamma[0]+norm_rand()) > 0);
 	      dtemp1 = rlnorm(meano1[i]+gamma1[1], sqrt(*sig2)) *
 		((meano[i]+gamma[1]+norm_rand()) > 0);;
-	      if (R[i] == 1) 
-		if (Z[i] == 1)
+	      if (R[i] == 1) {
+		if (Z[i] == 1) {
 		  dtemp = Y1[i];
-		else 
+		} else { 
 		  dtemp1 = Y1[i];
+		}
+	      }
 	      Y1barC += dtemp; Y0barC += dtemp1;
 	    } else if (A[i] == 1) {
 	      if (R[i] == 1)
