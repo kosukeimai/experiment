@@ -984,11 +984,13 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 		dtemp = (double)((meano[i]+gamma[0]+norm_rand()) > 0);
 		dtemp1 = (double)((meano[i]+gamma[1]+norm_rand()) > 0);
 	      }
-	      if (R[i] == 1) 
-		if (Z[i] == 1) 
+	      if (R[i] == 1) {
+		if (Z[i] == 1) { 
 		  dtemp = (double)Y[i]; 
-		else 
+		} else { 
 		  dtemp1 = (double)Y[i];
+		}
+	      }
 	      Y1barC[grp[i]] += dtemp; Y0barC[grp[i]] += dtemp1;
 	      Y1barC[n_grp] += dtemp; Y0barC[n_grp] += dtemp1;
 	    } else if (A[i] == 1) { /* always-takers */ 
@@ -1506,11 +1508,13 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
 		dtemp = rnorm(meano[i]+gamma[0], sqrt(*sig2));
 		dtemp1 = rnorm(meano[i]+gamma[1], sqrt(*sig2));
 	      }
-	      if (R[i] == 1) 
-		if (Z[i] == 1) 
+	      if (R[i] == 1) {
+		if (Z[i] == 1) {
 		  dtemp = Y[i]; 
-		else 
+		} else { 
 		  dtemp1 = Y[i];
+		}
+	      }
 	      Y1barC[grp[i]] += dtemp; Y0barC[grp[i]] += dtemp1;
 	      Y1barC[n_grp] += dtemp; Y0barC[n_grp] += dtemp1;
 	    } else if (A[i] == 1) { /* always-takers */ 
@@ -2082,11 +2086,13 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 				    (pnorm(tau[j], meano[i]+gamma[1], 1, 1, 0) 
 				     -pnorm(tau[j-1], meano[i]+gamma[1], 1, 1, 0)));		
 		}
-		if (R[i] == 1)
-		  if (Z[i] == 1) 
+		if (R[i] == 1) {
+		  if (Z[i] == 1) { 
 		    dtemp = (double)(Y[i] == j);
-		  else 
+		  } else { 
 		    dtemp1 = (double)(Y[i] == j);
+		  }
+		}
 		Y1barC[grp[i]][j-1] += dtemp; Y0barC[grp[i]][j-1] += dtemp1;
 		Y1barC[n_grp][j-1] += dtemp; Y0barC[n_grp][j-1] += dtemp1;
 	      } else if (A[i] == 1) { /* always-takers */ 
@@ -2654,11 +2660,13 @@ void LINegBinMixed(int *Y,         /* count outcome variable */
 		dtemp = rnegbin(exp(meano[i]+gamma[0]), *sig2);
 		dtemp1 = rnegbin(exp(meano[i]+gamma[1]), *sig2);
 	      }
-	      if (R[i] == 1) 
-		if (Z[i] == 1) 
+	      if (R[i] == 1) {
+		if (Z[i] == 1) { 
 		  dtemp = (double)Y[i]; 
-		else 
+		} else { 
 		  dtemp1 = (double)Y[i];
+		}
+	      }
 	      Y1barC[grp[i]] += dtemp; Y0barC[grp[i]] += dtemp1;
 	      Y1barC[n_grp] += dtemp; Y0barC[n_grp] += dtemp1;
 	    } else if (A[i] == 1) { /* always-takers */ 
@@ -3206,7 +3214,7 @@ void LItwopartMixed(int *Y,         /* indicator for Y > 0 */
 	  }
 	if (R[i] == 1)
 	  if ((Z[i] == 0) || (RD[i] == 0)) {
-	    if (Y[i] = 1) {
+	    if (Y[i] == 1) {
 	      if (*random) 
 		pC[i] = dlnorm(Y1[i], meano1[i]+gamma1[1-Z[i]]+xiO1[grp[i]][0], sqrt(*sig2), 0) * 
 		  pnorm(meano[i]+gamma[1-Z[i]]+xiO[grp[i]][0], 0, 1, 1, 0);
@@ -3275,11 +3283,13 @@ void LItwopartMixed(int *Y,         /* indicator for Y > 0 */
 		dtemp1 = rlnorm(meano1[i]+gamma1[1], sqrt(*sig2)) * 
 		  ((meano[i]+gamma[1]+norm_rand()) > 0);
 	      }
-	      if (R[i] == 1) 
-		if (Z[i] == 1) 
+	      if (R[i] == 1) {
+		if (Z[i] == 1) { 
 		  dtemp = Y1[i]; 
-		else 
+		} else { 
 		  dtemp1 = Y1[i];
+		}
+	      }
 	      Y1barC[grp[i]] += dtemp; Y0barC[grp[i]] += dtemp1;
 	      Y1barC[n_grp] += dtemp; Y0barC[n_grp] += dtemp1;
 	    } else if (A[i] == 1) { /* always-takers */ 
