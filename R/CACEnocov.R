@@ -44,10 +44,14 @@ CACEnocov <- function(Y, D, Z, data = parent.frame(), grp = NULL,
         CACEvar <- (ITTY$var*(ITTD$est^2) + ITTD$var*(ITTY$est^2) -
                     2*Cov*ITTY$est*ITTD$est)/(ITTD$est^4)
       } else {
-        Cov <- cov(ITTY$diff*ITTY$weights, ITTD$diff*ITTD$weights)/K
+        M <- ITTY$M
+        N <- ITTY$N
+        Cov <- M*sum((ITTY$diff*ITTY$weights - ITTY$est) *
+                     (ITTD$diff*ITTD$weights - ITTD$est))/((M-1)*(N^2))
         CACEvar <- (ITTY$var*(ITTD$est^2) + ITTD$var*(ITTY$est^2) -
                     2*Cov*ITTY$est*ITTD$est)/(ITTD$est^4)
-        CovT <- cov(ITTY$diff*ITTY$weightsT, ITTD$diff*ITTD$weightsT)/K
+        CovT <- M*sum((ITTY$diff*ITTY$weightsT - ITTY$estT) *
+                      (ITTD$diff*ITTD$weightsT - ITTD$estT))/((M-1)*(N^2))
         ##Cov2 <- covCluster(Y, D, grp)$cov
         CACEvarT <- (ITTY$varTw*(ITTD$estT^2) + ITTD$varTw*(ITTY$estT^2) -
                      2*CovT*ITTY$estT*ITTD$estT)/(ITTD$estT^4)

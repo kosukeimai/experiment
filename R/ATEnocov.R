@@ -154,7 +154,7 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
       w <- N*w/sum(w)
       diff <- Y1[ind1$ix] - Y0[ind0$ix]
       ATE.est <- weighted.mean(diff, w)
-      ATE.var <- M*var(w*diff)/(N^2)
+      ATE.var <- M*sum((w*diff-ATE.est)^2)/((M-1)*(N^2))
       ## wrong formula but right weights
       ATE.var1 <- sum(w^2)*sum(w*(diff-ATE.est)^2)/N^3
       ## wrong formula wrong weights.
