@@ -147,22 +147,25 @@ ATEnocov <- function(Y, Z, data = parent.frame(), grp = NULL,
       ind1 <- sort(match[Z==1], index.return = TRUE)
       if (sum(ind0$x == ind1$x) != sum(Z==1))
         stop("invalid input for `match'.")
-      w <- n1[ind1$ix] + n0[ind0$ix]
       N <- sum(n1) + sum(n0)
+      w <- n1[ind1$ix] + n0[ind0$ix]
       w <- N*w/sum(w)
       diff <- Y1[ind1$ix] - Y0[ind0$ix]
-      ATE.est <- mean(diff*w)/N
+      ATE.est <- weighted.mean(diff, w)
       ATE.var <- M*var(w*diff)/(N^2)
+      ## wrong formula but right weights
       ATE.var1 <- sum(w^2)*sum(w*(diff-ATE.est)^2)/N^3
-      ## this formula is used in the textbook
+      ## wrong formula wrong weights.
       ##ATE.var2 <- sum(wT*(diff-ATE.est)^2)*sum(wT^2)/(sum(wT)^3)
       wT <- n1[ind1$ix] * n0[ind0$ix]/(n1[ind1$ix] + n0[ind0$ix])
       wT <- N*wT/sum(wT)
+      ATE.est2 <- weighted.mean(diff, wT)
       ATE.var2 <- sum(wT^2)*sum(wT*(diff-ATE.est)^2)/N^3
-      return(list(call = call, est = ATE.est, var = ATE.var, varT =
-                  ATE.var1, varTw = ATE.var2, N = N,
-                  Y = Y, Z = Z, grp = grp, grp.size = grp.size,
-                  match = match, diff = diff, weights = w, weightsT = wT,
+      return(list(call = call, est = ATE.est, estT = ATE.est2,
+                  var = ATE.var, varTw = ATE.var1,
+                  varT = ATE.var2, N = N, Y = Y, Z = Z,
+                  grp = grp, grp.size = grp.size, match = match,
+                  diff = diff, weights = w, weightsT = wT,
                   grp.method = grp.method))
     }  
   } else if (grp.method == "unpooled") { # unpooled estimator
