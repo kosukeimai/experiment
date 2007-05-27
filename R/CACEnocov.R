@@ -41,27 +41,26 @@ CACEnocov <- function(Y, D, Z, data = parent.frame(), grp = NULL,
       if (method == "unpooled") {
         Cov <- covCluster(Y[Z==0], D[Z==0], grp[Z==0])$cov +
           covCluster(Y[Z==1], D[Z==1], grp[Z==1])$cov
-        CACEvar <- (ITTY$var*(ITTD$est^2) + ITTD$var*(ITTY$est^2) -
-                    2*Cov*ITTY$est*ITTD$est)/(ITTD$est^4)
       } else {
-        M <- ITTY$M
-        N <- ITTY$N
-        Cov <- M*sum((ITTY$diff*ITTY$weights - ITTY$est) *
-                     (ITTD$diff*ITTD$weights - ITTD$est))/((M-1)*(N^2))
-        CACEvar <- (ITTY$var*(ITTD$est^2) + ITTD$var*(ITTY$est^2) -
-                    2*Cov*ITTY$est*ITTD$est)/(ITTD$est^4)
-        CovT <- M*sum((ITTY$diff*ITTY$weightsT - ITTY$estT) *
-                      (ITTD$diff*ITTD$weightsT - ITTD$estT))/((M-1)*(N^2))
-        ##Cov2 <- covCluster(Y, D, grp)$cov
-        CACEvarT <- (ITTY$varTw*(ITTD$estT^2) + ITTD$varTw*(ITTY$estT^2) -
-                     2*CovT*ITTY$estT*ITTD$estT)/(ITTD$estT^4)
-        return(list(est = CACEest, estT = ITTY$estT/ITTD$estT,
-                    var = CACEvar, varT = CACEvarT,
-                    ITTd = ITTD, ITTy = ITTY,
-                    cov = Cov, covT = CovT)) 
+        Cov <- covCluster(Y, D, grp)$cov
       }
+      CACEvar <- (ITTY$var*(ITTD$est^2) + ITTD$var*(ITTY$est^2) -
+                  2*Cov*ITTY$est*ITTD$est)/(ITTD$est^4)
     } else { # with matching
-      stop("this estimator is not available for matched-pair designs.")
+      M <- ITTY$M
+      N <- ITTY$N
+      Cov <- M*sum((ITTY$diff*ITTY$weights - ITTY$est) *
+                   (ITTD$diff*ITTD$weights - ITTD$est))/((M-1)*(N^2))
+      CACEvar <- (ITTY$var*(ITTD$est^2) + ITTD$var*(ITTY$est^2) -
+                  2*Cov*ITTY$est*ITTD$est)/(ITTD$est^4)
+      CovT <- M*sum((ITTY$diff*ITTY$weightsT - ITTY$estT) *
+                    (ITTD$diff*ITTD$weightsT - ITTD$estT))/((M-1)*(N^2))
+      CACEvarT <- (ITTY$varTw*(ITTD$estT^2) + ITTD$varTw*(ITTY$estT^2) -
+                   2*CovT*ITTY$estT*ITTD$estT)/(ITTD$estT^4)
+      return(list(est = CACEest, estT = ITTY$estT/ITTD$estT,
+                  var = CACEvar, varT = CACEvarT,
+                  ITTd = ITTD, ITTy = ITTY,
+                  cov = Cov, covT = CovT)) 
     }
   } else if (method == "standard") {
     if (is.null(match)) { # without matching
