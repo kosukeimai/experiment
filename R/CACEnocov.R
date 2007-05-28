@@ -47,7 +47,7 @@ CACEnocov <- function(Y, D, Z, data = parent.frame(), grp = NULL,
       CACEvar <- (ITTY$var*(ITTD$est^2) + ITTD$var*(ITTY$est^2) -
                   2*Cov*ITTY$est*ITTD$est)/(ITTD$est^4)
     } else { # with matching
-      M <- ITTY$M
+      M <- length(ITTY$diff)
       N <- ITTY$N
       Cov <- M*sum((ITTY$diff*ITTY$weights - ITTY$est) *
                    (ITTD$diff*ITTD$weights - ITTD$est))/((M-1)*(N^2))
