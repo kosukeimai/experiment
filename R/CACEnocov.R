@@ -49,12 +49,12 @@ CACEnocov <- function(Y, D, Z, data = parent.frame(), grp = NULL,
     } else { # with matching
       M <- length(ITTY$diff)
       N <- ITTY$N
-      Cov <- M*sum((ITTY$diff*ITTY$weights - ITTY$est) *
-                   (ITTD$diff*ITTD$weights - ITTD$est))/((M-1)*(N^2))
+      Cov <- M*sum((ITTY$diff*ITTY$weights - N*ITTY$est/M) *
+                   (ITTD$diff*ITTD$weights - N*ITTD$est/M))/((M-1)*(N^2))
       CACEvar <- (ITTY$var*(ITTD$est^2) + ITTD$var*(ITTY$est^2) -
                   2*Cov*ITTY$est*ITTD$est)/(ITTD$est^4)
-      CovT <- M*sum((ITTY$diff*ITTY$weightsT - ITTY$estT) *
-                    (ITTD$diff*ITTD$weightsT - ITTD$estT))/((M-1)*(N^2))
+      CovT <- M*sum((ITTY$diff*ITTY$weightsT - N*ITTY$estT/M) *
+                    (ITTD$diff*ITTD$weightsT - N*ITTD$estT/M))/((M-1)*(N^2))
       CACEvarT <- (ITTY$varTw*(ITTD$estT^2) + ITTD$varTw*(ITTY$estT^2) -
                    2*CovT*ITTY$estT*ITTD$estT)/(ITTD$estT^4)
       return(list(est = CACEest, estT = ITTY$estT/ITTD$estT,
