@@ -1,5 +1,6 @@
-ATEcluster <- function(Y, Z, grp, data, match = NULL,
-                       weights = NULL, method = "conditional") {
+ATEcluster <- function(Y, Z, grp, data = parent.frame(),
+                       match = NULL, weights = NULL,
+                       method = "conditional") {
 
   call <- match.call()
   Y <- eval(call$Y, envir = data)
@@ -10,6 +11,8 @@ ATEcluster <- function(Y, Z, grp, data, match = NULL,
 
   N <- length(Y)
   M <- length(unique(match))
+  
+  
   Y1bar <- tapply(Y[Z==1], match[Z==1], mean)
   Y0bar <- tapply(Y[Z==0], match[Z==0], mean)
 
