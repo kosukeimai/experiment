@@ -89,12 +89,12 @@ ATEcluster <- function(Y, Z, grp, data = parent.frame(),
   }
 
   ## return the resutls
-  res <- list(est = ATE.est, bias = ATE.est-ATE.estU,
-              var = ATE.var, var.lb = ATE.varlb,
-              var.ub = ATE.varub, N = N, M = M,
-              Y1bar = Y1bar, Y0bar = Y0bar, Y1var = Y1var,
+  res <- list(call = call, est = ATE.est,
+              bias = ATE.est-ATE.estU, var = ATE.var,
+              var.lb = ATE.varlb, var.ub = ATE.varub, N = N,
+              M = M, Y1bar = Y1bar, Y0bar = Y0bar, Y1var = Y1var,
               Y0var = Y0var, weights = w, weights1 = w1,
-              weights0 = w0)
+              weights0 = w0, estimand = estimand)
   class(res) <- "ATEcluster"
   return(res)
 }
