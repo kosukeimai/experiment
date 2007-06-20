@@ -62,6 +62,9 @@
     (1988). If it equals zero, the confidence intervals will not be
     constructed. 
   }
+  \item{...}{
+    The arguments passed to other functions.
+  }
 }
 
 \details{
