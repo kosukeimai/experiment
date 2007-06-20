@@ -64,73 +64,130 @@ NoncompLI(formulae, Z, D, data = parent.frame(), n.draws = 5000,
   }
   \item{param}{
     A logical variable indicating whether the Monte Carlo draws of the
-    model parameters should be saved in the output object.
+    model parameters should be saved in the output object. The default
+    is \code{TRUE}.
   }
   \item{in.sample}{
-    in sample qoi?
+    A logical variable indicating whether or not the sample average
+    causal effect should be calculated using the observed
+    potential outcome for each unit. If it is set to \code{FALSE},
+    then the population average causal effect will be calculated. The
+    default is \code{FALSE}.
   }
   \item{model.c}{
-    model for compliance
+    The model for compliance. Either \code{logit} or \code{probit} model
+    is allowed. The default is \code{probit}.
   }
   \item{model.o}{
-    model for outcome
+    The model for outcome. The following five models are allowed:
+    \code{logit}, \code{probit}, \code{oprobit} (ordered probit regression),
+    \code{gaussian} (gaussian regression), \code{negbin} (negative
+    binomial regression), and \code{twopart} (two part model where the
+    first part is the probit regression for \eqn{Pr(Y>0|X)} and the
+    second part models \eqn{p(log(Y)|X, Y>0)} using the gaussian
+    regression). The default is \code{probit}.
   }
   \item{model.r}{
-    model for response
+    The model for (non)response. Either \code{logit} or \code{probit}
+    model is allowed. The default is \code{probit}.
   }
   \item{tune.c}{
-    tuning constants for compliance model.
+    Tuning constants for fitting the compliance model. These
+    positive constants are used to tune the (random-walk)
+    Metropolis-Hastings algorithm to fit the logit model. Use either a
+    scalar or a vector of constants whose length equals that of the
+    coefficient vector. The default is \code{0.01}.
   }
   \item{tune.o}{
-    tuning constants for outcome model.
+    Tuning constants for fitting the outcome model. These
+    positive constants are used to tune the (random-walk)
+    Metropolis-Hastings algorithm to fit logit, ordered
+    probit, and negative binomial models. Use either a
+    scalar or a vector of constants whose length equals that of the
+    coefficient vector for logit and negative binomial models. For the
+    ordered probit model, use either a scalar or a vector of constants
+    whose length equals that of cut-point parameters to be
+    estimated. The default is \code{0.01}.  
   }
   \item{tune.r}{
-    tuning constants for response model.
+    Tuning constants for fitting the (non)response model. These
+    positive constants are used to tune the (random-walk)
+    Metropolis-Hastings algorithm to fit the logit model. Use either a
+    scalar or a vector of constants whose length equals that of the
+    coefficient vector. The default is \code{0.01}.
   }
   \item{tune.v}{
-    tuning constants for variance.
+    A scalar tuning constant for fitting the variance component of the
+    negative binomial (outcome) model. The default is \code{0.01}.
+    
   }
   \item{p.mean.c}{
-    prior mean for the compliance model.
+    Prior mean for the compliance model. It should be either a scalar or
+    a vector of appropriate length. The default is \code{0}.
   }
   \item{p.prec.c}{
-    prior precision for the compliance model.
+    Prior precision for the compliance model. It should be either a
+    positive scalar or a positive semi-definite matrix of appropriate
+    size. The default is \code{0.001}.
   }
   \item{p.mean.o}{
-    prior mean for the outcome model.
+    Prior mean for the outcome model. It should be either a scalar or
+    a vector of appropriate length. The default is \code{0}.
   }
   \item{p.prec.o}{
-    prior precision for the outcome model.
+    Prior precision for the outcome model. It should be either a
+    positive scalar or a positive semi-definite matrix of appropriate
+    size. The default is \code{0.001}.
   }
   \item{p.mean.r}{
-    prior mean for the response model.
+    Prior mean for the (non)response model. It should be either a scalar or
+    a vector of appropriate length. The default is \code{0}.
   }
   \item{p.prec.r}{
-    prior precision for the response model.
+    Prior precision for the (non)response model. It should be either a
+    positive scalar or a positive semi-definite matrix of appropriate
+    size. The default is \code{0.001}.
   }
   \item{p.df.o}{
-    prior degrees of freedom for the outcome model.
+    A positive integer. Prior degrees of freedom parameter for the inverse
+    chisquare distribution in the gaussian and twopart (outcome) models. The
+    default is \code{10}.
   }
   \item{p.scale.o}{
-    prior scale for the outcome model.
+    A positive scalar. Prior scale parameter for the inverse chisquare
+    distribution (for the variance) in the gaussian and twopart
+    (outcome) models. For the negative binomial (outcome) model, this is
+    used for the scale parameter of the inverse gamma distribution. The
+    default is \code{1}.
   }
   \item{p.shape.o}{
-    prior shape for the outcome model.
+    A positive scalar. Prior shape for the inverse chisquare
+    distribution in the negative binomial (outcome) model. The default
+    is \code{1}.
   }
   \item{mda.probit}{
-    Use marginal data augmentation for probit models?
+    A logical variable indicating whether to use marginal data
+    augmentation for probit models. The default is \code{TRUE}.
   }
   \item{coef.start.c}{
-    starting values for coefficients of the compliance model.
+    Starting values for coefficients of the compliance model.     
+    It should be either a scalar or a vector of appropriate length. The
+    default is \code{0}. 
   }
   \item{coef.start.o}{
-    starting values for coefficients of the outcome model.
+    Starting values for coefficients of the outcome model.     
+    It should be either a scalar or a vector of appropriate length. The
+    default is \code{0}. 
   }
   \item{coef.start.r}{
-    starting values for coefficients of the response model.
+    Starting values for coefficients of the (non)response model.     
+    It should be either a scalar or a vector of appropriate length. The
+    default is \code{0}. 
   }
   \item{tau.start.o}{
-    starting values for thresholds of the outcome model.
+    Starting values for thresholds of the ordered probit (outcome) model.
+    It should be either a scalar or a vector of appropriate length.
+    The default is \code{0}. 
   }
   \item{var.start.o}{
     starting values for variances of the outcome model.
@@ -152,6 +209,18 @@ NoncompLI(formulae, Z, D, data = parent.frame(), n.draws = 5000,
   Y <- rep(c(0,1), n)
   X <- rnorm(n*2)
   #res <- Noncomp.bayes(list(Y ~ X, ~ X, ~ X), D = 1-Y, Z = Y)
+}
+
+\references{
+  Frangakis, C. E. and Rubin, D. B. (1999). \dQuote{Addressing
+    Complications of Intention-to-Treat Analysis in the Combined
+    Presence of All-or-None Treatment Noncompliance and Subsequent
+    Missing Outcomes.} \emph{Biometrika}, Vol. 86, No. 2, pp. 365-379.
+  
+  Horiuchi, Yusaku, Kosuke Imai, and Naoko Taniguchi (2007). \dQuote{Designing
+    and Analyzing Randomized Experiments: Application to a Japanese Election
+    Survey Experiment.} \emph{American Journal of Political Science}, Vol. 51,
+  No. 3 (July), pp. 669-687.
 }
 
 \author{
