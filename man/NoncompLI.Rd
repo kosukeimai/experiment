@@ -254,8 +254,16 @@ NoncompLI(formulae, Z, D, data = parent.frame(), n.draws = 5000,
     model from their posterior distribution.}
   \item{sig2}{The Monte carlo draws of the variance parameter for the
     gaussian, negative binomial, and twopart (outcome) models.}
-  }
+}
 
+\details{
+  For the details of the model being fitted, see the references. Note
+  that when always-takers exist we fit either two logistic or two probit
+  models by first modeling whether a unit is a complier or a
+  noncomplier, and then modeling whether a unit is an always-taker or a
+  never-taker for those who are classified as non-compliers. 
+}
+  
 \references{
   Frangakis, Constantine E. and Rubin, Donald
   B. (1999). \dQuote{Addressing Complications of Intention-to-Treat
