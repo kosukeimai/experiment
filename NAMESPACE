@@ -3,18 +3,18 @@ useDynLib(experiment)
 importFrom(MASS, mvrnorm)
 
 export(NoncompLI, 
-       NoncompMAR,
-       NoncompLIMixed,
-       NIbprobit,
-       NIbprobitMixed,
-       NInocov,
+#       NoncompMAR,
+#       NoncompLIMixed,
+#       NIbprobit,
+#       NIbprobitMixed,
+#       NInocov,
        ATEbounds,
-       ATEnocov,
-       ATEcluster,
-       CACEnocov,
-       CACEcluster,
-       CACEcov,
-       MARnocov,
+#       ATEnocov,
+#       ATEcluster,
+#       CACEnocov,
+#       CACEcluster,
+#       CACEcov,
+#       MARnocov,
        randomize)
 
 S3method(print, randomize)

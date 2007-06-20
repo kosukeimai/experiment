@@ -107,7 +107,10 @@ ATEbounds <- function(formula, data = parent.frame(), maxY = NULL,
           paste("upper ", 1-alpha/2, "%CI", sep=""))
     }
   }
-  
+  res$Y <- Y
+  res$D <- D
+  res$call <- call
+  class(res) <- "ATEbounds"
   return(res)
 }
 
@@ -234,5 +237,7 @@ boundsAggComp <- function(data, weights, maxY, minY, alpha = NULL,
     return(c(t(bounds)))
   else
     return(list(bounds = bounds, maxY = maxY, minY = minY,
-                ratio = ratio, omega = omega))
+                ratio = ratio))
+    #return(list(bounds = bounds, maxY = maxY, minY = minY,
+    #            ratio = ratio, omega = omega))
 }

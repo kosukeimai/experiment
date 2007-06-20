@@ -20,8 +20,9 @@
 \arguments{
   \item{formula}{A formula of the form \code{Y ~ X} where \code{Y} is
     the name of the outcome variable and \code{X} is the
-    name of the (randomized) treatment variable. The missing values for
-    \code{Y} should be coded as \code{NA}.
+    name of the (randomized) treatment variable. \code{X} should be a
+    factor variable but its value can take more than two levels. The missing
+    values for \code{Y} should be coded as \code{NA}.
   }
   \item{data}{
     A data frame containing the relevant variables. 
@@ -73,6 +74,53 @@
   \item{call}{
     The matched call.
   }
+  \item{Y}{
+    The outcome variable.
+  }
+  \item{D}{
+    The treatment variable.
+  }
+  \item{bounds}{
+    The point estimates of the sharp bounds on the average treatment
+    effect.
+  }
+  \item{bounds.Y}{
+    The point estimates of the sharp bounds on the outcome variable
+    within each treatment/control group.
+  }
+  \item{bmethod.ci}{
+    The B-method confidence interval of the bounds on the average
+    treatment effect.
+  }
+  \item{bonf.ci}{
+    The Bonferroni confidence interval of the bounds on the average
+    treatment effect.
+  }
+  \item{bonf.ci.Y}{
+    The Bonferroni confidence interval of the bounds on the outcome
+    variable within each treatment/control group.
+  }
+  \item{bmethod.ci.Y}{
+    The B-method confidence interval of the bounds on the outcome
+    variable within each treatment/control group.
+  }
+  \item{maxY}{
+    The maximum value of the outcome variable used in the computation.
+  }
+  \item{minY}{
+    The minimum value of the outcome variable used in the computation.
+  }
+  \item{nobs}{
+    The number of observations.
+  }
+  \item{nobs.Y}{
+    The number of observations within each treatment/control group.
+  }
+  \item{ratio}{
+    The probability of treatment assignment (within each strata if
+    \code{strata} is specified) used in the computation.
+  }
+    
 }
 
 \references{
