@@ -265,20 +265,20 @@ NoncompLI(formulae, Z, D, data = parent.frame(), n.draws = 5000,
 }
   
 \references{
-  Frangakis, Constantine E. and Rubin, Donald
-  B. (1999). \dQuote{Addressing Complications of Intention-to-Treat
+  Frangakis, Constantine E. and Donald
+  B. Rubin. (1999). \dQuote{Addressing Complications of Intention-to-Treat
     Analysis in the Combined Presence of All-or-None Treatment
     Noncompliance and Subsequent Missing Outcomes.} \emph{Biometrika},
   Vol. 86, No. 2, pp. 365-379.
   
-  Hirano, Keisuke and Guido W. Imbens and Rubin,
-  Donald B. and Zhou, Xiao-Hua. (2000).
+  Hirano, Keisuke, Guido W. Imbens, Donald B. Rubin,
+  and Xiao-Hua Zhou. (2000).
   \dQuote{Assessing the Effect of an Influenza Vaccine in an
     Encouragement Design.} \emph{Biostatistics}, Vol. 1, No. 1, 
   pp. 69-88. 
 
-  Barnard, John and Frangakis, Constantine E. and
-    Hill, Jennifer L. and Rubin, Donald B. (2003).
+  Barnard, John, Constantine E. Frangakis,
+    Jennifer L. Hill, and Donald B. Rubin. (2003).
   \dQuote{Principal Stratification Approach to Broken
     Randomized Experiments: A Case Study of School
     Choice Vouchers in New York (with Discussion)},

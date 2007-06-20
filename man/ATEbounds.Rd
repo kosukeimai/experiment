@@ -7,7 +7,8 @@
 
 \description{
   This function computes the sharp bounds on the average treatment
-  effect when the outcome data are missing.
+  effect when the outcome data are missing. The confidence intervals for
+  the bounds are also computed. 
 }
 
 \usage{
@@ -17,9 +18,13 @@
 }
 
 \arguments{
+  \item{formula}{A formula of the form \code{Y ~ X} where \code{Y} is
+    the name of the outcome variable and \code{X} is the
+    name of the (randomized) treatment variable. The missing values for
+    \code{Y} should be coded as \code{NA}.
+  }
   \item{data}{
-    A data frame containing the observations to which the treatments
-    are randomly assigned.
+    A data frame containing the relevant variables. 
   }
   \item{maxY}{
     A scalar. The maximum value of the outcome variable. The default is the
@@ -31,7 +36,24 @@
   }
   \item{alpha}{
     A positive scalar that is less than or equal to 0.5. This will
-    determine the (1-alpha) level of confidence intervals.
+    determine the (1-\code{alpha}) level of confidence intervals. The
+    default is \code{0.05}.
+  }
+  \item{strata}{
+    The variable name indicating strata. If this is specified, the
+    quantities of interest will be first calculated within each strata
+    and then aggregated. The default is \code{NULL}.
+  }
+  \item{ratio}{
+    A \eqn{J \times M} matrix of probabilities where \eqn{J} is the
+    number of strata and \eqn{M} is the number of treatment and control
+    groups. Each element of the matrix specifies the probability of a
+    unit falling into that category. The default is \code{NULL} in which
+    case the sample estimates of these probabilities are used for
+    computation. 
+  }
+  \item{survey}{
+    The variable name for survey weights. The default is \code{NULL}.
   }
   \item{n.reps}{
     A positive integer. The number of bootstrap replicates used for
@@ -42,39 +64,32 @@
 }
 
 \details{
-  Randomized-block designs refer to the complete randomization of the
-  treatment within the pre-specified blocks which contain multiple
-  observations. Matched-pair designs refer to the randomization of the
-  binary treatment variable within the pre-specified pair of
-  observations.
+  For the details of the method implemented by this function, see the
+  references. 
 }
 
 \value{
-  A list of class \code{randomize} which contains the following items:
+  A list of class \code{ATEbounds} which contains the following items:
   \item{call}{
-    the matched call.
+    The matched call.
   }
-  \item{treatment}{
-    The vector of randomized treatments.
-  }
-  \item{data}{
-    The data frame that was used to conduct the randomization.
-  }
-  \item{block}{
-    The blocking variable that was used to implement randomized-block designs.
-  }
-  \item{match}{
-    The matching variable that was used to implement matched-pair
-    designs.
-  }
-  \item{block.id}{
-    The variable indicating which observations belong to which blocks in
-    randomized-block designs.
-  }
-  \item{match.id}{
-    The variable indicating which observations belong to which pairs in
-    matched-pair designs.
-  }
+}
+
+\references{
+  Horowitz, Joel L. and Charles F. Manski. (1998).
+  \dQuote{Censoring of Outcomes and Regressors due to Survey
+    Nonresponse: Identification and Estimation Using Weights and
+    Imputations.} \emph{Journal of Econometrics}, Vol. 84, pp.37-58.
+  
+  Horowitz, Joel L. and Charles F. Manski. (2000).
+  \dQuote{Nonparametric Analysis of Randomized Experiments
+    With Missing Covariate and Outcome Data.} \emph{Journal of the
+    Americal Statistical Association}, Vol. 95, No. 449, pp.77-84.
+
+  Harris-Lacewell, Melissa, Kosuke Imai, and Teppei Yamamoto. (2007).
+    \dQuote{Racial Gaps in the Responses to Hurricane Katrina:
+      An Experimental Study},
+   \emph{Technical Report}. Department of Politics, Princeton University.
 }
 
 \author{
