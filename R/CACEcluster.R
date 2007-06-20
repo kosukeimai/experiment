@@ -1,48 +1,52 @@
 CACEcluster <- function(Y, D, Z, grp, data = parent.frame(),
-                        match = NULL, estimand = "CATE1") {
+                        match = NULL, weights = NULL, ...) {
 
+  cov.internal <- function(x){
+    return(cov(x[,1],x[,2]))
+  }
+  
   call <- match.call()
   Y <- eval(call$Y, envir = data)
   D <- eval(call$D, envir = data)
   Z <- eval(call$Z, envir = data)
   grp <- eval(call$grp, envir = data)
   match <- eval(call$match, envir = data)
-
-  if (estimand == "CATE1")
-    ITTestimand <- "PATE1"
-  else if (estimand == "CATE2")
-    ITTestimand <- "PATE2"
-  else
-    stop("invalid estimand")
+  weights <- eval(call$weights, envir = data)
   
   ITTY <- ATEcluster(Y = Y, Z = Z, grp = grp, match = match,
-                     estimand = ITTestimand)
+                     weights = weights, ...)
   ITTD <- ATEcluster(Y = D, Z = Z, grp = grp, match = match,
-                     estimand = ITTestimand)
+                     weights = weights, ...)
 
+  ## point estimate
+  n <- ITTY$n
   ITTY.est <- ITTY$est
   ITTD.est <- ITTD$est
   CACE.est <- ITTY.est/ITTD.est
-  CACE.bias <- CACE.est - (ITTY.est - ITTY$bias)/(ITTD.est - ITTD$bias)
-  N <- ITTY$N
-  M <- ITTY$M
-  diffY <- ITTY$Y1bar-ITTY$Y0bar
-  diffD <- ITTD$Y1bar-ITTD$Y0bar
-  w <- ITTY$weights
 
+  ## outputs
+  res <- list(est = CACE.est, ITTY = ITTY, ITTD = ITTD)
+
+  ## calculation
   if (is.null(match))
     stop("the estimator is not yet available.")
   else {
-    Cov <- M*sum((diffY*w - N*ITTY.est/M) *
-                 (diffD*w - N*ITTD$est/M))/((M-1)*(N^2))
-    CACE.var <- (ITTY$var*(ITTD.est^2) + ITTD$var*(ITTY.est^2) -
-                2*Cov*ITTY.est*ITTD.est)/(ITTD.est^4)
+    res$n1 <- n1 <- ITTY$n1
+    res$n0 <- n0 <- ITTY$n0
+    res$N1 <- N1 <- ITTY$N1
+    res$N0 <- N0 <- ITTY$N0
+    res$m <- m <- ITTY$m
+    res$w <- w <- ITTY$w
+    diffY <- ITTY$diff
+    diffD <- ITTD$diff
+    Cov <- m*sum((diffY*w - n*ITTY.est/m) *
+                 (diffD*w - n*ITTD.est/m))/((m-1)*(n^2))
   }
-
-  ## return the results
-  res <- list(est = CACE.est, bias = CACE.bias, var = CACE.var,
-              cov = Cov, N = N, M = M, ITTY = ITTY, ITTD = ITTD,
-              weights = w)
+  
+  res$var <- CACE.var <-
+    (ITTY$var*(ITTD.est^2) + ITTD$var*(ITTY.est^2) -
+     2*Cov*ITTY.est*ITTD.est)/(ITTD.est^4)
+  
   class(res) <- "CACEcluster"
   return(res)
 }
