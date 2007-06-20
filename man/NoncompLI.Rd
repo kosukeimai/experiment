@@ -210,14 +210,65 @@ NoncompLI(formulae, Z, D, data = parent.frame(), n.draws = 5000,
   }
 }
 
-\examples{
-  n <- 5
-  Y <- rep(c(0,1), n)
-  X <- rnorm(n*2)
-  #res <- Noncomp.bayes(list(Y ~ X, ~ X, ~ X), D = 1-Y, Z = Y)
-}
+\value{
+  An object of class \code{NoncompLI} which contains the following
+  elements as a list:
+  \item{call}{The matched call.}
+  \item{Y}{The outcome variable.}
+  \item{D}{The treatment variable.}
+  \item{Z}{The (randomized) encouragement variable.}
+  \item{R}{The response indicator variable for \code{Y}.}
+  \item{A}{The indicator variable for (known) always-takers, i.e., the
+    control units who received the treatment.}
+  \item{C}{The indicator variable for (known) compliers, i.e., the
+    encouraged units who received the treatment when there is no
+    always-takers.} 
+  \item{Xo}{The matrix of covariates used for the outcome model.}
+  \item{Xc}{The matrix of covariates used for the compliance model.}
+  \item{Xr}{The matrix of covariates used for the (non)response model.}
+  \item{n.draws}{The number of MCMC draws.}
+  \item{QoI}{The Monte carlo draws of quantities of interest from their
+    posterior distributions. Quantities of interest include \code{ITT}
+    (intention-to-treat) effect, \code{CACE} (complier average causal effect),
+    \code{Y1barC} (The mean outcome value under the treatment for
+    compliers), \code{Y0barC} (The mean outcome value under the control
+    for compliers), \code{YbarN} (The mean outcome value for
+    never-takers), \code{YbarA} (The mean outcome value for
+    always-takers), \code{pC} (The proportion of compliers), \code{pN}
+    (The proportion of never-takers), \code{pA} (The proportion of
+    always-takers) 
+  }
+  If \code{param} is set to \code{TRUE}, the following elments are also
+  included:
+  \item{coefO}{The Monte carlo draws of coefficients of the outcome
+    model from their posterior distribution.}
+  \item{coefO1}{If \code{model = "twopart"}, this element contains the
+    Monte carlo draws of coefficients of the outcome model for
+    \eqn{p(log(Y)|X, Y > 0)} from their posterior distribution.}
+  \item{coefC}{The Monte carlo draws of coefficients of the compliance
+    model from their posterior distribution.}
+  \item{coefA}{If always-takers exist, then this element contains the
+    Monte carlo draws of coefficients of the compliance model for
+    always-takers from their posterior distribution.} 
+  \item{coefR}{The Monte carlo draws of coefficients of the (non)response
+    model from their posterior distribution.}
+  \item{sig2}{The Monte carlo draws of the variance parameter for the
+    gaussian, negative binomial, and twopart (outcome) models.}
+  }
 
 \references{
+  Frangakis, Constantine E. and Rubin, Donald
+  B. (1999). \dQuote{Addressing Complications of Intention-to-Treat
+    Analysis in the Combined Presence of All-or-None Treatment
+    Noncompliance and Subsequent Missing Outcomes.} \emph{Biometrika},
+  Vol. 86, No. 2, pp. 365-379.
+  
+  Hirano, Keisuke and Guido W. Imbens and Rubin,
+  Donald B. and Zhou, Xiao-Hua. (2000).
+  \dQuote{Assessing the Effect of an Influenza Vaccine in an
+    Encouragement Design.} \emph{Biostatistics}, Vol. 1, No. 1, 
+  pp. 69-88. 
+
   Barnard, John and Frangakis, Constantine E. and
     Hill, Jennifer L. and Rubin, Donald B. (2003).
   \dQuote{Principal Stratification Approach to Broken
@@ -226,12 +277,6 @@ NoncompLI(formulae, Z, D, data = parent.frame(), n.draws = 5000,
   \emph{Journal of the American Statistical Association},
   Vol. 98, No. 462, pp299--311.
 
-  Frangakis, Constantine E. and Rubin, Donald
-  B. (1999). \dQuote{Addressing Complications of Intention-to-Treat
-    Analysis in the Combined Presence of All-or-None Treatment
-    Noncompliance and Subsequent Missing Outcomes.} \emph{Biometrika},
-  Vol. 86, No. 2, pp. 365-379.
-  
   Horiuchi, Yusaku, Kosuke Imai, and Naoko Taniguchi (2007). \dQuote{Designing
     and Analyzing Randomized Experiments: Application to a Japanese Election
     Survey Experiment.} \emph{American Journal of Political Science}, Vol. 51,
