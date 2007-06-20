@@ -186,22 +186,28 @@ NoncompLI(formulae, Z, D, data = parent.frame(), n.draws = 5000,
   }
   \item{tau.start.o}{
     Starting values for thresholds of the ordered probit (outcome) model.
-    It should be either a scalar or a vector of appropriate length.
-    The default is \code{0}. 
+    If it is set to \code{NULL}, then the starting values will be a
+    sequence starting from 0 and then incrementing by 0.1. The default
+    is \code{NULL}.  
   }
   \item{var.start.o}{
-    starting values for variances of the outcome model.
+    A positive scalar starting value for the variance of the gaussian,
+    negative binomial, and twopart (outcome) models. The default is
+    \code{1}. 
   }
   \item{burnin}{
-    number of burnins.
+    The number of initial burnins for the Markov chain. The default is
+    \code{0}. 
   }
   \item{thin}{
-    number of thinning.
+    The size of thinning interval for the Markov chain. The default is
+    \code{0}. 
   }
   \item{verbose}{
-    some print outs.
+    A logical variable indicating whether additional progress reports
+    should be prited while running the code. The default is
+    \code{TRUE}. 
   }
-  
 }
 
 \examples{
@@ -212,10 +218,19 @@ NoncompLI(formulae, Z, D, data = parent.frame(), n.draws = 5000,
 }
 
 \references{
-  Frangakis, C. E. and Rubin, D. B. (1999). \dQuote{Addressing
-    Complications of Intention-to-Treat Analysis in the Combined
-    Presence of All-or-None Treatment Noncompliance and Subsequent
-    Missing Outcomes.} \emph{Biometrika}, Vol. 86, No. 2, pp. 365-379.
+  Barnard, John and Frangakis, Constantine E. and
+    Hill, Jennifer L. and Rubin, Donald B. (2003).
+  \dQuote{Principal Stratification Approach to Broken
+    Randomized Experiments: A Case Study of School
+    Choice Vouchers in New York (with Discussion)},
+  \emph{Journal of the American Statistical Association},
+  Vol. 98, No. 462, pp299--311.
+
+  Frangakis, Constantine E. and Rubin, Donald
+  B. (1999). \dQuote{Addressing Complications of Intention-to-Treat
+    Analysis in the Combined Presence of All-or-None Treatment
+    Noncompliance and Subsequent Missing Outcomes.} \emph{Biometrika},
+  Vol. 86, No. 2, pp. 365-379.
   
   Horiuchi, Yusaku, Kosuke Imai, and Naoko Taniguchi (2007). \dQuote{Designing
     and Analyzing Randomized Experiments: Application to a Japanese Election
