@@ -40,13 +40,14 @@ ATEnocov <- function(Y, Z, data = parent.frame(), match = NULL){
     
   ## ATE for unit randomization
   res$ATE.est <- mean(Y[Z==1])-mean(Y[Z==0])
-  res <- list(call = call, Y = Y, Z = Z)
+  res <- list(call = call, Y = Y, Z = Z, match = match)
   if (is.null(match)) { # without matching
     res$ATE.var <- var(Y[Z==1])/sum(Z==1)+var(Y[Z==0])/sum(Z==0)
   } else { # with matching
     res$diff <- diff <- match.check(Y, Z, match)
     res$ATE.var <- var(diff)/length(diff)
   }
+  class(res) <- "ATEnocov"
   return(res)
 }
 
