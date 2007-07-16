@@ -2,13 +2,14 @@
 
 \alias{ATEbounds}
 
-\title{Bounding the Average Treatment Effect when the Outcome Data are
-       Missing}
+\title{Bounding the Average Treatment Effect when some of the Outcome
+  Data are Missing
+}
 
 \description{
   This function computes the sharp bounds on the average treatment
-  effect when the outcome data are missing. The confidence intervals for
-  the bounds are also computed. 
+  effect when some of the outcome data are missing. The confidence
+  intervals for the bounds are also computed. 
 }
 
 \usage{
