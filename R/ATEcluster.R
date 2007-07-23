@@ -41,6 +41,7 @@ ATEcluster <- function(Y, Z, grp, data = parent.frame(),
   w.dk <- n*w.dk/sum(w.dk)
   ATEdk.est <- weighted.mean(diff, w.dk)
   ATEdk.var <- sum(w.dk^2)*sum(w.dk*(diff-ATEdk.est)^2)/(n^3)
+  ATE.dkvar <- sum(w^2)*sum(w*(diff-ATE.est)^2)/(n^3)
   ## lower bound for CATE variance
   if (!is.null(weights)) {
     Y1var <- tapply(Y[Z==1], match[Z==1], var)/n1
@@ -48,6 +49,8 @@ ATEcluster <- function(Y, Z, grp, data = parent.frame(),
     if (fpc) {
       Y1var <- (1-n1/N1)*Y1var
       Y0var <- (1-n0/N0)*Y0var
+      if ((sum(n0 > N0)+sum(n1 > N1))>0)
+        stop("population size is smaller than sample size")
     }
     res$Y1var <- Y1var
     res$Y0var <- Y0var
@@ -63,7 +66,9 @@ ATEcluster <- function(Y, Z, grp, data = parent.frame(),
   res$est <- ATE.est
   res$est.dk <- ATEdk.est
   res$var <- ATE.var
+  res$dkvar <- ATE.dkvar
   res$var.dk <- ATEdk.var
+  res$eff <- 1/(1-2*cov(w*Y1bar, w*Y0bar)/(var(w*Y1bar)+var(w*Y0bar)))
   res$w <- w
   res$w.dk <- w.dk
   if (!is.null(match)) {
