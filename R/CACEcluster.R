@@ -39,8 +39,8 @@ CACEcluster <- function(Y, D, Z, grp, data = parent.frame(),
     res$w <- w <- ITTY$w
     diffY <- ITTY$diff
     diffD <- ITTD$diff
-    Cov <- m*sum((diffY*w - n*ITTY.est/m) *
-                 (diffD*w - n*ITTD.est/m))/((m-1)*(n^2))
+    res$cov <- Cov <- m*sum((diffY*w - n*ITTY.est/m) *
+                            (diffD*w - n*ITTD.est/m))/((m-1)*(n^2))
   }
   
   res$var <- CACE.var <-
