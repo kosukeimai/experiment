@@ -78,6 +78,14 @@
     The cluster-specific (unweighted) average value of the observed outcome for the
     treatment group. 
   }
+  \item{Y1var}{
+    The cluster-specific sample variance of the observed outcome for the
+    treatment group.  
+  }
+  \item{Y0var}{
+    The cluster-specific sample variance of the observed outcome for the
+    control group.  
+  }
   \item{Z}{
     The treatment variable.
   }
@@ -97,6 +105,10 @@
     The estimated variance of the average treatment effect estimator
     based on the arithmetic mean weights. This uses the variance formula
     provided in Imai, King, and Nall (2007).
+  }
+  \item{var.lb}{
+    The estimated sharp lower bound of the cluster average treatment
+    effect estimator using the arithmetic mean weights.
   }
   \item{est.dk}{
     The estimated average treatment effect based on the harmonic mean weights.
