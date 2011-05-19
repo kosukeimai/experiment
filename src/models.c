@@ -721,6 +721,164 @@ void bprobitMixedGibbs(int *Y,          /* binary outcome variable */
   FreeMatrix(mtemp1, n_random);
 } /* end of mixed effects probit */
 
+/**
+   A Random Walk Metroplis Sampler for Binomial Logistic Mixed Effects 
+   Regression with Independent Normal Prior and Normal random effects.
+   
+   proposal distribution for fixed effects is the normal whose mean is
+   the current value and variance is given by the input. each
+   parameter is updated one by one.
+
+   proposal distribution for random effects is the multivariate normal
+   whose mean is the current value and variance is given by the
+   current value of covariance matrix multiplied by the input tuning
+   parameter. 
+
+**/
+
+void BinomLogitMixed(int *Y,          /* outcome variable: 0, 1, ..., J */
+		     double **X,      /* (N x K) covariate matrix for
+					 fixed effects */
+		     double **Z,      /* (N x L) covariate matrix for 
+					 random effects */
+		     int *grp,        /* group indicator, 0, 1, ..., G-1 */
+		     double *beta,    /* K coefficients for fixed effects */
+		     double **gamma,  /* (G x L) matrix of random effects */
+		     double **Psi,    /* LxL precision matrix for random effecs */
+		     int n_samp,      /* # of obs */
+		     int J,           /* size of binomial, J */
+		     int n_fixed,     /* # of fixed effects, K */
+		     int n_random,    /* # of random effects, L */
+		     int n_grp,       /* # of groups, G */
+		     double *beta0,   /* K dimensional prior mean vector */
+		     double **A0,     /* (K x K) prior precision */
+		     int tau0,        /* prior df for Psi */
+		     double **T0,     /* prior scale for Psi */
+		     double *tune_fixed,  /* K proposal variances */
+		     double *tune_random, /* tuning constant for random effects of each group */
+		     int n_gen,        /* # of MCMC draws */
+		     int *acc_fixed,   /* # of acceptance for fixed effects */
+		     int *acc_random   /* # of acceptance for random effects */
+		     ) {
+  
+  int i, j, k, main_loop;
+  double numer, denom;
+  /* proposal values */
+  double *beta1 = doubleArray(n_fixed);
+  double *gamma1 = doubleArray(n_random);
+  /* prior for gamma = 0 */
+  double *gamma0 = doubleArray(n_random);
+  /* data holders */
+  double *Xbeta = doubleArray(n_samp);
+  double *Xbeta1 = doubleArray(n_samp);
+  double *Zgamma = doubleArray(n_samp);
+  double *Zgamma1 = doubleArray(n_samp);
+  /* matrix holders */
+  double **mtemp = doubleMatrix(n_random, n_random);
+  double **mtemp1 = doubleMatrix(n_random, n_random);
+
+  for (j = 0; j < n_fixed; j++)
+    beta1[j] = beta[j];
+
+  for (j = 0; j < n_random; j++)
+    gamma0[j] = 0;
+
+  /** initializing Xbeta and Zgamma **/
+  for (i = 0; i < n_samp; i++) {
+    Xbeta[i] = 0; Zgamma[i] = 0;
+    for (j = 0; j < n_fixed; j++) { 
+      Xbeta[i] += X[i][j] * beta[j];
+    }
+    Xbeta1[i] = Xbeta[i];
+    for (j = 0; j < n_random; j++) {
+      Zgamma[i] += Z[i][j] * gamma[grp[i]][j];
+    }
+    Zgamma1[i] = Zgamma[i];
+  }
+
+  /** MCMC Sampler starts here **/
+  for (main_loop = 0; main_loop < n_gen; main_loop++) {
+
+    /** STEP 1: Update Each Fixed Effect **/
+    for (j = 0; j < n_fixed; j++) {
+      /* Sample from the proposal distribution */
+      beta1[j] = beta[j] + norm_rand() * sqrt(tune_fixed[j]);
+      /* Calculating the ratio (log scale) */
+      /* prior */
+      numer = dMVN(beta1, beta0, A0, n_fixed, 1);
+      denom = dMVN(beta, beta0, A0, n_fixed, 1);   
+      /* likelihood */
+      for (i = 0; i < n_samp; i++) {
+	Xbeta1[i] = Xbeta[i] - X[i][j] * (beta[j] - beta1[j]);
+	denom += dbinom(Y[i], J, 1 / (1 + exp(-Xbeta[i]-Zgamma[i])), 1);
+	numer += dbinom(Y[i], J, 1 / (1 + exp(-Xbeta1[i]-Zgamma[i])), 1);
+      }
+      /* Rejection */
+      if (unif_rand() < fmin2(1.0, exp(numer-denom))) {
+	acc_fixed[j]++;
+	beta[j] = beta1[j];
+	for (i = 0; i < n_samp; i++) {
+	  Xbeta[i] = Xbeta1[i];
+	}
+      }
+    }
+ 
+    /** STEP 2: Update Random Effects Given Fixed Effects **/
+    dinv(Psi, n_random, mtemp);
+    for (i = 0; i < n_random; i++)
+      for (j = 0; j < n_random; j++)
+	mtemp[i][j] *= tune_random[j];
+    for (j = 0; j < n_grp; j++) {
+      rMVN(gamma1, gamma[j], mtemp, n_random);
+      /* Calculating the ratio (log scale) */
+      /* prior */
+      numer = dMVN(gamma1, gamma0, Psi, n_random, 1);
+      denom = dMVN(gamma[j], gamma0, Psi, n_random, 1); 
+      /* likelihood for group j */
+      for (i = 0; i < n_samp; i++) {
+	if (grp[i] == j) {
+	  for (k = 0; k < n_random; k++)
+	    Zgamma1[i] = Zgamma[i] - Z[i][k]*(gamma[j][k]-gamma1[k]);
+	  denom += dbinom(Y[i], J, 1 / (1 + exp(-Xbeta[i]-Zgamma[i])), 1);
+	  numer += dbinom(Y[i], J, 1 / (1 + exp(-Xbeta[i]-Zgamma1[i])), 1);
+	}
+      }
+      /* Rejection */
+      if (unif_rand() < fmin2(1.0, exp(numer-denom))) {
+	acc_random[j]++;
+	for (k = 0; k < n_random; k++)
+	  gamma[j][k] = gamma1[k];
+	for (i = 0; i < n_samp; i++) {
+	  if (grp[i] == j) {
+	    Zgamma[i] = Zgamma1[i];
+	  }      
+	}
+      }
+    }
+    
+    /** STEP 3: Update Psi **/
+    for (j = 0; j < n_random; j++)
+      for (k = 0; k < n_random; k++)
+	mtemp[j][k] = T0[j][k];
+    for (i = 0; i < n_grp; i++)
+      for (j = 0; j < n_random; j++)
+	for (k = 0; k < n_random; k++)
+	  mtemp[j][k] += gamma[i][j] * gamma[i][k];
+    dinv(mtemp, n_random, mtemp1);
+    rWish(Psi, mtemp1, tau0+n_grp, n_random);
+  }
+
+  /* freeing memory */
+  free(beta1);
+  free(gamma1);
+  free(gamma0);
+  free(Xbeta);
+  free(Xbeta1);
+  free(Zgamma);
+  free(Zgamma1);
+  FreeMatrix(mtemp, n_random);
+  FreeMatrix(mtemp1, n_random);
+} /* end of mixed effects logit */
 
 
 /*** 
