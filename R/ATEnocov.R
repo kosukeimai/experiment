@@ -30,8 +30,6 @@ ATEnocov <- function(Y, Z, data = parent.frame(), match = NULL){
   ## checking data
   if (sum(sort(unique(Z)) == c(0,1)) != 2)
     stop("`Z' should be binary taking the value of 0 or 1")
-  if (!(method %in% c("unbiased", "weighted", "unpooled", "standard")))
-    stop("invalid input for `method'")
   if (length(Y) != length(Z))
     stop("`Y' and `Z' have different numbers of observations")
   if (!is.null(match))

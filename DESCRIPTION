@@ -1,6 +1,6 @@
 Package: experiment
-Version: 1.1-0
-Date: 2007-07-24
+Version: 1.1-1
+Date: 2013-03-28
 Title: experiment: R package for designing and analyzing randomized experiments
 Author: Kosuke Imai <kimai@princeton.edu>
 Maintainer: Kosuke Imai <kimai@princeton.edu>
@@ -13,5 +13,5 @@ Description: The package provides various statistical methods for
   randomized experiments including cluster randomized experiments,
   randomized experiments with noncompliance, and randomized experiments
   with missing data.
-License: GPL (version 2 or later)
-URL: http://imai.princeton.edu/research/
+License: GPL (>=2)
+URL: http://imai.princeton.edu/software/experiment.html
