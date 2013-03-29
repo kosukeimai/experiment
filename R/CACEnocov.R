@@ -16,10 +16,10 @@ CACEnocov <- function(Y, D, Z, data = parent.frame(), grp = NULL,
   match <- eval(call$match, envir = data)
   
   ## point estimates and variances
-  ITTY <- ATEnocov(Y = Y, Z = Z, grp = grp, match = match,
-                   grp.size = grp.size) 
-  ITTD <- ATEnocov(Y = D, Z = Z, grp = grp, match = match,
-                   grp.size = grp.size) 
+  ITTY <- ATEcluster(Y = Y, Z = Z, grp = grp, match = match)
+#                   grp.size = grp.size) 
+  ITTD <- ATEcluster(Y = D, Z = Z, grp = grp, match = match)
+#                   grp.size = grp.size) 
   CACEest <- ITTY$est/ITTD$est
 
   ## covariance calculation
