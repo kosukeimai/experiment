@@ -77,7 +77,6 @@ randomize <- function(data, group = c("Treat", "Control"), ratio =
         tmp <- quantile(block, (0:(n.block-1))/n.block)
         block.id <- rep(0, n)
         for (i in 1:n.block) {
-            print(block.id)
             block.id[block >= tmp[i]] <- block.id[block >= tmp[i]] + 1
         }
       if (sum(table(block.id) < m) > 0)
@@ -88,9 +87,6 @@ randomize <- function(data, group = c("Treat", "Control"), ratio =
     for (i in 1:n.block) {
       howmany <- sum(block.id == i)
       if (complete) { # comlete randomization
-          print(howmany)
-          print(ratio)
-          print(group)
         tmp <- ratio2size(howmany, ratio, group)
         ttt[block.id == i] <- sample(tmp$vector, howmany, replace = FALSE)
       } else {
