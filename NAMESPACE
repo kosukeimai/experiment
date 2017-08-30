@@ -1,6 +1,7 @@
 useDynLib(experiment)
 
 importFrom(MASS, mvrnorm)
+importFrom(boot, boot)
 
 export(NoncompLI, 
 #       NoncompMAR,
