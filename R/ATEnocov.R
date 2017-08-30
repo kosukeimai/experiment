@@ -2,6 +2,36 @@
 ### Calculate the ATE without covariates
 ###
 
+
+
+#' Estimation of the Average Treatment Effect in Randomized Experiments
+#' 
+#' This function computes the standard ``difference-in-means'' estimate of the
+#' average treatment effect in randomized experiments without using
+#' pre-treatment covariates. The treatment variable is assumed to be binary.
+#' Currently, the two designs are allowed: complete randomized design and
+#' matched-pair design.
+#' 
+#' 
+#' @param Y The outcome variable of interest.
+#' @param Z The (randomized) treatment variable. This variable should be
+#' binary.
+#' @param data A data frame containing the relevant variables.
+#' @param match A variable indicating matched-pairs. The two units in the same
+#' matched-pair should have the same value.
+#' @return A list of class \code{ATEnocov} which contains the following items:
+#' \item{call}{ The matched call.  } \item{Y}{ The outcome variable.  }
+#' \item{Z}{ The treatment variable.  } \item{match}{ The matched-pair
+#' indicator variable.  } \item{ATEest}{ The estimated average treatment
+#' effect.  } \item{ATE.var}{ The estimated variance of the average treatment
+#' effect estimator.  } \item{diff}{ Within-pair differences if the
+#' matched-pair design is analyzed.  }
+#' @author Kosuke Imai, Department of Politics, Princeton University
+#' \email{kimai@@Princeton.Edu}, \url{http://imai.princeton.edu};
+#' @references Imai, Kosuke, (2007). \dQuote{Randomization-based Inference and
+#' Efficiency Analysis in Experiments under the Matched-Pair Design}, Technical
+#' Report. Department of Politics, Princeton University.
+#' @keywords design
 ATEnocov <- function(Y, Z, data = parent.frame(), match = NULL){
 
   ## an internal function that checks match and returns diff
