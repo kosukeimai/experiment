@@ -77,6 +77,7 @@
 #' Study}, \emph{Technical Report}. Department of Politics, Princeton
 #' University.
 #' @keywords design
+#' @export ATEbounds
 ATEbounds <- function(formula, data = parent.frame(), maxY = NULL,
                       minY = NULL, alpha = 0.05, n.reps = 0,
                       strata = NULL, ratio = NULL, survey = NULL, ...) {

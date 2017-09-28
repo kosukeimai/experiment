@@ -58,6 +58,7 @@
 #' @author Kosuke Imai, Department of Politics, Princeton University
 #' \email{kimai@@Princeton.Edu}, \url{http://imai.princeton.edu};
 #' @keywords design
+#' @export randomize
 randomize <- function(data, group = c("Treat", "Control"), ratio =
                       NULL, indx = NULL, block = NULL, n.block = NULL,
                       match = NULL, complete = TRUE){  

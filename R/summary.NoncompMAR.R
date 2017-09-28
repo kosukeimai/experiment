@@ -1,3 +1,4 @@
+#' @export
 summary.NoncompMAR <- function(object, CI=c(2.5, 97.5),...){
 
   qoi <- cbind(object$itt, object$cace, object$pc, object$base)

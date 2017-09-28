@@ -1,9 +1,6 @@
 ###
 ### Calculate the ATE without covariates
 ###
-
-
-
 #' Estimation of the Average Treatment Effect in Randomized Experiments
 #' 
 #' This function computes the standard ``difference-in-means'' estimate of the
@@ -11,7 +8,12 @@
 #' pre-treatment covariates. The treatment variable is assumed to be binary.
 #' Currently, the two designs are allowed: complete randomized design and
 #' matched-pair design.
-#' 
+#'
+#' @useDynLib experiment 
+#' @importFrom stats coef complete.cases cov fitted ftable lm mahalanobis model.frame model.matrix model.response na.fail na.omit printCoefmat qnorm quantile rbinom rnorm runif sd terms var vcov weighted.mean
+#' @importFrom utils packageDescription
+#' @importFrom MASS mvrnorm
+#' @importFrom boot boot
 #' 
 #' @param Y The outcome variable of interest.
 #' @param Z The (randomized) treatment variable. This variable should be
@@ -32,6 +34,7 @@
 #' Efficiency Analysis in Experiments under the Matched-Pair Design}, Technical
 #' Report. Department of Politics, Princeton University.
 #' @keywords design
+#' @export ATEnocov
 ATEnocov <- function(Y, Z, data = parent.frame(), match = NULL){
 
   ## an internal function that checks match and returns diff

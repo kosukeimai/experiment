@@ -73,6 +73,7 @@
 #' Mexican Universal Health Insurance Evaluation}, Technical Report. Department
 #' of Politics, Princeton University.
 #' @keywords design
+#' @export ATEcluster
 ATEcluster <- function(Y, Z, grp, data = parent.frame(),
                        match = NULL, weights = NULL, fpc = TRUE) {
 

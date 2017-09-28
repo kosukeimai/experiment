@@ -1,3 +1,4 @@
+#' @export
 print.summary.NoncompMAR <- function(x, digits = max(3, getOption("digits")
                                           - 3), param = TRUE, ...) { 
 

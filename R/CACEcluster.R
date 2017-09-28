@@ -50,6 +50,7 @@
 #' Application to the Mexican Universal Health Insurance Evaluation}, Technical
 #' Report. Department of Politics, Princeton University.
 #' @keywords design
+#' @export CACEcluster
 CACEcluster <- function(Y, D, Z, grp, data = parent.frame(),
                         match = NULL, weights = NULL, ...) {
 
