@@ -2612,7 +2612,7 @@ void LINegBinMixed(int *Y,         /* count outcome variable */
 	    pN[i] = dnegbin(Y[i], exp(meano[i]), *sig2, 0);
 	  } 
       }
-      vitemp[grp[i]++];
+      // vitemp[grp[i]++];
     }
  
     /** storing the results **/
