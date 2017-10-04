@@ -67,7 +67,7 @@ void NIbprobit(int *Y,         /* binary outcome variable */
   int progress = 1;
   int keep = 1;
   int i, j, k, main_loop;  
-  int itemp, itemp0, itemp1, itemp2, itemp3, itempP = ftrunc((double) n_gen/10);
+  int itemp, itemp0, itemp1, itemp2, itempP = ftrunc((double) n_gen/10);
   double dtemp, pj, r0, r1;
 
   /*** get random seed **/
@@ -304,7 +304,7 @@ void NIbprobitMixed(int *Y,         /* binary outcome variable */
   int progress = 1;
   int keep = 1;
   int i, j, k, main_loop;  
-  int itemp, itemp0, itemp1, itemp2, itemp3, itempP = ftrunc((double) n_gen/10);
+  int itemp, itemp0, itemp1, itemp2, itemp3 = 0, itempP = ftrunc((double) n_gen/10);
   int *vitemp = intArray(n_grp);
   double dtemp, pj, r0, r1;
 

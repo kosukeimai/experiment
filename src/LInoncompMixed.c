@@ -834,7 +834,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
   int i, j, main_loop;
   int itempP = ftrunc((double) *n_gen/10);
   int itemp, itempA, itempC, itempO, itempQ, itempR;
-  int itempAv, itempCv, itempOv, itempRv, itempPO, itempPC, itempPA, itempPR;
+  int itempPO, itempPC, itempPA, itempPR;
 
   /*** get random seed **/
   GetRNGstate();
@@ -855,7 +855,7 @@ void LIbprobitMixed(int *Y,         /* binary outcome variable */
 
   /*** Gibbs Sampler! ***/
   itempA = 0; itempC = 0; itempO = 0; itempQ = 0; itempR = 0;   
-  itempAv = 0; itempCv = 0; itempOv = 0; itempRv = 0;   
+  // itempAv = 0; itempCv = 0; itempOv = 0; itempRv = 0;   
   itempPO = 0; itempPA = 0; itempPC = 0; itempPR = 0;
   for (j = 0; j < n_fixedC*2; j++)
     acc_fixed[j] = 0;
@@ -1363,7 +1363,7 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
   int i, j, main_loop;
   int itempP = ftrunc((double) *n_gen/10);
   int itemp, itempA, itempC, itempO, itempQ, itempR;
-  int itempAv, itempCv, itempOv, itempRv, itempS;
+  int itempS;
   double dtemp, dtemp1;
 
   /*** get random seed **/
@@ -1387,7 +1387,7 @@ void LINormalMixed(double *Y,      /* Gaussian outcome variable */
 
   /*** Gibbs Sampler! ***/
   itempA = 0; itempC = 0; itempO = 0; itempQ = 0; itempR = 0;   
-  itempAv = 0; itempCv = 0; itempOv = 0; itempRv = 0; itempS = 0;   
+  itempS = 0;   
   for (j = 0; j < n_fixedC*2; j++)
     acc_fixed[j] = 0;
   acc_random[0] = 0; acc_random[1] = 0;
@@ -1877,7 +1877,7 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
   int i, j, k, main_loop;
   int itempP = ftrunc((double) *n_gen/10);
   int itemp, itempA, itempC, itempO, itempQ, itempR, itempT;
-  int itempAv, itempCv, itempOv, itempRv;
+  // int itempAv, itempCv, itempOv, itempRv;
   double dtemp, dtemp1;
 
   /*** get random seed **/
@@ -1899,7 +1899,7 @@ void LIboprobitMixed(int *Y,         /* binary outcome variable */
 
   /*** Gibbs Sampler! ***/
   itempA = 0; itempC = 0; itempO = 0; itempQ = 0; itempR = 0; itempT = 0;   
-  itempAv = 0; itempCv = 0; itempOv = 0; itempRv = 0;   
+  // itempAv = 0; itempCv = 0; itempOv = 0; itempRv = 0;   
   for (j = 0; j < n_fixedC*2; j++)
     acc_fixed[j] = 0;
   acc_random[0] = 0; acc_random[1] = 0; acc_tau[0] = 0;
@@ -2508,7 +2508,7 @@ void LINegBinMixed(int *Y,         /* count outcome variable */
   int i, j, main_loop;
   int itempP = ftrunc((double) *n_gen/10);
   int itemp, itempA, itempC, itempO, itempQ, itempR;
-  int itempAv, itempCv, itempOv, itempRv, itempS;
+  int itempS;
   double dtemp, dtemp1;
 
   /*** get random seed **/
@@ -2534,7 +2534,7 @@ void LINegBinMixed(int *Y,         /* count outcome variable */
 
   /*** Gibbs Sampler! ***/
   itempA = 0; itempC = 0; itempO = 0; itempQ = 0; itempR = 0;   
-  itempAv = 0; itempCv = 0; itempOv = 0; itempRv = 0; itempS = 0;   
+  itempS = 0;   
   for (j = 0; j < n_fixedC*2; j++)
     acc_fixed[j] = 0;
   acc_random[0] = 0; acc_random[1] = 0; 
@@ -2612,7 +2612,7 @@ void LINegBinMixed(int *Y,         /* count outcome variable */
 	    pN[i] = dnegbin(Y[i], exp(meano[i]), *sig2, 0);
 	  } 
       }
-      vitemp[grp[i]++];
+      // vitemp[grp[i]++];
     }
  
     /** storing the results **/
@@ -3057,7 +3057,7 @@ void LItwopartMixed(int *Y,         /* indicator for Y > 0 */
   int i, j, main_loop;
   int itempP = ftrunc((double) *n_gen/10);
   int itemp, itempA, itempC, itempO, itempO1, itempQ, itempR;
-  int itempAv, itempCv, itempOv, itempRv, itempS;
+  int itempS;
   double dtemp, dtemp1;
   double **mtemp = doubleMatrix(n_fixedO, n_fixedO);
   int *vitemp1 = intArray(n_grp);
@@ -3116,7 +3116,7 @@ void LItwopartMixed(int *Y,         /* indicator for Y > 0 */
 
   /*** Gibbs Sampler! ***/
   itempA = 0; itempC = 0; itempO = 0; itempO1 = 0; itempQ = 0; itempR = 0;   
-  itempAv = 0; itempCv = 0; itempOv = 0; itempRv = 0; itempS = 0;   
+  itempS = 0;   
   for (j = 0; j < n_fixedC*2; j++)
     acc_fixed[j] = 0;
   acc_random[0] = 0; acc_random[1] = 0;

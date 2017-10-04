@@ -74,7 +74,7 @@ void MARprobit(int *Y, /* binary outcome variable */
   /*** storage parameters and loop counters **/
   int progress = 1;
   int keep = 1;
-  int i, j, k, l, main_loop;  
+  int i, j, k, main_loop;  
   int itemp, itempP = ftrunc((double) n_gen/10);
   double dtemp, ndraw, cdraw;
   double *vtemp;

@@ -1,3 +1,4 @@
+#' @export
 print.randomize <- function(x, digits = getOption("digits"), ...) {
 
   cat("\nCall:\n", deparse(x$call), "\n\n", sep = "")

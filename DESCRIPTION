@@ -1,6 +1,6 @@
 Package: experiment
-Version: 1.1-1
-Date: 2013-03-28
+Version: 1.1-2
+Date: 2017-08-28
 Title: experiment: R package for designing and analyzing randomized experiments
 Author: Kosuke Imai <kimai@princeton.edu>
 Maintainer: Kosuke Imai <kimai@princeton.edu>
@@ -15,3 +15,4 @@ Description: The package provides various statistical methods for
   with missing data.
 License: GPL (>=2)
 URL: http://imai.princeton.edu/software/experiment.html
+RoxygenNote: 6.0.1
