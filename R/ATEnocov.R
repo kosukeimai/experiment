@@ -10,7 +10,7 @@
 #' matched-pair design.
 #'
 #' @useDynLib experiment 
-#' @importFrom stats coef complete.cases cov fitted ftable lm mahalanobis model.frame model.matrix model.response na.fail na.omit printCoefmat qnorm quantile rbinom rnorm runif sd terms var vcov weighted.mean
+#' @importFrom stats coef complete.cases cov fitted ftable lm mahalanobis model.frame model.matrix model.response na.fail na.omit printCoefmat qnorm quantile rbinom rnorm runif pnorm uniroot sd terms var vcov weighted.mean
 #' @importFrom utils packageDescription
 #' @importFrom MASS mvrnorm
 #' @importFrom boot boot
