@@ -2,7 +2,10 @@ Package: experiment
 Version: 1.1-2
 Date: 2017-08-28
 Title: experiment: R package for designing and analyzing randomized experiments
-Author: Kosuke Imai <kimai@princeton.edu>
+Authors@R: c(
+  person("Kosuke", "Imai", , "kimai@princeton.edu", c("aut", "cre")),
+  person("Zhichao", "Jiang", , "zhichaoj@princeton.edu", c("ctb"))
+  )
 Maintainer: Kosuke Imai <kimai@princeton.edu>
 Depends: boot, MASS, R (>= 2.4.0)
 Description: The package provides various statistical methods for
