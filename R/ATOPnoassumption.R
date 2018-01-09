@@ -52,7 +52,7 @@ ATOPnoassumption = function(Ya,Yb,Ra,Rb,Ta,Tb,l,u,alpha,rep){
   omega0 <- mean(c(Ya[Ta==0&Ra==1&Rb==1],Yb[Tb==0&Rb==1&Ra==1])) 
   
   pi <- mean(Ra==1&Rb==1)
-  
+  N=length(Ya)
   
   #####  
   
