@@ -18,7 +18,7 @@ seguro
 }
 \description{
 This data set contains the outcome, missing indicator and the treatment for the application 
-in  Imai and Jiang (2018)
+in  Kosuke Imai and Zhichao Jiang (2018).
 }
 \examples{
 data(seguro)

@@ -38,7 +38,7 @@
 #'\item{UB.CI}{ The upper limit of the confidence interval for the ATOP.    } 
 #' @author Kosuke Imai, Department of Politics, Princeton University
 #' \email{kimai@@Princeton.Edu}, \url{http://imai.princeton.edu};
-#' @references Kosuke Imai and Zhichao Jiang. (2007).
+#' @references Kosuke Imai and Zhichao Jiang (2018).
 #' \dQuote{A Sensitivity Analysis for Missing Outcomes Due to 
 #' Truncation-by-Death under the Matched-Pairs Design}, \emph{Technical Report}. Department of Politics, Princeton
 #' University.

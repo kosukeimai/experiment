@@ -53,7 +53,7 @@ attach(seguro)
 ATOPnoassumption(Ya,Yb,Ra,Rb,Ta,Tb,l=0,u=1,alpha=0.05,rep=1000)
 }
 \references{
-Kosuke Imai and Zhichao Jiang. (2007).
+Kosuke Imai and Zhichao Jiang (2018).
 \dQuote{A Sensitivity Analysis for Missing Outcomes Due to 
 Truncation-by-Death under the Matched-Pairs Design}, \emph{Technical Report}. Department of Politics, Princeton
 University.
