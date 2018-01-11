@@ -43,6 +43,10 @@
 #' Truncation-by-Death under the Matched-Pairs Design}, \emph{Technical Report}. Department of Politics, Princeton
 #' University.
 #' @keywords matched-pairs design
+#' @examples 
+#' data(seguro)
+#' attach(seguro)
+#' ATOPobs(Ya,Yb,Ra,Rb,Ta,Tb,gamma=0.95,kappa1=1,kappa0=1,l=0,u=1,alpha=0.05,rep=1000)
 #' @export ATOPsens
 
 
@@ -59,8 +63,8 @@ ATOPsens <- function(Ya,Yb,Ra,Rb,Ta,Tb,gamma,l,u,alpha,rep){
   alpha0 <- (sum(Ta==0&Ra==1)+sum(Tb==0&Rb==1))/(sum(Ta==0)+sum(Tb==0))
   
   pi <- mean(Ra==1&Rb==1)
-  N=length(Ya)
-  
+  N<-length(Ya)
+
   Delta1 <- max(2*pi-1+gamma*(1-alpha1),2*pi-1+gamma*(1-alpha0),pi-(1-gamma)*(alpha1+alpha0), 2*pi-(2-gamma)*alpha1,  2*pi-(2-gamma)*alpha0,pi-(1-gamma)*(2-alpha1-alpha0),pi-(1-gamma)*(1-abs(alpha1-alpha0)))/pi
   
   ind <- which.max(c(2*pi-1+gamma*(1-alpha1),2*pi-1+gamma*(1-alpha0),pi-(1-gamma)*(alpha1+alpha0),2*pi-(2-gamma)*alpha1,  2*pi-(2-gamma)*alpha0,pi-(1-gamma)*(2-alpha1-alpha0),pi-(1-gamma)*(1-abs(alpha1-alpha0)) ))
