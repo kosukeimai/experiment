@@ -55,6 +55,11 @@ ATOP are also computed.
 For the details of the method implemented by this function, see the
 references.
 }
+\examples{
+data(seguro)
+attach(seguro)
+ATOPsens(Ya,Yb,Ra,Rb,Ta,Tb,gamma=0.95,l=0,u=1,alpha=0.05,rep=1000)
+}
 \references{
 Kosuke Imai and Zhichao Jiang. (2007).
 \dQuote{A Sensitivity Analysis for Missing Outcomes Due to 

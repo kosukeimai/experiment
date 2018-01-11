@@ -40,6 +40,10 @@
 #' Truncation-by-Death under the Matched-Pairs Design}, \emph{Technical Report}. Department of Politics, Princeton
 #' University.
 #' @keywords matched-pairs design
+#' @examples 
+#' data(seguro)
+#' attach(seguro)
+#' ATOPnoassumption(Ya,Yb,Ra,Rb,Ta,Tb,l=0,u=1,alpha=0.05,rep=1000)
 #' @export ATOPnoassumption
 
 ATOPnoassumption = function(Ya,Yb,Ra,Rb,Ta,Tb,l,u,alpha,rep){

@@ -18,8 +18,4 @@
 #' @name seguro
 #' @examples
 #' data(seguro)
-#' attach(seguro)
-#' ATOPnoassumption(Ya,Yb,Ra,Rb,Ta,Tb,l=0,u=1,alpha=0.05,rep=1000)
-#' ATOPsens(Ya,Yb,Ra,Rb,Ta,Tb,gamma=0.95,l=0,u=1,alpha=0.05,rep=1000)
-#' ATOPobs(Ya,Yb,Ra,Rb,Ta,Tb,gamma=0.95,kappa1=1,kappa0=1,l=0,u=1,alpha=0.05,rep=1000)
 "seguro"
