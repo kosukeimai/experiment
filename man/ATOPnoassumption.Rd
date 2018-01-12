@@ -60,7 +60,9 @@ University.
 }
 \author{
 Kosuke Imai, Department of Politics, Princeton University
-\email{kimai@Princeton.Edu}, \url{http://imai.princeton.edu};
+\email{kimai@Princeton.Edu}, \url{http://imai.princeton.edu}; 
+Zhichao Jiang, Department of Politics, Princeton University
+\email{zhichaoj@princeton.edu}.
 }
 \keyword{design}
 \keyword{matched-pairs}
