@@ -50,7 +50,7 @@ references.
 \examples{
 data(seguro)
 attach(seguro)
-ATOPnoassumption(Ya,Yb,Ra,Rb,Ta,Tb,l=0,u=1,alpha=0.05,rep=1000)
+ATOPnoassumption(Ya,Yb,Ra,Rb,Ta,Tb,l=0,u=1,alpha=0.05,rep=200)
 }
 \references{
 Kosuke Imai and Zhichao Jiang (2018).
