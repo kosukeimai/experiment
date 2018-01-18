@@ -45,7 +45,7 @@
 #' @examples 
 #' data(seguro)
 #' attach(seguro)
-#' ATOPnoassumption(Ya,Yb,Ra,Rb,Ta,Tb,l=0,u=1,alpha=0.05,rep=200)
+#' ATOPnoassumption(Ya,Yb,Ra,Rb,Ta,Tb,l=0,u=1,alpha=0.05,rep=100)
 #' @export ATOPnoassumption
 
 ATOPnoassumption = function(Ya,Yb,Ra,Rb,Ta,Tb,l,u,alpha,rep){

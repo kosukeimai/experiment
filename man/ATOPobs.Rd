@@ -58,7 +58,7 @@ references.
 \examples{
 data(seguro)
 attach(seguro)
-ATOPsens(Ya,Yb,Ra,Rb,Ta,Tb,gamma=0.95,l=0,u=1,alpha=0.05,rep=200)
+ATOPsens(Ya,Yb,Ra,Rb,Ta,Tb,gamma=0.95,l=0,u=1,alpha=0.05,rep=100)
 }
 \references{
 Kosuke Imai and Zhichao Jiang (2018).
