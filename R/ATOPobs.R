@@ -50,7 +50,7 @@
 #' @examples 
 #' data(seguro)
 #' attach(seguro)
-#' ATOPsens(Ya,Yb,Ra,Rb,Ta,Tb,gamma=0.95,l=0,u=1,alpha=0.05,rep=1000)
+#' ATOPsens(Ya,Yb,Ra,Rb,Ta,Tb,gamma=0.95,l=0,u=1,alpha=0.05,rep=100)
 #' @export ATOPobs
 
 ATOPobs <- function(Ya,Yb,Ra,Rb,Ta,Tb,gamma,kappa1,kappa0,l,u,alpha,rep){
