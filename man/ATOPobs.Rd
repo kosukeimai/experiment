@@ -55,8 +55,13 @@ ATOP are also computed.
 For the details of the method implemented by this function, see the
 references.
 }
+\examples{
+data(seguro)
+attach(seguro)
+ATOPsens(Ya,Yb,Ra,Rb,Ta,Tb,gamma=0.95,l=0,u=1,alpha=0.05,rep=100)
+}
 \references{
-Kosuke Imai and Zhichao Jiang. (2007).
+Kosuke Imai and Zhichao Jiang (2018).
 \dQuote{A Sensitivity Analysis for Missing Outcomes Due to 
 Truncation-by-Death under the Matched-Pairs Design}, \emph{Technical Report}. Department of Politics, Princeton
 University.
@@ -64,6 +69,8 @@ University.
 \author{
 Kosuke Imai, Department of Politics, Princeton University
 \email{kimai@Princeton.Edu}, \url{http://imai.princeton.edu};
+Zhichao Jiang, Department of Politics, Princeton University
+\email{zhichaoj@princeton.edu}.
 }
 \keyword{design}
 \keyword{matched-pairs}

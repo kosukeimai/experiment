@@ -1,14 +1,14 @@
 Package: experiment
-Version: 1.1-2
-Date: 2017-08-28
-Title: experiment: R package for designing and analyzing randomized experiments
+Version: 1.1-3
+Date: 2018-04-13
+Title: R Package for Designing and Analyzing Randomized Experiments
 Authors@R: c(
   person("Kosuke", "Imai", , "kimai@princeton.edu", c("aut", "cre")),
-  person("Zhichao", "Jiang", , "zhichaoj@princeton.edu", c("ctb"))
+  person("Zhichao", "Jiang", , "zhichaoj@princeton.edu", c("aut"))
   )
 Maintainer: Kosuke Imai <kimai@princeton.edu>
 Depends: boot, MASS, R (>= 2.4.0)
-Description: The package provides various statistical methods for
+Description: Provides various statistical methods for
   designing and analyzing randomized experiments. One main functionality
   of the package is the implementation of randomized-block and
   matched-pair designs based on possibly multivariate pre-treatment

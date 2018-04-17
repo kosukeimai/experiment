@@ -40,11 +40,17 @@
 #'\item{UB.CI}{ The upper limit of the confidence interval for the ATOP.    } 
 #' @author Kosuke Imai, Department of Politics, Princeton University
 #' \email{kimai@@Princeton.Edu}, \url{http://imai.princeton.edu};
-#' @references Kosuke Imai and Zhichao Jiang. (2007).
+#' Zhichao Jiang, Department of Politics, Princeton University
+#' \email{zhichaoj@@princeton.edu}.
+#' @references Kosuke Imai and Zhichao Jiang (2018).
 #' \dQuote{A Sensitivity Analysis for Missing Outcomes Due to 
 #' Truncation-by-Death under the Matched-Pairs Design}, \emph{Technical Report}. Department of Politics, Princeton
 #' University.
 #' @keywords matched-pairs design
+#' @examples 
+#' data(seguro)
+#' attach(seguro)
+#' ATOPsens(Ya,Yb,Ra,Rb,Ta,Tb,gamma=0.95,l=0,u=1,alpha=0.05,rep=100)
 #' @export ATOPobs
 
 ATOPobs <- function(Ya,Yb,Ra,Rb,Ta,Tb,gamma,kappa1,kappa0,l,u,alpha,rep){
@@ -59,8 +65,8 @@ ATOPobs <- function(Ya,Yb,Ra,Rb,Ta,Tb,gamma,kappa1,kappa0,l,u,alpha,rep){
   alpha0 <- (sum(Ta==0&Ra==1)+sum(Tb==0&Rb==1))/(sum(Ta==0)+sum(Tb==0))*(1+kappa0)/2
   
   pi <- mean(Ra==1&Rb==1)
-  N=length(Ya)
-  
+  N <- length(Ya)
+
   Delta1 <- max(2*pi-2+2*gamma*(1-alpha1),2*pi-2+2*gamma*(1-alpha0),pi-2*(1-gamma)*(alpha1+alpha0), 2*pi-2*(2-gamma)*alpha1,  2*pi-2*(2-gamma)*alpha0,pi-2*(1-gamma)*(2-alpha1-alpha0),pi-2*(1-gamma)*(1-abs(alpha1-alpha0)))/pi
   
   ind <- which.max(c(2*pi-2+2*gamma*(1-alpha1),2*pi-2+2*gamma*(1-alpha0),pi-2*(1-gamma)*(alpha1+alpha0),2*pi-2*(2-gamma)*alpha1,  2*pi-2*(2-gamma)*alpha0,pi-2*(1-gamma)*(2-alpha1-alpha0),pi-2*(1-gamma)*(1-abs(alpha1-alpha0)) ))
