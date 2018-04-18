@@ -52,7 +52,8 @@ void MARprobit(int *Y, /* binary outcome variable */
   double pnmean;
   double **SS;    /* matrix folders for SWEEP */
   double **SSo; 
-  double **SSr;
+  // HJ commented it out on April 17, 2018
+  // double **SSr;
   double *meanb;  /* means for beta and gamma */
   double *meano;
   double *meanr;
@@ -98,7 +99,8 @@ void MARprobit(int *Y, /* binary outcome variable */
   taumin = doubleArray(Ymax);
   SS = doubleMatrix(n_cov+1, n_cov+1);
   SSo = doubleMatrix(n_covo+1, n_covo+1);
-  SSr = doubleMatrix(4, 4);
+  // HJ commented it out on April 17, 2018
+  // SSr = doubleMatrix(4, 4);
   V = doubleMatrix(n_cov, n_cov);
   Vo = doubleMatrix(n_covo, n_covo);
   Vr = doubleMatrix(3, 3);
