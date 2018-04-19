@@ -1,6 +1,6 @@
 Package: experiment
 Version: 1.1-3
-Date: 2018-04-13
+Date: 2018-04-19
 Title: R Package for Designing and Analyzing Randomized Experiments
 Authors@R: c(
   person("Kosuke", "Imai", , "kimai@princeton.edu", c("aut", "cre")),
