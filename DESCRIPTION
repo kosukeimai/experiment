@@ -14,8 +14,8 @@ Description: Provides various statistical methods for
   matched-pair designs based on possibly multivariate pre-treatment
   covariates. The package also provides the tools to analyze various
   randomized experiments including cluster randomized experiments,
-  randomized experiments with noncompliance, and randomized experiments
-  with missing data.
+  two-stage randomized experiments, randomized experiments with 
+  noncompliance, and randomized experiments with missing data.
 License: GPL (>=2)
 URL: http://imai.princeton.edu/software/experiment.html
 RoxygenNote: 6.0.1
