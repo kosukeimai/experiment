@@ -4,10 +4,12 @@
 \alias{CADErand}
 \title{Randomization-based method for the complier average direct effect and the complier average spillover effect}
 \usage{
-CADErand(data)
+CADErand(data, individual = 1)
 }
 \arguments{
 \item{data}{A data frame containing the relevant variables. The names for the variables should be: ``Z'' for the treatment assignment,  ``D''  for the actual received treatment, ``Y'' for the outcome, ``A'' for the treatment assignment mechanism and ``id'' for the cluster ID. The variable for the cluster id should be a factor.}
+
+\item{individual}{A binary variable with 1 for  individual-weighted estimators and 0 for cluster-weighted estimators.}
 }
 \value{
 A list of class \code{CADErand} which contains the following items:
@@ -16,14 +18,23 @@ A list of class \code{CADErand} which contains the following items:
 \item{var.CADE1}{ The  variance estimate of CADE(1).   } 
 \item{var.CADE0}{ The  variance estimate of CADE(0).   } 
 \item{var.CASE1}{ The  variance estimate of CASE(1).   } 
-\item{var.CASE0}{ The  variance estimate of CASE(0).   }
+\item{var.CASE0}{ The  variance estimate of CASE(0).   } 
+\item{DEY1}{ The point estimate of DEY(1).  } \item{DEY0}{ The point estimate of DEY(0).  } 
+\item{DED1}{ The point estimate of DED(1).  } \item{DED0}{ The point estimate of DED(0).  } 
+\item{var.DEY1}{ The  variance estimate of DEY(1).   } 
+\item{var.DEY0}{ The  variance estimate of DEY(0).   } 
+\item{var.DED1}{ The  variance estimate of DED(1).   } 
+\item{var.DED0}{ The  variance estimate of DED(0).   } 
+\item{SEY1}{ The point estimate of SEY(1).  } \item{SEY0}{ The point estimate of SEY(0).  } 
+\item{SED1}{ The point estimate of SED(1).  } \item{SED0}{ The point estimate of SED(0).  } 
+\item{var.SEY1}{ The  variance estimate of SEY(1).   } 
+\item{var.SEY0}{ The  variance estimate of SEY(0).   } 
+\item{var.SED1}{ The  variance estimate of SED(1).   } 
+\item{var.SED0}{ The  variance estimate of SED(0).   }
 }
 \description{
 This function computes the point estimates and variance estimates of the complier average direct effect (CADE)  and the complier average spillover effect (CASE).
-The estimators calculated using this function are cluster-weighted, i.e., the weights are equal for each cluster. To obtain the indivudal-weighted
- estimators, please multiply the recieved treatment and the outcome by \code{n_jJ/N}, where
- \code{n_j} is the number of individuals in cluster \code{j}, \code{J} is the number of clusters and 
- \code{N} is the total number of individuals.
+The estimators calculated using this function are either individual weighted or cluster-weighted. The point estimates and variances of ITT effects are also included.
 }
 \details{
 For the details of the method implemented by this function, see the
