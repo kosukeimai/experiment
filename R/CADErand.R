@@ -9,16 +9,14 @@
 #'
 #' 
 #' This function computes the point estimates and variance estimates of the complier average direct effect (CADE)  and the complier average spillover effect (CASE).
-#' The estimators calculated using this function are cluster-weighted, i.e., the weights are equal for each cluster. To obtain the indivudal-weighted
-#'  estimators, please multiply the recieved treatment and the outcome by \code{n_jJ/N}, where
-#'  \code{n_j} is the number of individuals in cluster \code{j}, \code{J} is the number of clusters and 
-#'  \code{N} is the total number of individuals. 
+#' The estimators calculated using this function are either individual weighted or cluster-weighted. The point estimates and variances of ITT effects are also included. 
 #'
 #' 
 #' For the details of the method implemented by this function, see the
 #' references.
 #' 
 #' @param data  A data frame containing the relevant variables. The names for the variables should be: ``Z'' for the treatment assignment,  ``D''  for the actual received treatment, ``Y'' for the outcome, ``A'' for the treatment assignment mechanism and ``id'' for the cluster ID. The variable for the cluster id should be a factor.
+#' @param individual  A binary variable with TRUE for  individual-weighted estimators and FALSE for cluster-weighted estimators.
 #' @return A list of class \code{CADErand} which contains the following items:
 #' \item{CADE1}{ The point estimate of CADE(1).  } \item{CADE0}{ The point estimate of CADE(0).  } 
 #'\item{CADE1}{ The point estimate of CASE(1).  } \item{CASE0}{ The point estimate of CASE(0).  } 
@@ -26,8 +24,20 @@
 #'\item{var.CADE0}{ The  variance estimate of CADE(0).   } 
 #'\item{var.CASE1}{ The  variance estimate of CASE(1).   } 
 #'\item{var.CASE0}{ The  variance estimate of CASE(0).   } 
+#'\item{DEY1}{ The point estimate of DEY(1).  } \item{DEY0}{ The point estimate of DEY(0).  } 
+#'\item{DED1}{ The point estimate of DED(1).  } \item{DED0}{ The point estimate of DED(0).  } 
+#'\item{var.DEY1}{ The  variance estimate of DEY(1).   } 
+#'\item{var.DEY0}{ The  variance estimate of DEY(0).   } 
+#'\item{var.DED1}{ The  variance estimate of DED(1).   } 
+#'\item{var.DED0}{ The  variance estimate of DED(0).   } 
+#'\item{SEY1}{ The point estimate of SEY(1).  } \item{SEY0}{ The point estimate of SEY(0).  } 
+#'\item{SED1}{ The point estimate of SED(1).  } \item{SED0}{ The point estimate of SED(0).  } 
+#'\item{var.SEY1}{ The  variance estimate of SEY(1).   } 
+#'\item{var.SEY0}{ The  variance estimate of SEY(0).   } 
+#'\item{var.SED1}{ The  variance estimate of SED(1).   } 
+#'\item{var.SED0}{ The  variance estimate of SED(0).   } 
 #' @author Kosuke Imai, Department of Politics, Princeton University
-#' \email{kimai@@Princeton.Edu}, \url{http://imai.princeton.edu};
+#' \email{kimai@Princeton.Edu}, \url{https://imai.princeton.edu};
 #' Zhichao Jiang, Department of Politics, Princeton University
 #' \email{zhichaoj@@princeton.edu}.
 #' @references Kosuke Imai, Zhichao Jiang and Anup Malani (2018).
@@ -37,7 +47,7 @@
 #' @export CADErand
 
 
-CADErand=function(data){
+CADErand=function(data,individual=1){
 	## transform the data into list 	
   if(!is.factor(data$id)){stop('The cluster_id should be a factor variable.')}
   cluster.id=unique(data$id)	
@@ -59,8 +69,14 @@ CADErand=function(data){
 	
 	
   n=sapply(Z,length)
+  N=sum(n)
   J=length(n)
-  
+  if (individual==1){
+    for ( i in 1:n.cluster){
+      Y[[i]]=Y[[i]]*n[i]*J/N
+      D[[i]]=D[[i]]*n[i]*J/N
+    }
+  }
   est.Dj00=rep(0,J)
   est.Dj00= sapply(Difflist(D,Productlist(D,Z)),sum)/(n-sapply(Z,sum))*(1-A)
   est.Dj01=rep(0,J)
@@ -173,5 +189,10 @@ CADErand=function(data){
   est.varCADE0=   (var.DEY0-2*est.CADE0*est.zeta0+est.CADE0^2*var.DED0)/est.DED0^2
   est.varCASE1=   (var.SEY1-2*est.CASE1*est.zetab1+est.CASE1^2*var.SED1)/est.SED1^2
   est.varCASE0=   (var.SEY0-2*est.CASE0*est.zetab0+est.CASE0^2*var.SED0)/est.SED0^2
-  return(list(CADE1=est.CADE1,CADE0=est.CADE0,CASE1=est.CASE1,CASE0=est.CASE0, var.CADE1=est.varCADE1,var.CADE0=est.varCADE0,var.CASE1=est.varCASE1,var.CASE0=est.varCASE0))
+  return(list(CADE1=est.CADE1,CADE0=est.CADE0,CASE1=est.CASE1,CASE0=est.CASE0, var.CADE1=est.varCADE1,var.CADE0=est.varCADE0,var.CASE1=est.varCASE1,var.CASE0=est.varCASE0,
+  DEY1=est.DEY1,DEY0=est.DEY0,DED1=est.DED1,DED0=est.DED0,
+  var.DEY1=var.DEY1,var.DEY0=var.DEY0,var.DED1=var.DED1,var.DED0=var.DED0,
+  SEY1=est.SEY1,SEY0=est.SEY0,SED1=est.SED1,SED0=est.SED0,
+  var.SEY1=var.SEY1,var.SEY0=var.SEY0,var.SED1=var.SED1,var.SED0=var.SED0
+  ))
 }
