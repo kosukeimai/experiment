@@ -16,7 +16,7 @@
 #' references.
 #' 
 #' @param data  A data frame containing the relevant variables. The names for the variables should be: ``Z'' for the treatment assignment,  ``D''  for the actual received treatment, ``Y'' for the outcome, ``A'' for the treatment assignment mechanism and ``id'' for the cluster ID. The variable for the cluster id should be a factor.
-#' @param individual  A binary variable with 1 for  individual-weighted estimators and 0 for cluster-weighted estimators.
+#' @param individual  A binary variable with TRUE for  individual-weighted estimators and FALSE for cluster-weighted estimators.
 #' @return A list of class \code{CADErand} which contains the following items:
 #' \item{CADE1}{ The point estimate of CADE(1).  } \item{CADE0}{ The point estimate of CADE(0).  } 
 #'\item{CADE1}{ The point estimate of CASE(1).  } \item{CASE0}{ The point estimate of CASE(0).  } 
@@ -37,7 +37,7 @@
 #'\item{var.SED1}{ The  variance estimate of SED(1).   } 
 #'\item{var.SED0}{ The  variance estimate of SED(0).   } 
 #' @author Kosuke Imai, Department of Politics, Princeton University
-#' \email{kimai@@Princeton.Edu}, \url{http://imai.princeton.edu};
+#' \email{kimai@Princeton.Edu}, \url{https://imai.princeton.edu};
 #' Zhichao Jiang, Department of Politics, Princeton University
 #' \email{zhichaoj@@princeton.edu}.
 #' @references Kosuke Imai, Zhichao Jiang and Anup Malani (2018).
