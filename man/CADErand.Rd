@@ -9,7 +9,7 @@ CADErand(data, individual = 1)
 \arguments{
 \item{data}{A data frame containing the relevant variables. The names for the variables should be: ``Z'' for the treatment assignment,  ``D''  for the actual received treatment, ``Y'' for the outcome, ``A'' for the treatment assignment mechanism and ``id'' for the cluster ID. The variable for the cluster id should be a factor.}
 
-\item{individual}{A binary variable with 1 for  individual-weighted estimators and 0 for cluster-weighted estimators.}
+\item{individual}{A binary variable with TRUE for  individual-weighted estimators and FALSE for cluster-weighted estimators.}
 }
 \value{
 A list of class \code{CADErand} which contains the following items:
@@ -47,7 +47,7 @@ University.
 }
 \author{
 Kosuke Imai, Department of Politics, Princeton University
-\email{kimai@Princeton.Edu}, \url{http://imai.princeton.edu};
+\email{kimai@Princeton.Edu}, \url{https://imai.princeton.edu};
 Zhichao Jiang, Department of Politics, Princeton University
 \email{zhichaoj@princeton.edu}.
 }
