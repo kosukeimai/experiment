@@ -1,6 +1,6 @@
 Package: experiment
-Version: 1.1-3
-Date: 2018-04-19
+Version: 1.1-4
+Date: 2018-04-30
 Title: R Package for Designing and Analyzing Randomized Experiments
 Authors@R: c(
   person("Kosuke", "Imai", , "kimai@princeton.edu", c("aut", "cre")),
@@ -9,7 +9,7 @@ Authors@R: c(
 Maintainer: Kosuke Imai <kimai@princeton.edu>
 Depends: boot, MASS, R (>= 2.4.0)
 Description: Provides various statistical methods for
-  designing and analyzing randomized experiments. One main functionality
+  designing and analyzing randomized experiments. One functionality
   of the package is the implementation of randomized-block and
   matched-pair designs based on possibly multivariate pre-treatment
   covariates. The package also provides the tools to analyze various
@@ -17,5 +17,6 @@ Description: Provides various statistical methods for
   two-stage randomized experiments, randomized experiments with 
   noncompliance, and randomized experiments with missing data.
 License: GPL (>=2)
-URL: http://imai.princeton.edu/software/experiment.html
+URL: https://github.com/kosukeimai/experiment
+BugReports: https://github.com/kosukeimai/experiment/issues
 RoxygenNote: 6.0.1
