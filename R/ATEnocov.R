@@ -69,9 +69,9 @@ ATEnocov <- function(Y, Z, data = parent.frame(), match = NULL){
     if (length(match) != length(Y))
       stop("`match' and `Y' have different numbers of observations")
     
+  res <- list(call = call, Y = Y, Z = Z, match = match)
   ## ATE for unit randomization
   res$ATE.est <- mean(Y[Z==1])-mean(Y[Z==0])
-  res <- list(call = call, Y = Y, Z = Z, match = match)
   if (is.null(match)) { # without matching
     res$ATE.var <- var(Y[Z==1])/sum(Z==1)+var(Y[Z==0])/sum(Z==0)
   } else { # with matching
