@@ -29,6 +29,9 @@ This function implements the complete randomization of treatment assignment for
 randomized experiments.
 }
 \examples{
+## example data
+data <- data.frame(x1 = rnorm(20), x2 = rnorm(20))
+
 ## assigns half of the units to treatment, half to control
 completeRandomization(data) 
 
