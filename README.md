@@ -3,7 +3,7 @@ R package experiment Provides various statistical methods for designing and anal
 
 ## Examples
 
-Complete Randomization is supported via the `completeRandomization` function, which takes `data` as an argument and assigns `n` units to treatment. Multiple treatment arms are supported by including a vector for n:
+Complete Randomization is supported via the `completeRandomization` function, which takes `data` as an argument and assigns `n` units to treatment. Multiple treatment arms are supported by providing a vector for `n`:
 
 ```
 ## assigns half of the units to treatment, half to control
