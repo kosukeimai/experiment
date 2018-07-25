@@ -68,18 +68,35 @@ estimateComplete <- function(formula, data, std.error = "HC3") {
   
   ## fit model
   lm.fit <- lm(formula, data = data)
+  sum <- summary(lm.fit)
   
   ## calculate appropriate standard errors
   se <- vcovHC(lm.fit, type = std.error)
   
+  ## degrees of freedom
+  df <- df.residual(lm.fit)
+  
+  ## t-values
+  t.val <- coef(lm.fit) / sqrt(diag(se))
+  
+  ## p-values
+  p.val <- 2 * pt(-abs(t.val), df)
+  
   ## collect results
-  est <- data.frame(estimates = lm.fit$coefficients, se = sqrt(diag(se)))
+  est <- data.frame(Estimates = lm.fit$coefficients, 
+                    SE = sqrt(diag(se)),
+                    t.val = t.val,
+                    p.val = p.val)
   
   ## put standard error name in data frame for clarity
   se.name <- paste("SE (", std.error, ")", sep = "")
-  attr(est, "names")[length(attr(est, "names"))] <- se.name
+  attr(est, "names")[2] <- se.name
   
-  res <- list(call = call, estimates = est, data = data)
+  res <- list(call = call, estimates = est, 
+              data = data, df = df,
+              r.squared = sum$r.squared,
+              adj.r.squared = sum$adj.r.squared)
+  
   class(res) <- "estimateComplete"
   
   return(res)
