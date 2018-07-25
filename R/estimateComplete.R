@@ -29,23 +29,23 @@
 #' URL \url{http://www.jstatsoft.org/v11/i10/.}
 #' 
 #' Cribari-Neto F. (2004), Asymptotic Inference under Heteroskedasticity of Unknown Form. 
-#' Computational Statistics & Data Analysis 45, 215–233. 
+#' Computational Statistics & Data Analysis 45, 215-233. 
 #' \url{http://doi.org/10.1016/S0167-9473(02)00366-3}.
 #' 
 #' Cribari-Neto F., Da Silva W.B. (2011), A New Heteroskedasticity-Consistent Covariance Matrix 
-#' Estimator for the Linear Regression Model. Advances in Statistical Analysis, 95(2), 129–146.
+#' Estimator for the Linear Regression Model. Advances in Statistical Analysis, 95(2), 129-146.
 #' \url{https://doi.org/10.1007/s10182-010-0141-2}.
 #' 
 #' Cribari-Neto F., Souza T.C., Vasconcellos, K.L.P. (2007), Inference under Heteroskedasticity 
-#' and Leveraged Data. Communications in Statistics – Theory and Methods, 36, 1877–1888. Errata: 
-#' 37, 3329–3330, 2008. \url{https://doi.org/10.1080/03610920601126589}.
+#' and Leveraged Data. Communications in Statistics - Theory and Methods, 36, 1877-1888. Errata: 
+#' 37, 3329-3330, 2008. \url{https://doi.org/10.1080/03610920601126589}.
 #' 
 #' MacKinnon, James, and Halbert White. (1985), "Some Heteroskedasticity-Consistent 
 #' Covariance Matrix Estimators with Improved Finite Sample Properties." Journal 
 #' of Econometrics 29 (3): 305-25. \url{https://doi.org/10.1016/0304-4076(85)90158-7}.
 #' 
 #' White H. (1980), A Heteroskedasticity-Consistent Covariance Matrix and a Direct Test 
-#' for Heteroskedasticity. Econometrica 48, 817–838. \url{http://doi.org/10.2307/1912934}.
+#' for Heteroskedasticity. Econometrica 48, 817-838. \url{http://doi.org/10.2307/1912934}.
 #' 
 #' @examples
 #' ## PlantGrowth data provided with R, HC3 standard errors
