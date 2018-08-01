@@ -21,7 +21,6 @@
 #' \email{imai@@harvard.edu};
 #' @author Tyler Simko, PhD Student, Harvard University
 #' \email{tsimko@@g.harvard.edu};
-#' @keywords estimate
 #' @importFrom sandwich vcovHC
 #' @references 
 #' Achim Zeileis (2004). Econometric Computing with HC and HAC 

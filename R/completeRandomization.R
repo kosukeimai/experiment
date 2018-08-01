@@ -21,7 +21,6 @@
 #' \email{imai@@harvard.edu};
 #' @author Tyler Simko, PhD Student, Harvard University
 #' \email{tsimko@@g.harvard.edu};
-#' @keywords design
 #' 
 #' @examples 
 #' ## example data
