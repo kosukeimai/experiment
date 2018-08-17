@@ -2,7 +2,7 @@
 % Please edit documentation in R/completeRandomization.R
 \name{completeRandomization}
 \alias{completeRandomization}
-\title{Complete Randomization of the Treatment Assignment for Conducting Experiments}
+\title{Complete Randomization of the Treatment Assignment for Experiments}
 \usage{
 completeRandomization(data, n = nrow(data)/2)
 }
@@ -46,9 +46,8 @@ completeRandomization(data, n = c(10, 5, 5))
 }
 \author{
 Kosuke Imai, Professor of Government and Statistics, Harvard University
-\email{imai@harvard.edu};
+\email{imai@harvard.edu}
 
 Tyler Simko, PhD Student, Harvard University
-\email{tsimko@g.harvard.edu};
+\email{tsimko@g.harvard.edu}
 }
-\keyword{design}
