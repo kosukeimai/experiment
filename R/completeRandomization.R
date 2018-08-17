@@ -1,4 +1,4 @@
-#' Complete Randomization of the Treatment Assignment for Conducting Experiments
+#' Complete Randomization of the Treatment Assignment for Experiments
 #' 
 #' This function implements the complete randomization of treatment assignment for
 #' randomized experiments.
@@ -18,9 +18,9 @@
 #' treatments.} \item{data}{The data frame that was used to conduct the
 #' randomization.}
 #' @author Kosuke Imai, Professor of Government and Statistics, Harvard University
-#' \email{imai@@harvard.edu};
+#' \email{imai@@harvard.edu}
 #' @author Tyler Simko, PhD Student, Harvard University
-#' \email{tsimko@@g.harvard.edu};
+#' \email{tsimko@@g.harvard.edu}
 #' 
 #' @examples 
 #' ## example data

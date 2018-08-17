@@ -37,13 +37,15 @@
 
 blockRandomization <- function(data, n = NULL, block = NULL, sort = TRUE) {  
   
-  if (is.null(n))     stop("n (number of observations to be assigned to treatment) must be provided.")
-  if (is.null(block)) stop("block indicator must be provided.")
+  if (is.null(n))     
+    stop("n (number of observations to be assigned to treatment) must be provided.")
+  if (is.null(block)) 
+    stop("block indicator must be provided.")
   
+  ## n must define treatment count for each group
   if (length(n) != length(unique(block))) 
     stop("length of n must match number of unique categories in block")
   
-  ## call
   call <- match.call()
   
   ## for ordering
@@ -67,7 +69,7 @@ blockRandomization <- function(data, n = NULL, block = NULL, sort = TRUE) {
       rbind(dataToRet, dat)
     })
   
-  (finalData <- do.call(rbind, dd))
+  finalData <- do.call(rbind, dd)
   
   ## return data grouped by block if requested
   if (sort) {
