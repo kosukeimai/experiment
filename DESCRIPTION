@@ -3,10 +3,10 @@ Version: 1.1-4
 Date: 2018-04-30
 Title: R Package for Designing and Analyzing Randomized Experiments
 Authors@R: c(
-  person("Kosuke", "Imai", , "kimai@princeton.edu", c("aut", "cre")),
+  person("Kosuke", "Imai", , "imai@harvard.edu", c("aut", "cre")),
   person("Zhichao", "Jiang", , "zhichaoj@princeton.edu", c("aut"))
   )
-Maintainer: Kosuke Imai <kimai@princeton.edu>
+Maintainer: Kosuke Imai <imai@harvard.edu>
 Depends: boot, MASS, R (>= 2.4.0)
 Description: Provides various statistical methods for
   designing and analyzing randomized experiments. One functionality
