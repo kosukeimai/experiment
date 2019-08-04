@@ -1,10 +1,11 @@
 Package: experiment
-Version: 1.1-4
-Date: 2018-04-30
+Version: 1.2.0
+Date: 2019-08-14
 Title: R Package for Designing and Analyzing Randomized Experiments
 Authors@R: c(
   person("Kosuke", "Imai", , "imai@harvard.edu", c("aut", "cre")),
-  person("Zhichao", "Jiang", , "zhichaoj@princeton.edu", c("aut"))
+  person("Zhichao", "Jiang", , "zhichaoj@princeton.edu", c("aut")),
+  person("Michael", "Li", , "mlli@mit.edu", c("aut"))
   )
 Maintainer: Kosuke Imai <imai@harvard.edu>
 Depends: boot, MASS, R (>= 2.4.0)
