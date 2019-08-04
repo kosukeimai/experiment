@@ -8,8 +8,6 @@
 #' @param tau The unit-level continuous score for treatment assignment. We assume those that have tau<0 should
 #' not have treatment. Conditional Average Treatment Effect is one possible measure.
 #' @param Y The outcome variable of interest.
-#' @param plim The maximum percentage of population that can be treated under the
-#' budget constraint. Should be a decimal between 0 and 1. 
 #' @return A list that contains the following items: \item{aupec}{The estimated
 #' Area Under Prescription Evaluation Curve} \item{sd}{The estimated standard deviation
 #' of AUPEC.}

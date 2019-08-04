@@ -5,8 +5,8 @@
 \title{Estimation of the Average Treatment Effects in Cluster-Randomized
 Experiments}
 \usage{
-ATEcluster(Y, Z, grp, data = parent.frame(), match = NULL, weights = NULL,
-  fpc = TRUE)
+ATEcluster(Y, Z, grp, data = parent.frame(), match = NULL,
+  weights = NULL, fpc = TRUE)
 }
 \arguments{
 \item{Y}{The outcome variable of interest.}

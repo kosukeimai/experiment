@@ -5,8 +5,9 @@
 \alias{Randomize}
 \title{Randomization of the Treatment Assignment for Conducting Experiments}
 \usage{
-randomize(data, group = c("Treat", "Control"), ratio = NULL, indx = NULL,
-  block = NULL, n.block = NULL, match = NULL, complete = TRUE)
+randomize(data, group = c("Treat", "Control"), ratio = NULL,
+  indx = NULL, block = NULL, n.block = NULL, match = NULL,
+  complete = TRUE)
 }
 \arguments{
 \item{data}{A data frame containing the observations to which the treatments
