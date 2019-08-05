@@ -14,7 +14,7 @@
   \item{Tb}{Treatment assignment for the second unit in the matched pairs}
   #' }}
 \usage{
-seguro
+data(seguro)
 }
 \description{
 This data set contains the outcome, missing indicator and the treatment for the application 
