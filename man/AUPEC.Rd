@@ -13,9 +13,6 @@ AUPEC(T, tau, Y)
 not have treatment. Conditional Average Treatment Effect is one possible measure.}
 
 \item{Y}{The outcome variable of interest.}
-
-\item{plim}{The maximum percentage of population that can be treated under the
-budget constraint. Should be a decimal between 0 and 1.}
 }
 \value{
 A list that contains the following items: \item{aupec}{The estimated
