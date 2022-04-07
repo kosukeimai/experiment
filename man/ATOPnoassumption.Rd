@@ -59,8 +59,8 @@ Truncation-by-Death under the Matched-Pairs Design}, \emph{Technical Report}. De
 University.
 }
 \author{
-Kosuke Imai, Department of Politics, Princeton University
-\email{kimai@Princeton.Edu}, \url{http://imai.princeton.edu}; 
+Kosuke Imai, Department of Government and Department of Statistics, Harvard University
+\email{imai@Harvard.Edu}, \url{https://imai.fas.harvard.edu};
 Zhichao Jiang, Department of Politics, Princeton University
 \email{zhichaoj@princeton.edu}.
 }

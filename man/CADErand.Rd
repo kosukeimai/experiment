@@ -46,8 +46,8 @@ Kosuke Imai, Zhichao Jiang and Anup Malani (2018).
 University.
 }
 \author{
-Kosuke Imai, Department of Politics, Princeton University
-\email{kimai@Princeton.Edu}, \url{https://imai.princeton.edu};
+Kosuke Imai, Department of Government and Department of Statistics, Harvard University
+\email{imai@Harvard.Edu}, \url{https://imai.fas.harvard.edu};
 Zhichao Jiang, Department of Politics, Princeton University
 \email{zhichaoj@princeton.edu}.
 }

@@ -34,12 +34,11 @@ Currently, the two designs are allowed: complete randomized design and
 matched-pair design.
 }
 \references{
-Imai, Kosuke, (2007). \dQuote{Randomization-based Inference and
-Efficiency Analysis in Experiments under the Matched-Pair Design}, Technical
-Report. Department of Politics, Princeton University.
+Imai, Kosuke, (2008). \dQuote{Randomization-based Inference and
+Efficiency Analysis in Experiments under the Matched-Pair Design}, Statistics in Medicine.
 }
 \author{
-Kosuke Imai, Department of Politics, Princeton University
-\email{kimai@Princeton.Edu}, \url{http://imai.princeton.edu};
+Kosuke Imai, Department of Government and Department of Statistics, Harvard University
+\email{imai@Harvard.Edu}, \url{https://imai.fas.harvard.edu};
 }
 \keyword{design}

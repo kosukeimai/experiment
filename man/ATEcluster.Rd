@@ -5,8 +5,15 @@
 \title{Estimation of the Average Treatment Effects in Cluster-Randomized
 Experiments}
 \usage{
-ATEcluster(Y, Z, grp, data = parent.frame(), match = NULL,
-  weights = NULL, fpc = TRUE)
+ATEcluster(
+  Y,
+  Z,
+  grp,
+  data = parent.frame(),
+  match = NULL,
+  weights = NULL,
+  fpc = TRUE
+)
 }
 \arguments{
 \item{Y}{The outcome variable of interest.}
@@ -90,7 +97,7 @@ Mexican Universal Health Insurance Evaluation}, Technical Report. Department
 of Politics, Princeton University.
 }
 \author{
-Kosuke Imai, Department of Politics, Princeton University
-\email{kimai@Princeton.Edu}, \url{http://imai.princeton.edu};
+Kosuke Imai, Department of Government and Department of Statistics, Harvard University
+\email{imai@Harvard.Edu}, \url{https://imai.fas.harvard.edu};
 }
 \keyword{design}

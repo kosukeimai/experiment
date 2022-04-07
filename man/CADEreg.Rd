@@ -36,13 +36,12 @@ For the details of the method implemented by this function, see the
 references.
 }
 \references{
-Kosuke Imai, Zhichao Jiang and Anup Malani (2018).
-\dQuote{Causal Inference with Interference and Noncompliance in the Two-Stage Randomized Experiments}, \emph{Technical Report}. Department of Politics, Princeton
-University.
+Kosuke Imai, Zhichao Jiang and Anup Malani (2021).
+\dQuote{Causal Inference with Interference and Noncompliance in the Two-Stage Randomized Experiments}, \emph{Journal of the American Statistical Association}.
 }
 \author{
-Kosuke Imai, Department of Politics, Princeton University
-\email{kimai@Princeton.Edu}, \url{http://imai.princeton.edu};
+Kosuke Imai, Department of Government and Department of Statistics, Harvard University
+\email{imai@Harvard.Edu}, \url{https://imai.fas.harvard.edu};
 Zhichao Jiang, Department of Politics, Princeton University
 \email{zhichaoj@princeton.edu}.
 }

@@ -5,9 +5,16 @@
 \alias{Randomize}
 \title{Randomization of the Treatment Assignment for Conducting Experiments}
 \usage{
-randomize(data, group = c("Treat", "Control"), ratio = NULL,
-  indx = NULL, block = NULL, n.block = NULL, match = NULL,
-  complete = TRUE)
+randomize(
+  data,
+  group = c("Treat", "Control"),
+  ratio = NULL,
+  indx = NULL,
+  block = NULL,
+  n.block = NULL,
+  match = NULL,
+  complete = TRUE
+)
 }
 \arguments{
 \item{data}{A data frame containing the observations to which the treatments
@@ -77,7 +84,7 @@ observations. Matched-pair designs refer to the randomization of the binary
 treatment variable within the pre-specified pair of observations.
 }
 \author{
-Kosuke Imai, Department of Politics, Princeton University
-\email{kimai@Princeton.Edu}, \url{http://imai.princeton.edu};
+Kosuke Imai, Department of Government and Department of Statistics, Harvard University
+\email{imai@Harvard.Edu}, \url{https://imai.fas.harvard.edu};
 }
 \keyword{design}

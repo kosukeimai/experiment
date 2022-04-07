@@ -63,12 +63,11 @@ ATOPsens(Ya,Yb,Ra,Rb,Ta,Tb,gamma=0.95,l=0,u=1,alpha=0.05,rep=100)
 \references{
 Kosuke Imai and Zhichao Jiang (2018).
 \dQuote{A Sensitivity Analysis for Missing Outcomes Due to 
-Truncation-by-Death under the Matched-Pairs Design}, \emph{Technical Report}. Department of Politics, Princeton
-University.
+Truncation-by-Death under the Matched-Pairs Design}, \emph{Statistics in Medicine}.
 }
 \author{
-Kosuke Imai, Department of Politics, Princeton University
-\email{kimai@Princeton.Edu}, \url{http://imai.princeton.edu};
+Kosuke Imai, Department of Government and Department of Statistics, Harvard University
+\email{imai@Harvard.Edu}, \url{https://imai.fas.harvard.edu};
 Zhichao Jiang, Department of Politics, Princeton University
 \email{zhichaoj@princeton.edu}.
 }

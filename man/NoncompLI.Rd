@@ -5,15 +5,40 @@
 \title{Bayesian Analysis of Randomized Experiments with Noncompliance and Missing
 Outcomes Under the Assumption of Latent Ignorability}
 \usage{
-NoncompLI(formulae, Z, D, data = parent.frame(), n.draws = 5000,
-  param = TRUE, in.sample = FALSE, model.c = "probit",
-  model.o = "probit", model.r = "probit", tune.c = 0.01,
-  tune.o = 0.01, tune.r = 0.01, tune.v = 0.01, p.mean.c = 0,
-  p.mean.o = 0, p.mean.r = 0, p.prec.c = 0.001, p.prec.o = 0.001,
-  p.prec.r = 0.001, p.df.o = 10, p.scale.o = 1, p.shape.o = 1,
-  mda.probit = TRUE, coef.start.c = 0, coef.start.o = 0,
-  tau.start.o = NULL, coef.start.r = 0, var.start.o = 1,
-  burnin = 0, thin = 0, verbose = TRUE)
+NoncompLI(
+  formulae,
+  Z,
+  D,
+  data = parent.frame(),
+  n.draws = 5000,
+  param = TRUE,
+  in.sample = FALSE,
+  model.c = "probit",
+  model.o = "probit",
+  model.r = "probit",
+  tune.c = 0.01,
+  tune.o = 0.01,
+  tune.r = 0.01,
+  tune.v = 0.01,
+  p.mean.c = 0,
+  p.mean.o = 0,
+  p.mean.r = 0,
+  p.prec.c = 0.001,
+  p.prec.o = 0.001,
+  p.prec.r = 0.001,
+  p.df.o = 10,
+  p.scale.o = 1,
+  p.shape.o = 1,
+  mda.probit = TRUE,
+  coef.start.c = 0,
+  coef.start.o = 0,
+  tau.start.o = NULL,
+  coef.start.r = 0,
+  var.start.o = 1,
+  burnin = 0,
+  thin = 0,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{formulae}{A list of formulae where the first formula specifies the
@@ -227,7 +252,7 @@ Survey Experiment.} \emph{American Journal of Political Science}, Vol. 51,
 No. 3 (July), pp. 669-687.
 }
 \author{
-Kosuke Imai, Department of Politics, Princeton University
-\email{kimai@Princeton.Edu}, \url{http://imai.princeton.edu};
+Kosuke Imai, Department of Government and Department of Statistics, Harvard University
+\email{imai@Harvard.Edu}, \url{https://imai.fas.harvard.edu};
 }
 \keyword{models}

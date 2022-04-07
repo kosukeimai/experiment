@@ -5,9 +5,18 @@
 \title{Bounding the Average Treatment Effect when some of the Outcome Data are
 Missing}
 \usage{
-ATEbounds(formula, data = parent.frame(), maxY = NULL, minY = NULL,
-  alpha = 0.05, n.reps = 0, strata = NULL, ratio = NULL,
-  survey = NULL, ...)
+ATEbounds(
+  formula,
+  data = parent.frame(),
+  maxY = NULL,
+  minY = NULL,
+  alpha = 0.05,
+  n.reps = 0,
+  strata = NULL,
+  ratio = NULL,
+  survey = NULL,
+  ...
+)
 }
 \arguments{
 \item{formula}{A formula of the form \code{Y ~ X} where \code{Y} is the name
@@ -93,7 +102,7 @@ Study}, \emph{Technical Report}. Department of Politics, Princeton
 University.
 }
 \author{
-Kosuke Imai, Department of Politics, Princeton University
-\email{kimai@Princeton.Edu}, \url{http://imai.princeton.edu};
+Kosuke Imai, Department of Government and Department of Statistics, Harvard University
+\email{imai@Harvard.Edu}, \url{https://imai.fas.harvard.edu};
 }
 \keyword{design}

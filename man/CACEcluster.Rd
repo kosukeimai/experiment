@@ -5,8 +5,16 @@
 \title{Estimation of the Complier Average Causal Effects in Cluster-Randomized
 Experiments with Unit-level Noncompliance}
 \usage{
-CACEcluster(Y, D, Z, grp, data = parent.frame(), match = NULL,
-  weights = NULL, ...)
+CACEcluster(
+  Y,
+  D,
+  Z,
+  grp,
+  data = parent.frame(),
+  match = NULL,
+  weights = NULL,
+  ...
+)
 }
 \arguments{
 \item{Y}{The outcome variable of interest.}
@@ -68,7 +76,7 @@ Application to the Mexican Universal Health Insurance Evaluation}, Technical
 Report. Department of Politics, Princeton University.
 }
 \author{
-Kosuke Imai, Department of Politics, Princeton University
-\email{kimai@Princeton.Edu}, \url{http://imai.princeton.edu};
+Kosuke Imai, Department of Government and Department of Statistics, Harvard University
+\email{imai@Harvard.Edu}, \url{https://imai.fas.harvard.edu};
 }
 \keyword{design}
