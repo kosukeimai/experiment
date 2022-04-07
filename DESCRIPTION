@@ -1,6 +1,6 @@
 Package: experiment
 Version: 1.2.1
-Date: 2022-04-06
+Date: 2022-04-07
 Title: R Package for Designing and Analyzing Randomized Experiments
 Authors@R: c(
   person("Kosuke", "Imai", , "imai@harvard.edu", c("aut", "cre")),
@@ -17,6 +17,7 @@ Description: Provides various statistical methods for
   two-stage randomized experiments, randomized experiments with 
   noncompliance, and randomized experiments with missing data.
 License: GPL (>=2)
+LazyData: true
 URL: https://github.com/kosukeimai/experiment
 BugReports: https://github.com/kosukeimai/experiment/issues
 RoxygenNote: 7.1.2
