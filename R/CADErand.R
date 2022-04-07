@@ -36,8 +36,8 @@
 #'\item{var.SEY0}{ The  variance estimate of SEY(0).   } 
 #'\item{var.SED1}{ The  variance estimate of SED(1).   } 
 #'\item{var.SED0}{ The  variance estimate of SED(0).   } 
-#' @author Kosuke Imai, Department of Politics, Princeton University
-#' \email{kimai@Princeton.Edu}, \url{https://imai.princeton.edu};
+#' @author Kosuke Imai, Department of Government and Department of Statistics, Harvard University
+#' \email{imai@@Harvard.Edu}, \url{https://imai.fas.harvard.edu};
 #' Zhichao Jiang, Department of Politics, Princeton University
 #' \email{zhichaoj@@princeton.edu}.
 #' @references Kosuke Imai, Zhichao Jiang and Anup Malani (2018).

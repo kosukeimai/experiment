@@ -43,8 +43,8 @@
 #' sizes for the control group.  } \item{w}{ Pair-specific normalized
 #' arithmetic mean weights. These weights sum up to the total number of units
 #' in the sample, i.e., \code{n}.  }
-#' @author Kosuke Imai, Department of Politics, Princeton University
-#' \email{kimai@@Princeton.Edu}, \url{http://imai.princeton.edu};
+#' @author Kosuke Imai, Department of Government and Department of Statistics, Harvard University
+#' \email{imai@@Harvard.Edu}, \url{https://imai.fas.harvard.edu};
 #' @references Imai, Kosuke, Gary King, and Clayton Nall (2007). \dQuote{The
 #' Essential Role of Pair Matching in Cluster-Randomized Experiments, with
 #' Application to the Mexican Universal Health Insurance Evaluation}, Technical

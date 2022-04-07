@@ -155,8 +155,8 @@
 #' coefficients of the (non)response model from their posterior distribution.}
 #' \item{sig2}{The Monte carlo draws of the variance parameter for the
 #' gaussian, negative binomial, and twopart (outcome) models.}
-#' @author Kosuke Imai, Department of Politics, Princeton University
-#' \email{kimai@@Princeton.Edu}, \url{http://imai.princeton.edu};
+#' @author Kosuke Imai, Department of Government and Department of Statistics, Harvard University
+#' \email{imai@@Harvard.Edu}, \url{https://imai.fas.harvard.edu};
 #' @references Frangakis, Constantine E. and Donald B. Rubin. (1999).
 #' \dQuote{Addressing Complications of Intention-to-Treat Analysis in the
 #' Combined Presence of All-or-None Treatment Noncompliance and Subsequent

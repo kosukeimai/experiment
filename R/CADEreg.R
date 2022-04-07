@@ -32,13 +32,12 @@
 #'\item{var0.ind}{ The  individual-robust variance of CADE(0).    } 
 #'\item{var1.reg}{ The  proposed variance of CADE(1).    } 
 #'\item{var0.reg}{ The  proposed variance of CADE(0).    } 
-#' @author Kosuke Imai, Department of Politics, Princeton University
-#' \email{kimai@@Princeton.Edu}, \url{http://imai.princeton.edu};
+#' @author Kosuke Imai, Department of Government and Department of Statistics, Harvard University
+#' \email{imai@@Harvard.Edu}, \url{https://imai.fas.harvard.edu};
 #' Zhichao Jiang, Department of Politics, Princeton University
 #' \email{zhichaoj@@princeton.edu}.
-#' @references Kosuke Imai, Zhichao Jiang and Anup Malani (2018).
-#' \dQuote{Causal Inference with Interference and Noncompliance in the Two-Stage Randomized Experiments}, \emph{Technical Report}. Department of Politics, Princeton
-#' University.
+#' @references Kosuke Imai, Zhichao Jiang and Anup Malani (2021).
+#' \dQuote{Causal Inference with Interference and Noncompliance in the Two-Stage Randomized Experiments}, \emph{Journal of the American Statistical Association}.
 #' @keywords two-stage randomized experiments
 #' @export CADEreg
 

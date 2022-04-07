@@ -55,8 +55,8 @@
 #' variable indicating which observations belong to which blocks in
 #' randomized-block designs.  } \item{match.id}{ The variable indicating which
 #' observations belong to which pairs in matched-pair designs.  }
-#' @author Kosuke Imai, Department of Politics, Princeton University
-#' \email{kimai@@Princeton.Edu}, \url{http://imai.princeton.edu};
+#' @author Kosuke Imai, Department of Government and Department of Statistics, Harvard University
+#' \email{imai@@Harvard.Edu}, \url{https://imai.fas.harvard.edu};
 #' @keywords design
 #' @export randomize
 randomize <- function(data, group = c("Treat", "Control"), ratio =

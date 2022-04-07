@@ -28,11 +28,10 @@
 #' effect.  } \item{ATE.var}{ The estimated variance of the average treatment
 #' effect estimator.  } \item{diff}{ Within-pair differences if the
 #' matched-pair design is analyzed.  }
-#' @author Kosuke Imai, Department of Politics, Princeton University
-#' \email{kimai@@Princeton.Edu}, \url{http://imai.princeton.edu};
-#' @references Imai, Kosuke, (2007). \dQuote{Randomization-based Inference and
-#' Efficiency Analysis in Experiments under the Matched-Pair Design}, Technical
-#' Report. Department of Politics, Princeton University.
+#' @author Kosuke Imai, Department of Government and Department of Statistics, Harvard University
+#' \email{imai@@Harvard.Edu}, \url{https://imai.fas.harvard.edu};
+#' @references Imai, Kosuke, (2008). \dQuote{Randomization-based Inference and
+#' Efficiency Analysis in Experiments under the Matched-Pair Design}, Statistics in Medicine.
 #' @keywords design
 #' @export ATEnocov
 ATEnocov <- function(Y, Z, data = parent.frame(), match = NULL){

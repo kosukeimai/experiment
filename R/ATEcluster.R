@@ -62,8 +62,8 @@
 #' of units in the sample, i.e., \code{n}.  } \item{diff}{ Within-pair
 #' differences if the matched-pair design is analyzed. This equals the
 #' difference between \code{Y1bar} and \code{Y0bar}.  }
-#' @author Kosuke Imai, Department of Politics, Princeton University
-#' \email{kimai@@Princeton.Edu}, \url{http://imai.princeton.edu};
+#' @author Kosuke Imai, Department of Government and Department of Statistics, Harvard University
+#' \email{imai@@Harvard.Edu}, \url{https://imai.fas.harvard.edu};
 #' @references Donner, A. and N. Klar (1993). \dQuote{Confidence interval
 #' construction for effect measures arising from cluster randomized trials.}
 #' Journal of Clinical Epidemiology. Vol. 46, No. 2, pp. 123-131.

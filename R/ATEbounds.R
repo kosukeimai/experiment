@@ -60,8 +60,8 @@
 #' The number of observations within each treatment/control group.  }
 #' \item{ratio}{ The probability of treatment assignment (within each strata if
 #' \code{strata} is specified) used in the computation.  }
-#' @author Kosuke Imai, Department of Politics, Princeton University
-#' \email{kimai@@Princeton.Edu}, \url{http://imai.princeton.edu};
+#' @author Kosuke Imai, Department of Government and Department of Statistics, Harvard University
+#' \email{imai@@Harvard.Edu}, \url{https://imai.fas.harvard.edu};
 #' @references Horowitz, Joel L. and Charles F. Manski. (1998).
 #' \dQuote{Censoring of Outcomes and Regressors due to Survey Nonresponse:
 #' Identification and Estimation Using Weights and Imputations.} \emph{Journal

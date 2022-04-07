@@ -1,11 +1,10 @@
 Package: experiment
-Version: 1.2.0
-Date: 2019-08-14
+Version: 1.2.1
+Date: 2022-04-06
 Title: R Package for Designing and Analyzing Randomized Experiments
 Authors@R: c(
   person("Kosuke", "Imai", , "imai@harvard.edu", c("aut", "cre")),
-  person("Zhichao", "Jiang", , "zhichaoj@princeton.edu", c("aut")),
-  person("Michael", "Li", , "mlli@mit.edu", c("aut"))
+  person("Zhichao", "Jiang", , "zhichaoj@princeton.edu", c("aut"))
   )
 Maintainer: Kosuke Imai <imai@harvard.edu>
 Depends: boot, MASS, R (>= 2.4.0)
@@ -20,4 +19,4 @@ Description: Provides various statistical methods for
 License: GPL (>=2)
 URL: https://github.com/kosukeimai/experiment
 BugReports: https://github.com/kosukeimai/experiment/issues
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.2

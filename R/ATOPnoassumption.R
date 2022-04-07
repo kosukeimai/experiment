@@ -33,8 +33,8 @@
 #' \item{LB}{ The lower bound for the ATOP.  } \item{UB}{ The upper bound for the ATOP.   }
 #' \item{LB.CI}{ The lower limit of the confidence interval for the ATOP.   }
 #'\item{UB.CI}{ The upper limit of the confidence interval for the ATOP.    } 
-#' @author Kosuke Imai, Department of Politics, Princeton University
-#' \email{kimai@@Princeton.Edu}, \url{http://imai.princeton.edu}; 
+#' @author Kosuke Imai, Department of Government and Department of Statistics, Harvard University
+#' \email{imai@@Harvard.Edu}, \url{https://imai.fas.harvard.edu};
 #' Zhichao Jiang, Department of Politics, Princeton University
 #' \email{zhichaoj@@princeton.edu}.
 #' @references Kosuke Imai and Zhichao Jiang (2018).

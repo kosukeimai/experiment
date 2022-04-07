@@ -1,4 +1,4 @@
-
+#define USE_FC_LEN_T
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -45,9 +45,9 @@ void dinv(double **X,
   for (i = 0, j = 0; j < size; j++) 
     for (k = 0; k <= j; k++) 
       pdInv[i++] = X[k][j];
-  F77_CALL(dpptrf)("U", &size, pdInv, &errorM);
+  F77_CALL(dpptrf)("U", &size, pdInv, &errorM FCONE);
   if (!errorM) {
-    F77_CALL(dpptri)("U", &size, pdInv, &errorM);
+    F77_CALL(dpptri)("U", &size, pdInv, &errorM FCONE);
     if (errorM) {
       Rprintf("LAPACK dpptri failed, %d\n", errorM);
       error("Exiting from dinv().\n");
@@ -78,7 +78,7 @@ void dcholdc(double **X, int size, double **L)
   for (j = 0, i = 0; j < size; j++) 
     for (k = 0; k <= j; k++) 
       pdTemp[i++] = X[k][j];
-  F77_CALL(dpptrf)("U", &size, pdTemp, &errorM);
+  F77_CALL(dpptrf)("U", &size, pdTemp, &errorM FCONE);
   if (errorM) {
     Rprintf("LAPACK dpptrf failed, %d\n", errorM);
     error("Exiting from dcholdc().\n");
