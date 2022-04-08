@@ -17,7 +17,8 @@ Description: Provides various statistical methods for
   two-stage randomized experiments, randomized experiments with 
   noncompliance, and randomized experiments with missing data.
 License: GPL (>=2)
-LazyData: true
+LazyLoad: yes
+LazyData: yes
 URL: https://github.com/kosukeimai/experiment
 BugReports: https://github.com/kosukeimai/experiment/issues
 RoxygenNote: 7.1.2
